@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Paid Analysis</title>
+</head>
+<body>
+    <h1>Test Paid Analysis Response</h1>
+    <button onclick="testPaid()">Test Paid API Call</button>
+    <div id="result"></div>
+
+    <script>
+        async function testPaid() {
+            // Create a simple test file
+            const testContent = new Blob(['John Doe\nSoftware Engineer\nWorked at company for 3 years'], {type: 'text/plain'});
+            const formData = new FormData();
+            formData.append('file', testContent, 'test.txt');
+            formData.append('payment_token', 'payment_success_123');
+
+            try {
+                const response = await fetch('/api/check-resume', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('result').innerHTML = `
+                        <h2>Response:</h2>
+                        <p><strong>Analysis Type:</strong> ${data.analysis_type}</p>
+                        <p><strong>Has text_rewrites:</strong> ${'text_rewrites' in data}</p>
+                        <p><strong>Has sample_improvements:</strong> ${'sample_improvements' in data}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    document.getElementById('result').innerHTML = `Error: ${response.status}`;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

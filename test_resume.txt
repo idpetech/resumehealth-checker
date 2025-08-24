@@ -1,0 +1,14 @@
+John Doe
+Software Engineer
+
+Experience:
+- Worked at company for 3 years
+- Made some improvements to the system
+- Helped with various projects
+- Collaborated with team members
+
+Skills:
+- Python
+- JavaScript 
+- Problem solving
+- Team player

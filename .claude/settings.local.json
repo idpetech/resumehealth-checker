@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(./setup.sh:*)",
+      "Bash(source:*)",
+      "Bash(python -m pytest tests/test_main.py -v)",
+      "Bash(python -m pytest tests/test_main.py::TestResumeAnalysisEndpoint::test_check_resume_paid_analysis -v)",
+      "Bash(python -m pytest tests/test_main.py::TestResumeAnalysisEndpoint::test_check_resume_empty_file_content -v)",
+      "Bash(python:*)",
+      "Bash(grep:*)",
+      "Bash(rm:*)",
+      "Bash(make:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
