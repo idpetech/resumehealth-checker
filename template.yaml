@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Resume Health Checker - FastAPI on AWS Lambda
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.11
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+  OpenAIApiKey:
+    Type: String
+    NoEcho: true
+    Description: OpenAI API Key
+  StripePaymentUrl:
+    Type: String
+    Description: Stripe Payment URL
+  StripeSuccessToken:
+    Type: String
+    NoEcho: true
+    Description: Stripe Success Token
+
+Resources:
+  ResumeHealthCheckerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'resume-health-checker-${Environment}'
+      CodeUri: .
+      Handler: lambda_handler.lambda_handler
+      Runtime: python3.11
+      Timeout: 30
+      MemorySize: 1024
+      Environment:
+        Variables:
+          OPENAI_API_KEY: !Ref OpenAIApiKey
+          STRIPE_PAYMENT_URL: !Ref StripePaymentUrl
+          STRIPE_PAYMENT_SUCCESS_TOKEN: !Ref StripeSuccessToken
+          ENVIRONMENT: !Ref Environment
+      Events:
+        ApiGateway:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId: !Ref ResumeHealthCheckerApi
+        RootApiGateway:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+            RestApiId: !Ref ResumeHealthCheckerApi
+
+  ResumeHealthCheckerApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub 'resume-health-checker-api-${Environment}'
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      BinaryMediaTypes:
+        - "multipart/form-data"
+        - "application/pdf"
+        - "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+  # CloudWatch Log Group
+  ResumeHealthCheckerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/resume-health-checker-${Environment}'
+      RetentionInDays: 14
+
+Outputs:
+  ApiGatewayUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ResumeHealthCheckerApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiGatewayUrl"
+  
+  LambdaFunctionArn:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt ResumeHealthCheckerFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-LambdaFunctionArn"

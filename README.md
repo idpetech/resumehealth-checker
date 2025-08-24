@@ -108,9 +108,28 @@ railway init
 railway up
 ```
 
-### Option 3: AWS Lambda
+### Option 3: AWS Lambda (Recommended for Production)
 
-Use AWS SAM or Serverless Framework to deploy the FastAPI app.
+Full AWS deployment with SAM:
+
+```bash
+# Install prerequisites
+brew install awscli
+pip install aws-sam-cli
+
+# Configure AWS
+aws configure
+
+# Set environment variables
+export OPENAI_API_KEY="your-key"
+export STRIPE_PAYMENT_URL="your-url" 
+export STRIPE_PAYMENT_SUCCESS_TOKEN="your-token"
+
+# Deploy
+./deploy.sh prod
+```
+
+See [AWS_DEPLOYMENT.md](./AWS_DEPLOYMENT.md) for detailed instructions.
 
 ## Stripe Payment Setup
 
