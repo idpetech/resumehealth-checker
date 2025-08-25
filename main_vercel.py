@@ -888,6 +888,8 @@ async def serve_frontend():
 
             // Reset function for new uploads
             function resetForNewUpload() {
+                console.log('Reset function called'); // Debug log
+                
                 // Clear current state
                 selectedFile = null;
                 currentAnalysis = null;
@@ -899,30 +901,43 @@ async def serve_frontend():
                 
                 // Reset upload UI
                 const uploadDiv = document.querySelector('.file-upload');
-                uploadDiv.innerHTML = `
-                    <input type="file" id="fileInput" accept=".pdf,.docx" onchange="handleFileSelect(event)" style="display: none;">
-                    <div class="upload-text">
-                        <strong>Click to upload your resume</strong><br>
-                        or drag and drop it here
-                    </div>
-                    <div class="file-types">Supports PDF and Word documents</div>
-                `;
-                
-                // Re-add click handler
-                uploadDiv.onclick = function() {
-                    document.getElementById('fileInput').click();
-                };
+                if (uploadDiv) {
+                    uploadDiv.innerHTML = `
+                        <input type="file" id="fileInput" accept=".pdf,.docx" onchange="handleFileSelect(event)" style="display: none;">
+                        <div class="upload-text">
+                            <strong>Click to upload your resume</strong><br>
+                            or drag and drop it here
+                        </div>
+                        <div class="file-types">Supports PDF and Word documents</div>
+                    `;
+                    
+                    // Re-add click handler
+                    uploadDiv.onclick = function() {
+                        document.getElementById('fileInput').click();
+                    };
+                } else {
+                    console.error('Upload div not found');
+                }
                 
                 // Reset analyze button
                 const analyzeBtn = document.getElementById('analyzeBtn');
-                analyzeBtn.disabled = true;
-                analyzeBtn.textContent = 'Analyze My Resume - FREE';
+                if (analyzeBtn) {
+                    analyzeBtn.disabled = true;
+                    analyzeBtn.textContent = 'Analyze My Resume - FREE';
+                } else {
+                    console.error('Analyze button not found');
+                }
                 
                 // Hide results section
-                document.getElementById('resultsSection').style.display = 'none';
+                const resultsSection = document.getElementById('resultsSection');
+                if (resultsSection) {
+                    resultsSection.style.display = 'none';
+                } else {
+                    console.error('Results section not found');
+                }
                 
                 // Re-add drag and drop functionality
-                setupDragAndDrop();
+                setTimeout(() => setupDragAndDrop(), 100); // Small delay to ensure DOM is ready
             }
             
             // Function to setup drag and drop (extracted for reuse)
