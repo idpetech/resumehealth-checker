@@ -689,7 +689,7 @@ async def serve_frontend():
                                 <li>✓ Formatting fixes</li>
                                 <li>✓ Prioritized action plan</li>
                             </ul>
-                            <a href="STRIPE_PAYMENT_URL_PLACEHOLDER?success_url=${encodeURIComponent(window.location.origin + '/?payment_token=STRIPE_SUCCESS_TOKEN_PLACEHOLDER')}" class="upgrade-btn">
+                            <a href="#" class="upgrade-btn" onclick="goToStripeCheckout()">
                                 Unlock Full Report - $5
                             </a>
                         </div>
@@ -844,6 +844,13 @@ async def serve_frontend():
                 if (score >= 60) return 'score-good';
                 if (score >= 40) return 'score-fair';
                 return 'score-poor';
+            }
+
+            function goToStripeCheckout() {
+                const stripeUrl = 'STRIPE_PAYMENT_URL_PLACEHOLDER';
+                const successUrl = encodeURIComponent(window.location.origin + '/?payment_token=STRIPE_SUCCESS_TOKEN_PLACEHOLDER');
+                const fullUrl = stripeUrl + '?success_url=' + successUrl;
+                window.location.href = fullUrl;
             }
 
             // If payment token is present, automatically analyze the previously uploaded resume
