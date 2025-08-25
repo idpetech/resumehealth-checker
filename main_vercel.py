@@ -545,6 +545,36 @@ async def serve_frontend():
             // Check for payment success token in URL
             const urlParams = new URLSearchParams(window.location.search);
             const paymentToken = urlParams.get('payment_token');
+            
+            // If returning from payment, restore the previously uploaded file
+            if (paymentToken) {
+                const savedFileData = localStorage.getItem('pendingResumeUpload');
+                if (savedFileData) {
+                    const fileData = JSON.parse(savedFileData);
+                    // Recreate file from stored data
+                    fetch('data:' + fileData.type + ';base64,' + fileData.data)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const file = new File([blob], fileData.name, { type: fileData.type });
+                            selectedFile = file;
+                            
+                            // Update UI to show the file is selected
+                            const uploadDiv = document.querySelector('.file-upload');
+                            uploadDiv.innerHTML = `
+                                <div class="upload-text">
+                                    <strong>Payment successful! Analyzing: ${file.name}</strong><br>
+                                    <small>Getting your detailed analysis...</small>
+                                </div>
+                            `;
+                            
+                            // Clear the stored file data
+                            localStorage.removeItem('pendingResumeUpload');
+                            
+                            // Automatically start paid analysis
+                            analyzeResume();
+                        });
+                }
+            }
 
             // Handle file upload
             function handleFileSelect(event) {
@@ -847,10 +877,27 @@ async def serve_frontend():
             }
 
             function goToStripeCheckout() {
-                const stripeUrl = 'STRIPE_PAYMENT_URL_PLACEHOLDER';
-                const successUrl = encodeURIComponent(window.location.origin + '/?payment_token=STRIPE_SUCCESS_TOKEN_PLACEHOLDER');
-                const fullUrl = stripeUrl + '?success_url=' + successUrl;
-                window.location.href = fullUrl;
+                // Save the current file to localStorage before going to Stripe
+                if (selectedFile) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const fileData = {
+                            name: selectedFile.name,
+                            type: selectedFile.type,
+                            data: e.target.result.split(',')[1] // Remove data URL prefix
+                        };
+                        localStorage.setItem('pendingResumeUpload', JSON.stringify(fileData));
+                        
+                        // Now go to Stripe
+                        const stripeUrl = 'STRIPE_PAYMENT_URL_PLACEHOLDER';
+                        const successUrl = encodeURIComponent(window.location.origin + '/?payment_token=STRIPE_SUCCESS_TOKEN_PLACEHOLDER');
+                        const fullUrl = stripeUrl + '?success_url=' + successUrl;
+                        window.location.href = fullUrl;
+                    };
+                    reader.readAsDataURL(selectedFile);
+                } else {
+                    alert('Please upload a resume first before upgrading.');
+                }
             }
 
             // If payment token is present, automatically analyze the previously uploaded resume
