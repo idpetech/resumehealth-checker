@@ -6,7 +6,7 @@ Globals:
   Function:
     Timeout: 30
     MemorySize: 512
-    Runtime: python3.11
+    Runtime: python3.12
 
 Parameters:
   Environment:
@@ -32,10 +32,10 @@ Resources:
   ResumeHealthCheckerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub 'resume-health-checker-${Environment}'
+      FunctionName: !Sub 'resume-health-checker-api-${Environment}'
       CodeUri: .
-      Handler: lambda_handler.lambda_handler
-      Runtime: python3.11
+      Handler: lambda_handler_monolith.lambda_handler
+      Runtime: python3.12
       Timeout: 30
       MemorySize: 1024
       Environment:
@@ -50,39 +50,20 @@ Resources:
           Properties:
             Path: /{proxy+}
             Method: ANY
-            RestApiId: !Ref ResumeHealthCheckerApi
         RootApiGateway:
           Type: Api
           Properties:
             Path: /
             Method: ANY
-            RestApiId: !Ref ResumeHealthCheckerApi
+    Metadata:
+      BuildMethod: python3.12
 
-  ResumeHealthCheckerApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      Name: !Sub 'resume-health-checker-api-${Environment}'
-      StageName: !Ref Environment
-      Cors:
-        AllowMethods: "'GET,POST,OPTIONS'"
-        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        AllowOrigin: "'*'"
-      BinaryMediaTypes:
-        - "multipart/form-data"
-        - "application/pdf"
-        - "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-
-  # CloudWatch Log Group
-  ResumeHealthCheckerLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/resume-health-checker-${Environment}'
-      RetentionInDays: 14
+# CloudWatch Log Group will be created automatically by Lambda
 
 Outputs:
   ApiGatewayUrl:
     Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${ResumeHealthCheckerApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
     Export:
       Name: !Sub "${AWS::StackName}-ApiGatewayUrl"
   

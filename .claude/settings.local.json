@@ -10,7 +10,11 @@
       "Bash(python:*)",
       "Bash(grep:*)",
       "Bash(rm:*)",
-      "Bash(make:*)"
+      "Bash(make:*)",
+      "Bash(mkdir:*)",
+      "Bash(aws s3 cp:*)",
+      "Bash(aws s3 website:*)",
+      "Bash(aws s3api put-bucket-policy:*)"
     ],
     "deny": [],
     "ask": []

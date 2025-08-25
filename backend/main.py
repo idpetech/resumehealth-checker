@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 import openai
 from docx import Document
 import fitz  # PyMuPDF
+import tempfile
 
 # Load environment variables
 load_dotenv()
@@ -35,45 +36,30 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 STRIPE_SUCCESS_TOKEN = os.getenv("STRIPE_PAYMENT_SUCCESS_TOKEN", "payment_success_123")
 STRIPE_PAYMENT_URL = os.getenv("STRIPE_PAYMENT_URL", "https://buy.stripe.com/test_placeholder")
 
-def validate_pdf_magic_bytes(file_content: bytes) -> bool:
-    """Validate PDF magic bytes to ensure file integrity"""
-    # PDF files start with %PDF (hex: 25 50 44 46)
-    pdf_magic = b'%PDF'
-    return file_content.startswith(pdf_magic)
-
-def validate_docx_magic_bytes(file_content: bytes) -> bool:
-    """Validate DOCX magic bytes to ensure file integrity"""
-    # DOCX files are ZIP files that start with PK (hex: 50 4B)
-    docx_magic = b'PK'
-    return file_content.startswith(docx_magic)
-
 def extract_text_from_pdf(file_content: bytes) -> str:
-    """Extract text from PDF file using PyMuPDF - Lambda-optimized version"""
-    # Validate magic bytes first
-    if not validate_pdf_magic_bytes(file_content):
-        raise HTTPException(status_code=400, detail="Invalid PDF file: Magic bytes do not match PDF format")
-    
+    """Extract text from PDF file using PyMuPDF"""
     try:
-        # Use stream-based approach instead of temporary files (Lambda-friendly)
-        doc = fitz.open(stream=file_content, filetype="pdf")
-        text = ""
-        for page in doc:
-            text += page.get_text()
-        doc.close()
-        
-        return text.strip()
+        # Create a temporary file to work with PyMuPDF
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+            tmp_file.write(file_content)
+            tmp_file.flush()
+            
+            # Open PDF and extract text
+            doc = fitz.open(tmp_file.name)
+            text = ""
+            for page in doc:
+                text += page.get_text()
+            doc.close()
+            
+            # Clean up temporary file
+            os.unlink(tmp_file.name)
+            
+            return text.strip()
     except Exception as e:
-        if "password" in str(e).lower():
-            raise HTTPException(status_code=400, detail="PDF file is password-protected. Please remove password protection and try again.")
-        else:
-            raise HTTPException(status_code=400, detail=f"Error processing PDF: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error processing PDF: {str(e)}")
 
 def extract_text_from_docx(file_content: bytes) -> str:
-    """Extract text from DOCX file using python-docx - Lambda-optimized version"""
-    # Validate magic bytes first
-    if not validate_docx_magic_bytes(file_content):
-        raise HTTPException(status_code=400, detail="Invalid DOCX file: Magic bytes do not match DOCX format")
-    
+    """Extract text from DOCX file using python-docx"""
     try:
         doc = Document(io.BytesIO(file_content))
         text = ""
@@ -84,35 +70,18 @@ def extract_text_from_docx(file_content: bytes) -> str:
         raise HTTPException(status_code=400, detail=f"Error processing DOCX: {str(e)}")
 
 def resume_to_text(file: UploadFile) -> str:
-    """Convert uploaded resume file to text - Lambda-optimized version"""
-    try:
-        # Read file content as bytes
-        file_content = file.file.read()
-        
-        # Validate file size (reasonable limit for resumes)
-        if len(file_content) > 10 * 1024 * 1024:  # 10MB limit
-            raise HTTPException(status_code=400, detail="File too large. Please upload a file smaller than 10MB.")
-        
-        if len(file_content) == 0:
-            raise HTTPException(status_code=400, detail="Empty file uploaded.")
-        
-        # Log file information for debugging
-        print(f"Processing file: {file.filename}, type: {file.content_type}, size: {len(file_content)} bytes")
-        print(f"First 8 bytes: {file_content[:8].hex()}")
-        
-        # Determine file type and extract text
-        if file.content_type == "application/pdf" or (file.filename and file.filename.lower().endswith('.pdf')):
-            return extract_text_from_pdf(file_content)
-        elif file.content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" or (file.filename and file.filename.lower().endswith(('.docx', '.doc'))):
-            return extract_text_from_docx(file_content)
-        else:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Unsupported file format. Content-Type: {file.content_type}, Filename: {file.filename}. Please upload a PDF or DOCX file."
-            )
-    except Exception as e:
-        print(f"Error in resume_to_text: {str(e)}")
-        raise e
+    """Convert uploaded resume file to text"""
+    file_content = file.file.read()
+    
+    if file.content_type == "application/pdf":
+        return extract_text_from_pdf(file_content)
+    elif file.content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return extract_text_from_docx(file_content)
+    else:
+        raise HTTPException(
+            status_code=400, 
+            detail="Unsupported file format. Please upload a PDF or DOCX file."
+        )
 
 def get_free_analysis_prompt(resume_text: str) -> str:
     """Generate prompt for free resume analysis (teaser)"""
@@ -281,15 +250,10 @@ async def check_resume(
     
     # Extract text from resume
     try:
-        print(f"🔍 Attempting to extract text from file...")
         resume_text = resume_to_text(file)
-        print(f"✅ Text extraction successful: {len(resume_text)} characters")
         if not resume_text.strip():
-            print(f"❌ Empty text content extracted")
             raise HTTPException(status_code=400, detail="Could not extract text from file")
     except Exception as e:
-        print(f"❌ Text extraction failed: {str(e)}")
-        print(f"Error type: {type(e).__name__}")
         raise HTTPException(status_code=400, detail=str(e))
     
     # Determine if this is a paid or free analysis
@@ -309,21 +273,10 @@ async def check_resume(
     
     return JSONResponse(content=analysis)
 
-@app.options("/api/check-resume")
-async def check_resume_options():
-    """Handle CORS preflight for check-resume endpoint"""
-    return {"message": "OK"}
-
-@app.options("/api/health")
-async def health_options():
-    """Handle CORS preflight for health endpoint"""
-    return {"message": "OK"}
-
 @app.get("/api/health")
 async def health_check():
     """API health check endpoint"""
     return {"status": "healthy", "service": "resume-health-checker-api", "version": "1.0.0"}
-
 
 if __name__ == "__main__":
     import uvicorn

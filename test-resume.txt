@@ -1,0 +1,15 @@
+John Doe
+Software Engineer
+
+Experience:
+- Worked at ABC Company for 3 years
+- Developed web applications using Python and JavaScript
+- Managed databases and APIs
+
+Skills:
+- Python, JavaScript, SQL
+- Web development
+- Database management
+
+Education:
+- BS Computer Science, University of Technology

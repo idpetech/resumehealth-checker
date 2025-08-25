@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Architecture Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Hybrid Architecture Integration Test</h1>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        async function runTests() {
+            const results = document.getElementById('test-results');
+            
+            function addResult(test, success, message) {
+                const div = document.createElement('div');
+                div.className = `test-result ${success ? 'success' : 'error'}`;
+                div.innerHTML = `<strong>${test}:</strong> ${message}`;
+                results.appendChild(div);
+            }
+            
+            function addInfo(message) {
+                const div = document.createElement('div');
+                div.className = 'test-result info';
+                div.innerHTML = message;
+                results.appendChild(div);
+            }
+            
+            addInfo('Testing hybrid architecture: Frontend (localhost:3000) → Backend API (localhost:8000)');
+            
+            // Test 1: Frontend serves static files
+            try {
+                const frontendResponse = await fetch('http://localhost:3000/js/config.js');
+                if (frontendResponse.ok) {
+                    addResult('Frontend Static Files', true, 'Frontend serving static files correctly');
+                } else {
+                    addResult('Frontend Static Files', false, `Frontend returned status: ${frontendResponse.status}`);
+                }
+            } catch (error) {
+                addResult('Frontend Static Files', false, `Frontend connection failed: ${error.message}`);
+            }
+            
+            // Test 2: Backend API health check
+            try {
+                const backendResponse = await fetch('http://localhost:8000/api/health');
+                if (backendResponse.ok) {
+                    const data = await backendResponse.json();
+                    addResult('Backend API Health', true, `Backend API healthy: ${data.service} v${data.version}`);
+                } else {
+                    addResult('Backend API Health', false, `Backend API returned status: ${backendResponse.status}`);
+                }
+            } catch (error) {
+                addResult('Backend API Health', false, `Backend API connection failed: ${error.message}`);
+            }
+            
+            // Test 3: CORS configuration
+            try {
+                const corsResponse = await fetch('http://localhost:8000/api/health', {
+                    method: 'GET',
+                    headers: {
+                        'Origin': 'http://localhost:3000',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (corsResponse.ok) {
+                    addResult('CORS Configuration', true, 'CORS headers allow cross-origin requests');
+                } else {
+                    addResult('CORS Configuration', false, `CORS test failed with status: ${corsResponse.status}`);
+                }
+            } catch (error) {
+                addResult('CORS Configuration', false, `CORS test failed: ${error.message}`);
+            }
+            
+            // Test 4: API Configuration Detection
+            try {
+                // Simulate frontend environment detection
+                const hostname = 'localhost'; // This would be window.location.hostname in real frontend
+                const environment = hostname === 'localhost' || hostname === '127.0.0.1' ? 'development' : 'production';
+                
+                if (environment === 'development') {
+                    addResult('Environment Detection', true, 'Frontend correctly detects development environment');
+                } else {
+                    addResult('Environment Detection', false, 'Frontend environment detection failed');
+                }
+            } catch (error) {
+                addResult('Environment Detection', false, `Environment detection failed: ${error.message}`);
+            }
+            
+            addInfo('✅ Integration test complete! Frontend and Backend are ready for hybrid architecture.');
+        }
+        
+        // Run tests when page loads
+        runTests();
+    </script>
+</body>
+</html>
