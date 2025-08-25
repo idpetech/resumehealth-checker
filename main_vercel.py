@@ -549,7 +549,9 @@ async def serve_frontend():
             
             // If returning from payment with session ID, restore the previously uploaded file
             if (sessionId) {
+                console.log('🎉 Payment return detected with session ID:', sessionId);
                 const savedFileData = localStorage.getItem(`resume_${sessionId}`);
+                console.log('📁 Stored file data found:', savedFileData ? 'YES' : 'NO');
                 if (savedFileData) {
                     const fileData = JSON.parse(savedFileData);
                     // Recreate file from stored data
@@ -559,14 +561,17 @@ async def serve_frontend():
                             const file = new File([blob], fileData.name, { type: fileData.type });
                             selectedFile = file;
                             
-                            // Update UI to show the file is selected but keep functionality
-                            updateUploadUI(file.name, true);
-                            
-                            // Clear the stored file data
+                            // Clear the stored file data first
                             localStorage.removeItem(`resume_${sessionId}`);
                             
-                            // Automatically start paid analysis
-                            analyzeResume();
+                            // Update UI to show payment success
+                            updateUploadUI(file.name, true);
+                            
+                            // Force immediate paid analysis (add small delay to ensure UI updates)
+                            setTimeout(() => {
+                                console.log('🔄 Starting automatic paid analysis...');
+                                analyzeResume();
+                            }, 100);
                         });
                 }
             }
@@ -582,14 +587,17 @@ async def serve_frontend():
                             const file = new File([blob], fileData.name, { type: fileData.type });
                             selectedFile = file;
                             
-                            // Update UI to show the file is selected but keep functionality
-                            updateUploadUI(file.name, true);
-                            
-                            // Clear the stored file data
+                            // Clear the stored file data first
                             localStorage.removeItem('pendingResumeUpload');
                             
-                            // Automatically start paid analysis
-                            analyzeResume();
+                            // Update UI to show payment success
+                            updateUploadUI(file.name, true);
+                            
+                            // Force immediate paid analysis (add small delay to ensure UI updates)
+                            setTimeout(() => {
+                                console.log('🔄 Starting automatic paid analysis...');
+                                analyzeResume();
+                            }, 100);
                         });
                 }
             }
@@ -652,10 +660,14 @@ async def serve_frontend():
                 
                 if (sessionId) {
                     // New session-based validation - no longer send token
+                    console.log('💰 Sending session_validated token for session:', sessionId);
                     formData.append('payment_token', 'session_validated');
                 } else if (paymentToken) {
                     // Backward compatibility for old payment tokens
+                    console.log('💰 Sending legacy payment token:', paymentToken);
                     formData.append('payment_token', paymentToken);
+                } else {
+                    console.log('🆓 No payment token - free analysis');
                 }
 
                 try {
@@ -673,6 +685,8 @@ async def serve_frontend():
                     
                     // DEBUG: Log the full analysis to browser console
                     console.log('=== FULL ANALYSIS RESPONSE ===');
+                    console.log('📊 Analysis type:', analysis.analysis_type);
+                    console.log('💰 Is paid analysis:', analysis.analysis_type === 'paid');
                     console.log(analysis);
                     console.log('================================');
                     
