@@ -558,14 +558,8 @@ async def serve_frontend():
                             const file = new File([blob], fileData.name, { type: fileData.type });
                             selectedFile = file;
                             
-                            // Update UI to show the file is selected
-                            const uploadDiv = document.querySelector('.file-upload');
-                            uploadDiv.innerHTML = `
-                                <div class="upload-text">
-                                    <strong>Payment successful! Analyzing: ${file.name}</strong><br>
-                                    <small>Getting your detailed analysis...</small>
-                                </div>
-                            `;
+                            // Update UI to show the file is selected but keep functionality
+                            updateUploadUI(file.name, true);
                             
                             // Clear the stored file data
                             localStorage.removeItem('pendingResumeUpload');
@@ -584,44 +578,30 @@ async def serve_frontend():
                     document.getElementById('analyzeBtn').disabled = false;
                     
                     // Update upload UI to show selected file
-                    const uploadDiv = document.querySelector('.file-upload');
-                    uploadDiv.innerHTML = `
-                        <div class="upload-text">
-                            <strong>Selected: ${file.name}</strong><br>
-                            <small>Click to change file</small>
-                        </div>
-                    `;
+                    updateUploadUI(file.name, false);
                 }
             }
 
-            // Drag and drop functionality
-            const fileUpload = document.querySelector('.file-upload');
-            
-            fileUpload.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                fileUpload.classList.add('dragover');
-            });
-            
-            fileUpload.addEventListener('dragleave', () => {
-                fileUpload.classList.remove('dragover');
-            });
-            
-            fileUpload.addEventListener('drop', (e) => {
-                e.preventDefault();
-                fileUpload.classList.remove('dragover');
+            // Centralized function to update upload UI while preserving functionality
+            function updateUploadUI(fileName, isPaidAnalysis = false) {
+                const uploadDiv = document.querySelector('.file-upload');
+                const statusText = isPaidAnalysis ? 
+                    `<strong>Payment successful! Analyzing: ${fileName}</strong><br><small>Getting your detailed analysis...</small>` :
+                    `<strong>Selected: ${fileName}</strong><br><small>Click to change file</small>`;
+                    
+                uploadDiv.innerHTML = `
+                    <input type="file" id="fileInput" accept=".pdf,.docx" onchange="handleFileSelect(event)" style="display: none;">
+                    <div class="upload-text">
+                        ${statusText}
+                    </div>
+                `;
                 
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    const file = files[0];
-                    if (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-                        selectedFile = file;
-                        document.getElementById('fileInput').files = files;
-                        handleFileSelect({ target: { files: [file] } });
-                    } else {
-                        alert('Please upload a PDF or Word document');
-                    }
-                }
-            });
+                // Re-add click handler to maintain upload functionality
+                uploadDiv.onclick = function() {
+                    document.getElementById('fileInput').click();
+                };
+            }
+
 
             async function analyzeResume() {
                 if (!selectedFile) {
@@ -865,6 +845,12 @@ async def serve_frontend():
                             <h4 style="color: #1565c0; margin-bottom: 0.5rem;">🚀 Ready to Implement?</h4>
                             <p style="color: #424242; margin: 0;">Copy the improved text above and update your resume to increase your interview rate!</p>
                         </div>
+                        
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <button onclick="resetForNewUpload()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem 2rem; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;">
+                                Analyze Another Resume
+                            </button>
+                        </div>
                     `;
                 }
             }
@@ -899,6 +885,79 @@ async def serve_frontend():
                     alert('Please upload a resume first before upgrading.');
                 }
             }
+
+            // Reset function for new uploads
+            function resetForNewUpload() {
+                // Clear current state
+                selectedFile = null;
+                currentAnalysis = null;
+                
+                // Clear URL parameters
+                const url = new URL(window.location);
+                url.searchParams.delete('payment_token');
+                window.history.replaceState({}, document.title, url);
+                
+                // Reset upload UI
+                const uploadDiv = document.querySelector('.file-upload');
+                uploadDiv.innerHTML = `
+                    <input type="file" id="fileInput" accept=".pdf,.docx" onchange="handleFileSelect(event)" style="display: none;">
+                    <div class="upload-text">
+                        <strong>Click to upload your resume</strong><br>
+                        or drag and drop it here
+                    </div>
+                    <div class="file-types">Supports PDF and Word documents</div>
+                `;
+                
+                // Re-add click handler
+                uploadDiv.onclick = function() {
+                    document.getElementById('fileInput').click();
+                };
+                
+                // Reset analyze button
+                const analyzeBtn = document.getElementById('analyzeBtn');
+                analyzeBtn.disabled = true;
+                analyzeBtn.textContent = 'Analyze My Resume - FREE';
+                
+                // Hide results section
+                document.getElementById('resultsSection').style.display = 'none';
+                
+                // Re-add drag and drop functionality
+                setupDragAndDrop();
+            }
+            
+            // Function to setup drag and drop (extracted for reuse)
+            function setupDragAndDrop() {
+                const fileUpload = document.querySelector('.file-upload');
+                
+                fileUpload.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    fileUpload.classList.add('dragover');
+                });
+                
+                fileUpload.addEventListener('dragleave', () => {
+                    fileUpload.classList.remove('dragover');
+                });
+                
+                fileUpload.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    fileUpload.classList.remove('dragover');
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const file = files[0];
+                        if (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                            selectedFile = file;
+                            document.getElementById('fileInput').files = files;
+                            handleFileSelect({ target: { files: [file] } });
+                        } else {
+                            alert('Please upload a PDF or Word document');
+                        }
+                    }
+                });
+            }
+            
+            // Initial setup of drag and drop
+            setupDragAndDrop();
 
             // If payment token is present, automatically analyze the previously uploaded resume
             if (paymentToken && selectedFile) {
