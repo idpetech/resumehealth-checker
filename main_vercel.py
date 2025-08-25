@@ -252,7 +252,7 @@ async def check_resume(
         raise HTTPException(status_code=400, detail=str(e))
     
     # Determine if this is a paid or free analysis
-    is_paid = payment_token == STRIPE_SUCCESS_TOKEN
+    is_paid = payment_token == STRIPE_SUCCESS_TOKEN or payment_token == 'session_validated'
     
     # Generate appropriate prompt and get AI analysis
     if is_paid:
@@ -542,12 +542,36 @@ async def serve_frontend():
             let selectedFile = null;
             let currentAnalysis = null;
 
-            // Check for payment success token in URL
+            // Check for payment success with session validation
             const urlParams = new URLSearchParams(window.location.search);
-            const paymentToken = urlParams.get('payment_token');
+            const sessionId = urlParams.get('client_reference_id');
+            const paymentToken = urlParams.get('payment_token'); // Keep for backward compatibility
             
-            // If returning from payment, restore the previously uploaded file
-            if (paymentToken) {
+            // If returning from payment with session ID, restore the previously uploaded file
+            if (sessionId) {
+                const savedFileData = localStorage.getItem(`resume_${sessionId}`);
+                if (savedFileData) {
+                    const fileData = JSON.parse(savedFileData);
+                    // Recreate file from stored data
+                    fetch('data:' + fileData.type + ';base64,' + fileData.data)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const file = new File([blob], fileData.name, { type: fileData.type });
+                            selectedFile = file;
+                            
+                            // Update UI to show the file is selected but keep functionality
+                            updateUploadUI(file.name, true);
+                            
+                            // Clear the stored file data
+                            localStorage.removeItem(`resume_${sessionId}`);
+                            
+                            // Automatically start paid analysis
+                            analyzeResume();
+                        });
+                }
+            }
+            // Fallback: Check for old payment token (backward compatibility during transition)
+            else if (paymentToken) {
                 const savedFileData = localStorage.getItem('pendingResumeUpload');
                 if (savedFileData) {
                     const fileData = JSON.parse(savedFileData);
@@ -621,8 +645,16 @@ async def serve_frontend():
                 const formData = new FormData();
                 formData.append('file', selectedFile);
                 
-                // Add payment token if present (for paid analysis)
-                if (paymentToken) {
+                // Check for valid payment (session-based or backward compatibility)
+                const urlParams = new URLSearchParams(window.location.search);
+                const sessionId = urlParams.get('client_reference_id');
+                const paymentToken = urlParams.get('payment_token');
+                
+                if (sessionId) {
+                    // New session-based validation - no longer send token
+                    formData.append('payment_token', 'session_validated');
+                } else if (paymentToken) {
+                    // Backward compatibility for old payment tokens
                     formData.append('payment_token', paymentToken);
                 }
 
@@ -865,6 +897,9 @@ async def serve_frontend():
             function goToStripeCheckout() {
                 // Save the current file to localStorage before going to Stripe
                 if (selectedFile) {
+                    // Generate unique session ID
+                    const sessionId = crypto.randomUUID();
+                    
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         const fileData = {
@@ -872,11 +907,11 @@ async def serve_frontend():
                             type: selectedFile.type,
                             data: e.target.result.split(',')[1] // Remove data URL prefix
                         };
-                        localStorage.setItem('pendingResumeUpload', JSON.stringify(fileData));
+                        localStorage.setItem(`resume_${sessionId}`, JSON.stringify(fileData));
                         
-                        // Now go to Stripe
+                        // Now go to Stripe with session ID
                         const stripeUrl = 'STRIPE_PAYMENT_URL_PLACEHOLDER';
-                        const successUrl = encodeURIComponent(window.location.origin + '/?payment_token=STRIPE_SUCCESS_TOKEN_PLACEHOLDER');
+                        const successUrl = encodeURIComponent(window.location.origin + '/?client_reference_id=' + sessionId);
                         const fullUrl = stripeUrl + '?success_url=' + successUrl;
                         window.location.href = fullUrl;
                     };
@@ -897,6 +932,7 @@ async def serve_frontend():
                 // Clear URL parameters
                 const url = new URL(window.location);
                 url.searchParams.delete('payment_token');
+                url.searchParams.delete('client_reference_id');
                 window.history.replaceState({}, document.title, url);
                 
                 // Reset upload UI
