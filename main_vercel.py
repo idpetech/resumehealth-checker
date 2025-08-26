@@ -542,42 +542,50 @@ async def serve_frontend():
             let selectedFile = null;
             let currentAnalysis = null;
 
-            // Check for payment success with session validation
+            // Check for payment success - detect if returning from Stripe
             const urlParams = new URLSearchParams(window.location.search);
             const sessionId = urlParams.get('client_reference_id');
             const paymentToken = urlParams.get('payment_token'); // Keep for backward compatibility
             
-            // If returning from payment with session ID, restore the previously uploaded file
-            if (sessionId) {
-                console.log('🎉 Payment return detected with session ID:', sessionId);
-                const savedFileData = localStorage.getItem(`resume_${sessionId}`);
-                console.log('📁 Stored file data found:', savedFileData ? 'YES' : 'NO');
-                if (savedFileData) {
-                    const fileData = JSON.parse(savedFileData);
-                    // Recreate file from stored data
-                    fetch('data:' + fileData.type + ';base64,' + fileData.data)
-                        .then(res => res.blob())
-                        .then(blob => {
-                            const file = new File([blob], fileData.name, { type: fileData.type });
-                            selectedFile = file;
-                            
-                            // Clear the stored file data first
-                            localStorage.removeItem(`resume_${sessionId}`);
-                            
-                            // Update UI to show payment success
-                            updateUploadUI(file.name, true);
-                            
-                            // Force immediate paid analysis (add small delay to ensure UI updates)
-                            setTimeout(() => {
-                                console.log('🔄 Starting automatic paid analysis...');
-                                analyzeResume();
-                            }, 100);
-                        });
+            // Check if this looks like a return from payment (no specific params needed for Payment Links)
+            const isPaymentReturn = document.referrer.includes('stripe.com') || 
+                                  sessionId || 
+                                  paymentToken ||
+                                  window.location.search.includes('payment') ||
+                                  localStorage.getItem('latest_resume_key');
+            
+            if (isPaymentReturn) {
+                console.log('🎉 Payment return detected');
+                
+                // Try to find stored file data
+                let savedFileData = null;
+                let storageKey = null;
+                
+                // Method 1: Session-based (new secure method)
+                if (sessionId) {
+                    storageKey = `resume_${sessionId}`;
+                    savedFileData = localStorage.getItem(storageKey);
+                    console.log('📁 Trying session-based key:', storageKey);
                 }
-            }
-            // Fallback: Check for old payment token (backward compatibility during transition)
-            else if (paymentToken) {
-                const savedFileData = localStorage.getItem('pendingResumeUpload');
+                
+                // Method 2: Latest resume key (Payment Link compatibility)
+                if (!savedFileData) {
+                    storageKey = localStorage.getItem('latest_resume_key');
+                    if (storageKey) {
+                        savedFileData = localStorage.getItem(storageKey);
+                        console.log('📁 Trying latest resume key:', storageKey);
+                    }
+                }
+                
+                // Method 3: Legacy method (backward compatibility)
+                if (!savedFileData && paymentToken) {
+                    storageKey = 'pendingResumeUpload';
+                    savedFileData = localStorage.getItem(storageKey);
+                    console.log('📁 Trying legacy key:', storageKey);
+                }
+                
+                console.log('📁 File data found:', savedFileData ? 'YES' : 'NO');
+                
                 if (savedFileData) {
                     const fileData = JSON.parse(savedFileData);
                     // Recreate file from stored data
@@ -587,18 +595,23 @@ async def serve_frontend():
                             const file = new File([blob], fileData.name, { type: fileData.type });
                             selectedFile = file;
                             
-                            // Clear the stored file data first
-                            localStorage.removeItem('pendingResumeUpload');
+                            // Clear the stored file data
+                            if (storageKey) {
+                                localStorage.removeItem(storageKey);
+                                localStorage.removeItem('latest_resume_key'); // Clean up tracker
+                            }
                             
                             // Update UI to show payment success
                             updateUploadUI(file.name, true);
                             
-                            // Force immediate paid analysis (add small delay to ensure UI updates)
+                            // Force immediate paid analysis
                             setTimeout(() => {
                                 console.log('🔄 Starting automatic paid analysis...');
                                 analyzeResume();
                             }, 100);
                         });
+                } else {
+                    console.log('⚠️ Payment return detected but no file data found');
                 }
             }
 
@@ -653,21 +666,22 @@ async def serve_frontend():
                 const formData = new FormData();
                 formData.append('file', selectedFile);
                 
-                // Check for valid payment (session-based or backward compatibility)
+                // Check for valid payment
                 const urlParams = new URLSearchParams(window.location.search);
                 const sessionId = urlParams.get('client_reference_id');
                 const paymentToken = urlParams.get('payment_token');
                 
-                if (sessionId) {
-                    // New session-based validation - no longer send token
-                    console.log('💰 Sending session_validated token for session:', sessionId);
+                // Determine if this is a paid analysis
+                const isPaidAnalysis = sessionId || 
+                                     paymentToken || 
+                                     document.referrer.includes('stripe.com') ||
+                                     localStorage.getItem('latest_resume_key');
+                
+                if (isPaidAnalysis) {
+                    console.log('💰 Detected paid analysis - sending session_validated token');
                     formData.append('payment_token', 'session_validated');
-                } else if (paymentToken) {
-                    // Backward compatibility for old payment tokens
-                    console.log('💰 Sending legacy payment token:', paymentToken);
-                    formData.append('payment_token', paymentToken);
                 } else {
-                    console.log('🆓 No payment token - free analysis');
+                    console.log('🆓 Free analysis');
                 }
 
                 try {
@@ -921,13 +935,17 @@ async def serve_frontend():
                             type: selectedFile.type,
                             data: e.target.result.split(',')[1] // Remove data URL prefix
                         };
-                        localStorage.setItem(`resume_${sessionId}`, JSON.stringify(fileData));
+                        // Store with timestamp-based key for Payment Link compatibility
+                        const timestamp = Date.now();
+                        const storageKey = `resume_pending_${timestamp}`;
+                        localStorage.setItem(storageKey, JSON.stringify(fileData));
+                        localStorage.setItem('latest_resume_key', storageKey);
                         
-                        // Now go to Stripe with session ID
+                        console.log('💾 Stored file with key:', storageKey);
+                        
+                        // Go to Stripe Payment Link (fixed success URL)
                         const stripeUrl = 'STRIPE_PAYMENT_URL_PLACEHOLDER';
-                        const successUrl = encodeURIComponent(window.location.origin + '/?client_reference_id=' + sessionId);
-                        const fullUrl = stripeUrl + '?success_url=' + successUrl;
-                        window.location.href = fullUrl;
+                        window.location.href = stripeUrl;
                     };
                     reader.readAsDataURL(selectedFile);
                 } else {
@@ -1050,7 +1068,13 @@ async def debug_environment():
     return {
         "stripe_payment_url": STRIPE_PAYMENT_URL,
         "stripe_success_token": STRIPE_SUCCESS_TOKEN,
-        "environment": os.getenv("RAILWAY_ENVIRONMENT", "unknown"),
+        "railway_environment": os.getenv("RAILWAY_ENVIRONMENT", "not_set"),
+        "railway_environment_name": os.getenv("RAILWAY_ENVIRONMENT_NAME", "not_set"),
+        "railway_service_name": os.getenv("RAILWAY_SERVICE_NAME", "not_set"),
+        "all_stripe_env_vars": {
+            "STRIPE_PAYMENT_URL": os.getenv("STRIPE_PAYMENT_URL", "not_set"),
+            "STRIPE_PAYMENT_SUCCESS_TOKEN": os.getenv("STRIPE_PAYMENT_SUCCESS_TOKEN", "not_set")
+        },
         "is_production": "production" in STRIPE_PAYMENT_URL.lower(),
         "is_test_mode": "test_" in STRIPE_PAYMENT_URL.lower()
     }
