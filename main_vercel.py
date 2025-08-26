@@ -1044,6 +1044,17 @@ async def health_check():
     """Simple health check endpoint"""
     return {"status": "healthy", "service": "resume-health-checker"}
 
+@app.get("/debug/env")
+async def debug_environment():
+    """Debug endpoint to check environment variables"""
+    return {
+        "stripe_payment_url": STRIPE_PAYMENT_URL,
+        "stripe_success_token": STRIPE_SUCCESS_TOKEN,
+        "environment": os.getenv("RAILWAY_ENVIRONMENT", "unknown"),
+        "is_production": "production" in STRIPE_PAYMENT_URL.lower(),
+        "is_test_mode": "test_" in STRIPE_PAYMENT_URL.lower()
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
