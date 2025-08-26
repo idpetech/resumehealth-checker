@@ -542,46 +542,106 @@ async def serve_frontend():
             let selectedFile = null;
             let currentAnalysis = null;
 
-            // Check for payment success - detect if returning from Stripe
+            // Function to find any pending payment sessions
+            function findAnyPendingPayment() {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('resume_meta_')) {
+                        const metadata = JSON.parse(localStorage.getItem(key));
+                        if (metadata.status === 'pending_payment') {
+                            // Check if it's not too old (24 hours max)
+                            const age = Date.now() - metadata.timestamp;
+                            if (age < 24 * 60 * 60 * 1000) {
+                                return metadata.sessionId;
+                            }
+                        }
+                    }
+                }
+                return null;
+            }
+
+            // Function to clean up old sessions
+            function cleanupOldSessions() {
+                const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith('resume_meta_') || key.startsWith('resume_session_'))) {
+                        const item = localStorage.getItem(key);
+                        try {
+                            const data = JSON.parse(item);
+                            if (data.timestamp && (Date.now() - data.timestamp > maxAge)) {
+                                localStorage.removeItem(key);
+                                console.log('🧹 Cleaned up old session:', key);
+                            }
+                        } catch (e) {
+                            // Invalid JSON, remove it
+                            localStorage.removeItem(key);
+                        }
+                    }
+                }
+            }
+
+            // Clean up old sessions on page load
+            cleanupOldSessions();
+
+            // Check for payment success - multiple detection methods
             const urlParams = new URLSearchParams(window.location.search);
-            const sessionId = urlParams.get('client_reference_id');
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const sessionId = urlParams.get('client_reference_id') || hashParams.get('session');
             const paymentToken = urlParams.get('payment_token'); // Keep for backward compatibility
             
-            // Check if this looks like a return from payment (no specific params needed for Payment Links)
+            // Detect payment return from multiple sources
             const isPaymentReturn = document.referrer.includes('stripe.com') || 
                                   sessionId || 
                                   paymentToken ||
                                   window.location.search.includes('payment') ||
-                                  localStorage.getItem('latest_resume_key');
+                                  window.location.hash.includes('session=') ||
+                                  findAnyPendingPayment();
             
             if (isPaymentReturn) {
                 console.log('🎉 Payment return detected');
                 
-                // Try to find stored file data
+                // Try to find stored file data using multiple methods
                 let savedFileData = null;
                 let storageKey = null;
+                let metadataKey = null;
+                let activeSessionId = null;
                 
-                // Method 1: Session-based (new secure method)
+                // Method 1: Direct session ID (from URL hash or parameters)
                 if (sessionId) {
-                    storageKey = `resume_${sessionId}`;
+                    activeSessionId = sessionId;
+                    storageKey = `resume_session_${sessionId}`;
+                    metadataKey = `resume_meta_${sessionId}`;
                     savedFileData = localStorage.getItem(storageKey);
-                    console.log('📁 Trying session-based key:', storageKey);
+                    console.log('📁 Trying direct session:', sessionId);
                 }
                 
-                // Method 2: Latest resume key (Payment Link compatibility)
+                // Method 2: Find any pending payment session
                 if (!savedFileData) {
-                    storageKey = localStorage.getItem('latest_resume_key');
-                    if (storageKey) {
+                    activeSessionId = findAnyPendingPayment();
+                    if (activeSessionId) {
+                        storageKey = `resume_session_${activeSessionId}`;
+                        metadataKey = `resume_meta_${activeSessionId}`;
                         savedFileData = localStorage.getItem(storageKey);
-                        console.log('📁 Trying latest resume key:', storageKey);
+                        console.log('📁 Trying pending payment session:', activeSessionId);
                     }
                 }
                 
-                // Method 3: Legacy method (backward compatibility)
+                // Method 3: Legacy fallbacks
+                if (!savedFileData) {
+                    // Try old session format
+                    const legacyKey = localStorage.getItem('latest_resume_key');
+                    if (legacyKey) {
+                        storageKey = legacyKey;
+                        savedFileData = localStorage.getItem(legacyKey);
+                        console.log('📁 Trying legacy latest key:', legacyKey);
+                    }
+                }
+                
                 if (!savedFileData && paymentToken) {
                     storageKey = 'pendingResumeUpload';
                     savedFileData = localStorage.getItem(storageKey);
-                    console.log('📁 Trying legacy key:', storageKey);
+                    console.log('📁 Trying legacy upload key');
                 }
                 
                 console.log('📁 File data found:', savedFileData ? 'YES' : 'NO');
@@ -595,10 +655,19 @@ async def serve_frontend():
                             const file = new File([blob], fileData.name, { type: fileData.type });
                             selectedFile = file;
                             
-                            // Clear the stored file data
+                            // Clear the stored file data and metadata
                             if (storageKey) {
                                 localStorage.removeItem(storageKey);
-                                localStorage.removeItem('latest_resume_key'); // Clean up tracker
+                            }
+                            if (metadataKey) {
+                                localStorage.removeItem(metadataKey);
+                            }
+                            // Clean up legacy trackers
+                            localStorage.removeItem('latest_resume_key');
+                            
+                            // Clear URL hash if it contains session info
+                            if (window.location.hash.includes('session=')) {
+                                window.location.hash = '';
                             }
                             
                             // Update UI to show payment success
@@ -675,7 +744,8 @@ async def serve_frontend():
                 const isPaidAnalysis = sessionId || 
                                      paymentToken || 
                                      document.referrer.includes('stripe.com') ||
-                                     localStorage.getItem('latest_resume_key');
+                                     findAnyPendingPayment() ||
+                                     window.location.hash.includes('session=');
                 
                 if (isPaidAnalysis) {
                     console.log('💰 Detected paid analysis - sending session_validated token');
@@ -935,13 +1005,26 @@ async def serve_frontend():
                             type: selectedFile.type,
                             data: e.target.result.split(',')[1] // Remove data URL prefix
                         };
-                        // Store with timestamp-based key for Payment Link compatibility
-                        const timestamp = Date.now();
-                        const storageKey = `resume_pending_${timestamp}`;
-                        localStorage.setItem(storageKey, JSON.stringify(fileData));
-                        localStorage.setItem('latest_resume_key', storageKey);
+                        // Store with unique session-based key for user isolation
+                        const storageKey = `resume_session_${sessionId}`;
+                        const metadataKey = `resume_meta_${sessionId}`;
                         
-                        console.log('💾 Stored file with key:', storageKey);
+                        // Store file data
+                        localStorage.setItem(storageKey, JSON.stringify(fileData));
+                        
+                        // Store session metadata with timestamp for cleanup
+                        const metadata = {
+                            sessionId: sessionId,
+                            timestamp: Date.now(),
+                            fileName: fileData.name,
+                            status: 'pending_payment'
+                        };
+                        localStorage.setItem(metadataKey, JSON.stringify(metadata));
+                        
+                        // Store session ID in URL hash for retrieval after payment
+                        window.location.hash = `session=${sessionId}`;
+                        
+                        console.log('💾 Stored file with unique session:', sessionId);
                         
                         // Go to Stripe Payment Link (fixed success URL)
                         const stripeUrl = 'STRIPE_PAYMENT_URL_PLACEHOLDER';
