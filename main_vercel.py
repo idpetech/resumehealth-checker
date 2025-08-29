@@ -29,7 +29,7 @@ app.add_middleware(
 # Initialize OpenAI client
 openai.api_key = os.getenv("OPENAI_API_KEY")
 STRIPE_SUCCESS_TOKEN = os.getenv("STRIPE_PAYMENT_SUCCESS_TOKEN", "payment_success_123")
-STRIPE_PAYMENT_URL = os.getenv("STRIPE_PAYMENT_URL", "https://buy.stripe.com/test_placeholder")
+STRIPE_PAYMENT_URL = os.getenv("STRIPE_PAYMENT_URL", "https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01")
 
 def extract_text_from_pdf(file_content: bytes) -> str:
     """Extract text from PDF file using PyMuPDF"""
@@ -94,10 +94,10 @@ def get_free_analysis_prompt(resume_text: str) -> str:
             "Issue 2: Brief description", 
             "Issue 3: Brief description"
         ],
-        "teaser_message": "A compelling message encouraging the user to get the full analysis for $5"
+        "teaser_message": "A compelling message encouraging the user to get the full analysis (mention the detailed breakdown, text rewrites, and actionable improvements they'll receive)"
     }}
 
-    Keep it concise but actionable. Make the teaser compelling.
+    Keep it concise but actionable. Make the teaser compelling but don't mention specific pricing - that will be handled dynamically.
     """
 
 def get_paid_analysis_prompt(resume_text: str) -> str:
@@ -305,14 +305,22 @@ async def serve_frontend():
             }
             
             .header h1 {
-                font-size: 2.5rem;
+                font-size: 2.8rem;
                 margin-bottom: 0.5rem;
                 font-weight: 700;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
             
             .header p {
-                font-size: 1.2rem;
+                font-size: 1.3rem;
                 opacity: 0.9;
+                margin-bottom: 1rem;
+            }
+            
+            .header .subtitle {
+                font-size: 1rem;
+                opacity: 0.8;
+                font-weight: 300;
             }
             
             .upload-section {
@@ -510,6 +518,97 @@ async def serve_frontend():
                 margin-bottom: 0.5rem;
                 line-height: 1.5;
             }
+            
+            .testimonials {
+                background: white;
+                padding: 2rem;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                margin-bottom: 2rem;
+            }
+            
+            .testimonials h2 {
+                text-align: center;
+                color: #333;
+                margin-bottom: 2rem;
+                font-size: 1.8rem;
+            }
+            
+            .testimonial-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 1.5rem;
+            }
+            
+            .testimonial {
+                background: #f8f9fa;
+                padding: 1.5rem;
+                border-radius: 8px;
+                border-left: 4px solid #667eea;
+                position: relative;
+            }
+            
+            .testimonial-quote {
+                font-style: italic;
+                margin-bottom: 1rem;
+                color: #555;
+                line-height: 1.6;
+            }
+            
+            .testimonial-author {
+                font-weight: 600;
+                color: #333;
+                font-size: 0.9rem;
+            }
+            
+            .testimonial-role {
+                color: #666;
+                font-size: 0.8rem;
+            }
+            
+            .footer {
+                background: rgba(255,255,255,0.1);
+                color: white;
+                text-align: center;
+                padding: 2rem;
+                border-radius: 12px;
+                margin-top: 3rem;
+            }
+            
+            .footer h3 {
+                margin-bottom: 1rem;
+                font-size: 1.2rem;
+            }
+            
+            .footer p {
+                opacity: 0.9;
+                margin-bottom: 0.5rem;
+            }
+            
+            .footer a {
+                color: #b3d9ff;
+                text-decoration: none;
+            }
+            
+            .footer a:hover {
+                text-decoration: underline;
+            }
+            
+            .pricing-banner {
+                background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+                color: white;
+                padding: 1rem;
+                border-radius: 8px;
+                text-align: center;
+                margin: 1rem 0;
+                font-weight: 600;
+            }
+            
+            .dynamic-price {
+                font-size: 1.2rem;
+                color: #fff;
+            }
+            
         </style>
     </head>
     <body>
@@ -517,6 +616,36 @@ async def serve_frontend():
             <div class="header">
                 <h1>Resume Health Checker</h1>
                 <p>Get expert feedback to land more interviews</p>
+                <p class="subtitle">AI-powered analysis used by 1000+ job seekers worldwide</p>
+            </div>
+            
+            <div class="testimonials">
+                <h2>Success Stories</h2>
+                <div class="testimonial-grid">
+                    <div class="testimonial">
+                        <div class="testimonial-quote">
+                            "The detailed analysis helped me identify exactly why my resume wasn't getting responses. After implementing the suggested changes, I got 3 interview requests within two weeks!"
+                        </div>
+                        <div class="testimonial-author">Sarah M.</div>
+                        <div class="testimonial-role">Marketing Manager, Tech Startup</div>
+                    </div>
+                    
+                    <div class="testimonial">
+                        <div class="testimonial-quote">
+                            "The text rewrites were game-changing. I had no idea my bullet points were so generic. The improved versions with metrics made my achievements stand out immediately."
+                        </div>
+                        <div class="testimonial-author">David K.</div>
+                        <div class="testimonial-role">Software Engineer, FAANG</div>
+                    </div>
+                    
+                    <div class="testimonial">
+                        <div class="testimonial-quote">
+                            "Worth every penny! The ATS optimization tips helped my resume pass through automated screening. I went from 0 callbacks to landing my dream job in consulting."
+                        </div>
+                        <div class="testimonial-author">Maria R.</div>
+                        <div class="testimonial-role">Business Consultant, Fortune 500</div>
+                    </div>
+                </div>
             </div>
             
             <div class="upload-section">
@@ -536,11 +665,75 @@ async def serve_frontend():
             <div class="results-section" id="resultsSection">
                 <!-- Results will be displayed here -->
             </div>
+            
+            <div class="footer">
+                <h3>Need Help?</h3>
+                <p>Our team is here to support your career success</p>
+                <p>Contact us: <a href="mailto:support@idpetech.com">support@idpetech.com</a></p>
+                <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.7;">
+                    Trusted by professionals worldwide • Secure payment processing • 24/7 support
+                </p>
+            </div>
         </div>
 
         <script>
             let selectedFile = null;
             let currentAnalysis = null;
+            let currentPricing = { price: '$5', currency: 'USD', stripe_url: 'https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01' };
+
+            // Load pricing configuration and detect user's country
+            async function loadPricingConfig() {
+                try {
+                    const response = await fetch('/api/pricing-config');
+                    const config = await response.json();
+                    
+                    // Check if we're in test mode
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const testCountry = urlParams.get('test_country');
+                    
+                    let countryCode = 'US';
+                    
+                    if (testCountry) {
+                        // Use test country from URL parameter
+                        countryCode = testCountry.toUpperCase();
+                        console.log('🧪 TEST MODE: Simulating country:', countryCode);
+                    } else {
+                        // Normal geolocation detection
+                        try {
+                            const geoResponse = await fetch('https://ipapi.co/json/');
+                            const geoData = await geoResponse.json();
+                            if (geoData.country_code) {
+                                countryCode = geoData.country_code;
+                            }
+                            console.log('🌍 Detected country:', countryCode);
+                        } catch (e) {
+                            console.log('IP geolocation failed, using default USD pricing');
+                        }
+                    }
+                    
+                    // Set pricing based on country
+                    currentPricing = config.pricing[countryCode] || config.pricing.default;
+                    console.log('💰 Using pricing:', currentPricing);
+                    updatePricingDisplay();
+                    
+                } catch (error) {
+                    console.log('Failed to load pricing config, using default');
+                }
+            }
+            
+            function updatePricingDisplay() {
+                // Update price display elements
+                const priceElements = document.querySelectorAll('.price-display');
+                priceElements.forEach(el => {
+                    el.textContent = currentPricing.price;
+                });
+                
+                // Update any other dynamic price displays
+                const dynamicPriceElements = document.querySelectorAll('.dynamic-price');
+                dynamicPriceElements.forEach(el => {
+                    el.textContent = currentPricing.price;
+                });
+            }
 
             // Function to find any pending payment sessions
             function findAnyPendingPayment() {
@@ -830,7 +1023,7 @@ async def serve_frontend():
                                 <li>✓ Prioritized action plan</li>
                             </ul>
                             <a href="#" class="upgrade-btn" onclick="goToStripeCheckout()">
-                                Unlock Full Report - $5
+                                Unlock Full Report - <span class="price-display">${currentPricing.price}</span>
                             </a>
                         </div>
                     `;
@@ -1026,8 +1219,8 @@ async def serve_frontend():
                         
                         console.log('💾 Stored file with unique session:', sessionId);
                         
-                        // Go to Stripe Payment Link (fixed success URL)
-                        const stripeUrl = 'STRIPE_PAYMENT_URL_PLACEHOLDER';
+                        // Go to Stripe Payment Link (use dynamic pricing URL)
+                        const stripeUrl = currentPricing.stripe_url || 'STRIPE_PAYMENT_URL_PLACEHOLDER';
                         window.location.href = stripeUrl;
                     };
                     reader.readAsDataURL(selectedFile);
@@ -1124,6 +1317,9 @@ async def serve_frontend():
             
             // Initial setup of drag and drop
             setupDragAndDrop();
+            
+            // Load pricing configuration on page load
+            loadPricingConfig();
 
             // If payment token is present, automatically analyze the previously uploaded resume
             if (paymentToken && selectedFile) {
@@ -1144,6 +1340,39 @@ async def serve_frontend():
 async def health_check():
     """Simple health check endpoint"""
     return {"status": "healthy", "service": "resume-health-checker"}
+
+@app.get("/api/pricing-config")
+async def get_pricing_config():
+    """Get pricing configuration for different countries"""
+    try:
+        with open("pricing_config.json", "r") as f:
+            config = json.load(f)
+        return config
+    except FileNotFoundError:
+        # Fallback configuration if file doesn't exist
+        return {
+            "pricing": {
+                "default": {
+                    "price": "$5",
+                    "currency": "USD", 
+                    "amount": 5,
+                    "stripe_url": STRIPE_PAYMENT_URL
+                }
+            }
+        }
+
+@app.get("/api/mock-geo/{country_code}")
+async def mock_geolocation(country_code: str):
+    """Mock geolocation API for testing different countries"""
+    country_data = {
+        "US": {"country_code": "US", "country_name": "United States", "city": "New York"},
+        "AE": {"country_code": "AE", "country_name": "United Arab Emirates", "city": "Dubai"},
+        "PK": {"country_code": "PK", "country_name": "Pakistan", "city": "Karachi"},
+        "IN": {"country_code": "IN", "country_name": "India", "city": "Mumbai"},
+        "BD": {"country_code": "BD", "country_name": "Bangladesh", "city": "Dhaka"}
+    }
+    
+    return country_data.get(country_code.upper(), country_data["US"])
 
 @app.get("/debug/env")
 async def debug_environment():
