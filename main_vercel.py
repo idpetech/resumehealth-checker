@@ -1344,8 +1344,16 @@ async def health_check():
 @app.get("/api/pricing-config")
 async def get_pricing_config():
     """Get pricing configuration for different countries"""
+    # Determine environment and use appropriate config file
+    environment = os.getenv("RAILWAY_ENVIRONMENT", "development")
+    
+    if environment == "staging":
+        config_file = "pricing_config_staging.json"
+    else:
+        config_file = "pricing_config.json"  # production/development
+    
     try:
-        with open("pricing_config.json", "r") as f:
+        with open(config_file, "r") as f:
             config = json.load(f)
         return config
     except FileNotFoundError:

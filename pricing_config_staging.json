@@ -1,0 +1,40 @@
+{
+  "pricing": {
+    "US": {
+      "price": "$5",
+      "currency": "USD",
+      "amount": 5,
+      "stripe_url": "https://buy.stripe.com/test_fZufZhghK7kmbRQdBE00000"
+    },
+    "AE": {
+      "price": "AED 20",
+      "currency": "AED", 
+      "amount": 20,
+      "stripe_url": "https://buy.stripe.com/test_fZufZhghK7kmbRQdBE00000"
+    },
+    "PK": {
+      "price": "₨599",
+      "currency": "PKR",
+      "amount": 599,
+      "stripe_url": "https://buy.stripe.com/test_fZufZhghK7kmbRQdBE00000"
+    },
+    "IN": {
+      "price": "₹300", 
+      "currency": "INR",
+      "amount": 300,
+      "stripe_url": "https://buy.stripe.com/test_fZufZhghK7kmbRQdBE00000"
+    },
+    "BD": {
+      "price": "৳408",
+      "currency": "BDT", 
+      "amount": 408,
+      "stripe_url": "https://buy.stripe.com/test_fZufZhghK7kmbRQdBE00000"
+    },
+    "default": {
+      "price": "$5",
+      "currency": "USD",
+      "amount": 5,
+      "stripe_url": "https://buy.stripe.com/test_fZufZhghK7kmbRQdBE00000"
+    }
+  }
+}
