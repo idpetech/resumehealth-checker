@@ -1346,8 +1346,9 @@ async def get_pricing_config():
     """Get pricing configuration for different countries"""
     # Determine environment and use appropriate config file
     environment = os.getenv("RAILWAY_ENVIRONMENT", "development")
+    environment_name = os.getenv("RAILWAY_ENVIRONMENT_NAME", "development")
     
-    if environment == "staging":
+    if environment == "staging" or environment_name == "staging":
         config_file = "pricing_config_staging.json"
     else:
         config_file = "pricing_config.json"  # production/development
@@ -1355,6 +1356,13 @@ async def get_pricing_config():
     try:
         with open(config_file, "r") as f:
             config = json.load(f)
+        # Add debug info to response
+        config["debug_info"] = {
+            "environment": environment,
+            "environment_name": environment_name,
+            "config_file": config_file,
+            "file_found": True
+        }
         return config
     except FileNotFoundError:
         # Fallback configuration if file doesn't exist
@@ -1366,6 +1374,13 @@ async def get_pricing_config():
                     "amount": 5,
                     "stripe_url": STRIPE_PAYMENT_URL
                 }
+            },
+            "debug_info": {
+                "environment": environment,
+                "environment_name": environment_name,
+                "config_file": config_file,
+                "file_found": False,
+                "error": "FileNotFoundError"
             }
         }
 
