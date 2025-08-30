@@ -970,6 +970,15 @@ async def serve_frontend():
                     displayResults(analysis);
 
                 } catch (error) {
+                    // Clear payment parameters from URL to prevent premium leakage on retry
+                    const url = new URL(window.location);
+                    url.searchParams.delete('payment_token');
+                    url.searchParams.delete('client_reference_id');
+                    if (window.location.hash.includes('session=')) {
+                        window.location.hash = '';
+                    }
+                    window.history.replaceState({}, document.title, url);
+                    
                     resultsSection.innerHTML = `
                         <div style="color: #f44336; text-align: center; padding: 2rem;">
                             <h3>Analysis Failed</h3>
