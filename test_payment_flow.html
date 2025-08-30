@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Flow Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .button { background: #007cba; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; margin: 5px; display: inline-block; }
+        .success { background: #28a745; }
+        .warning { background: #ffc107; color: black; }
+        .danger { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Payment Flow Testing</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Generate Session ID & Store File</h2>
+        <p>This simulates uploading a file and going to Stripe checkout:</p>
+        <button onclick="simulateFileUpload()" class="button">1. Simulate File Upload</button>
+        <button onclick="generateSessionAndStore()" class="button">2. Generate Session & Store</button>
+        <div id="sessionResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Simulate Payment Return URLs</h2>
+        <p>Click these links to test different payment return scenarios:</p>
+        
+        <h3>✅ New Session-Based (Secure)</h3>
+        <a href="javascript:void(0)" onclick="testSessionReturn()" class="button success">
+            Test Session-Based Return
+        </a>
+        
+        <h3>⚠️ Old Token-Based (Deprecated but works)</h3>
+        <a href="javascript:void(0)" onclick="testTokenReturn()" class="button warning">
+            Test Old Token Return
+        </a>
+        
+        <h3>❌ Invalid Session (Should fail)</h3>
+        <a href="javascript:void(0)" onclick="testInvalidSession()" class="button danger">
+            Test Invalid Session
+        </a>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Direct URL Testing</h2>
+        <p>Copy these URLs to test in production:</p>
+        <div id="testUrls"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Current Status</h2>
+        <div id="currentStatus"></div>
+    </div>
+
+    <script>
+        let testSessionId = null;
+        let testFileData = null;
+        
+        function simulateFileUpload() {
+            // Create fake file data
+            testFileData = {
+                name: "test-resume.pdf",
+                type: "application/pdf", 
+                data: btoa("This is fake PDF content for testing purposes")
+            };
+            
+            document.getElementById('sessionResult').innerHTML = 
+                `<p><strong>✅ Simulated file upload:</strong> ${testFileData.name}</p>`;
+        }
+        
+        function generateSessionAndStore() {
+            if (!testFileData) {
+                alert('Run "Simulate File Upload" first!');
+                return;
+            }
+            
+            // Generate session ID like the real app does
+            testSessionId = crypto.randomUUID();
+            
+            // Store in localStorage like real app
+            localStorage.setItem(`resume_${testSessionId}`, JSON.stringify(testFileData));
+            
+            document.getElementById('sessionResult').innerHTML += 
+                `<p><strong>✅ Generated Session:</strong> ${testSessionId}</p>
+                 <p><strong>✅ Stored in localStorage:</strong> resume_${testSessionId}</p>
+                 <p><strong>Ready for payment simulation!</strong></p>`;
+            
+            updateTestUrls();
+        }
+        
+        function testSessionReturn() {
+            if (!testSessionId) {
+                alert('Run "Generate Session & Store" first!');
+                return;
+            }
+            
+            // Simulate return from Stripe with session ID
+            const testUrl = `${window.location.origin}${window.location.pathname}?client_reference_id=${testSessionId}`;
+            window.location.href = testUrl;
+        }
+        
+        function testTokenReturn() {
+            // Simulate old token return (should still work for backward compatibility)
+            const testUrl = `${window.location.origin}${window.location.pathname}?payment_token=payment_success_123`;
+            
+            // Store old-style data for this test
+            localStorage.setItem('pendingResumeUpload', JSON.stringify({
+                name: "old-style-resume.pdf",
+                type: "application/pdf",
+                data: btoa("Old style test data")
+            }));
+            
+            window.location.href = testUrl;
+        }
+        
+        function testInvalidSession() {
+            // Test with invalid session ID (should fail gracefully)
+            const fakeSessionId = 'invalid-session-id-123';
+            const testUrl = `${window.location.origin}${window.location.pathname}?client_reference_id=${fakeSessionId}`;
+            window.location.href = testUrl;
+        }
+        
+        function updateTestUrls() {
+            const baseUrl = 'https://web-production-f7f3.up.railway.app';
+            const localUrl = 'http://localhost:8001';
+            
+            document.getElementById('testUrls').innerHTML = `
+                <h4>Production URLs:</h4>
+                <p><strong>New Session:</strong><br>
+                <code>${baseUrl}/?client_reference_id=${testSessionId || 'YOUR_SESSION_ID'}</code></p>
+                
+                <p><strong>Old Token:</strong><br>
+                <code>${baseUrl}/?payment_token=payment_success_123</code></p>
+                
+                <h4>Local URLs:</h4>
+                <p><strong>New Session:</strong><br>
+                <code>${localUrl}/?client_reference_id=${testSessionId || 'YOUR_SESSION_ID'}</code></p>
+                
+                <p><strong>Old Token:</strong><br>
+                <code>${localUrl}/?payment_token=payment_success_123</code></p>
+            `;
+        }
+        
+        function updateStatus() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('client_reference_id');
+            const paymentToken = urlParams.get('payment_token');
+            
+            let status = '';
+            
+            if (sessionId) {
+                const storedData = localStorage.getItem(`resume_${sessionId}`);
+                status = `
+                    <p><strong>🎉 Session-Based Return Detected!</strong></p>
+                    <p><strong>Session ID:</strong> ${sessionId}</p>
+                    <p><strong>Stored Data Found:</strong> ${storedData ? '✅ Yes' : '❌ No'}</p>
+                    <p><strong>Payment Status:</strong> ✅ PREMIUM (session_validated)</p>
+                `;
+            } else if (paymentToken) {
+                status = `
+                    <p><strong>⚠️ Old Token Return Detected!</strong></p>
+                    <p><strong>Payment Token:</strong> ${paymentToken}</p>
+                    <p><strong>Payment Status:</strong> ${paymentToken === 'payment_success_123' ? '✅ PREMIUM (legacy)' : '❌ Invalid Token'}</p>
+                `;
+            } else {
+                status = `
+                    <p><strong>🆓 Free Analysis Mode</strong></p>
+                    <p>No payment parameters detected</p>
+                `;
+            }
+            
+            document.getElementById('currentStatus').innerHTML = status;
+        }
+        
+        // Update status on page load
+        window.onload = function() {
+            updateStatus();
+            updateTestUrls();
+        };
+    </script>
+</body>
+</html>

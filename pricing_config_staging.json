@@ -7,7 +7,7 @@
       "stripe_url": "https://buy.stripe.com/test_fZufZhghK7kmbRQdBE00000"
     },
     "HK": {
-      "price": "HKD 20",
+      "price": "HKD 35",
       "currency": "HKD", 
       "amount": 20,
       "stripe_url": "https://buy.stripe.com/test_fZufZhghK7kmbRQdBE00000"

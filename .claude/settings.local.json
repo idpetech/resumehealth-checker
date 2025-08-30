@@ -14,7 +14,9 @@
       "Bash(mkdir:*)",
       "Bash(aws s3 cp:*)",
       "Bash(aws s3 website:*)",
-      "Bash(aws s3api put-bucket-policy:*)"
+      "Bash(aws s3api put-bucket-policy:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

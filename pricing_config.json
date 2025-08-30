@@ -6,6 +6,12 @@
       "amount": 5,
       "stripe_url": "https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01"
     },
+    "HK": {
+      "price": "HKD 35",
+      "currency": "HKD", 
+      "amount": 20,
+      "stripe_url": "https://buy.stripe.com/test_fZufZhghK7kmbRQdBE00000"
+   ,
     "AE": {
       "price": "AED 20",
       "currency": "AED", 
