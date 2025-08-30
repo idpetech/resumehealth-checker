@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import json
 import io
+import asyncio
+import time
 from typing import Optional
 from dotenv import load_dotenv
 import openai
@@ -180,47 +182,102 @@ def get_paid_analysis_prompt(resume_text: str) -> str:
     4. Make the improvements immediately actionable
     """
 
+async def get_ai_analysis_with_retry(prompt: str, max_retries: int = 3) -> dict:
+    """Get analysis from OpenAI with robust retry mechanism for slow/flaky connections"""
+    
+    for attempt in range(max_retries):
+        try:
+            # Calculate exponential backoff delay
+            if attempt > 0:
+                delay = min(2 ** (attempt - 1), 10)  # Max 10 seconds delay
+                print(f"⏳ Retry {attempt}/{max_retries} after {delay}s delay...")
+                await asyncio.sleep(delay)
+            
+            print(f"🔍 Calling OpenAI API (attempt {attempt + 1}/{max_retries})")
+            
+            # Use synchronous client with timeout handling (compatible with openai 1.3.5)
+            response = openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are an expert resume reviewer. Always respond with valid JSON only."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=1500,
+                timeout=60.0  # 60 second timeout for slow connections
+            )
+            
+            result = response.choices[0].message.content.strip()
+            print(f"✅ OpenAI API response received: {len(result)} characters")
+            
+            # Clean the response - remove markdown code blocks if present
+            if result.startswith('```json'):
+                result = result[7:]  # Remove ```json
+            if result.startswith('```'):
+                result = result[3:]   # Remove ```
+            if result.endswith('```'):
+                result = result[:-3]  # Remove trailing ```
+            
+            result = result.strip()
+            print(f"🧹 Cleaned response: {len(result)} characters")
+            
+            # Parse JSON to validate it's properly formatted
+            parsed_result = json.loads(result)
+            print(f"✅ JSON parsing successful on attempt {attempt + 1}")
+            return parsed_result
+            
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON parsing error on attempt {attempt + 1}: {str(e)}")
+            if attempt == max_retries - 1:  # Last attempt
+                print(f"Raw AI response: {result[:200] if 'result' in locals() else 'No response'}...")
+                raise HTTPException(
+                    status_code=503, 
+                    detail="AI service returned invalid response format. Please try again in a moment."
+                )
+            continue
+            
+        except Exception as e:
+            error_msg = str(e).lower()
+            print(f"❌ OpenAI error on attempt {attempt + 1}: {str(e)}")
+            print(f"Error type: {type(e).__name__}")
+            
+            # Handle different types of errors with specific user messages
+            if "timeout" in error_msg or "connection" in error_msg:
+                if attempt == max_retries - 1:
+                    raise HTTPException(
+                        status_code=503, 
+                        detail="Connection timeout. Your internet connection may be slow. Please try again."
+                    )
+            elif "rate limit" in error_msg:
+                if attempt < max_retries - 1:
+                    # Wait longer for rate limits
+                    await asyncio.sleep(min(5 * (attempt + 1), 20))
+                else:
+                    raise HTTPException(
+                        status_code=503, 
+                        detail="Service temporarily overloaded. Please try again in a few minutes."
+                    )
+            elif "api" in error_msg and "error" in error_msg:
+                if attempt == max_retries - 1:
+                    raise HTTPException(
+                        status_code=503, 
+                        detail="AI service temporarily unavailable. Please try again in a moment."
+                    )
+            else:
+                if attempt == max_retries - 1:
+                    raise HTTPException(
+                        status_code=503, 
+                        detail="Service temporarily unavailable. Please try again later."
+                    )
+            continue
+    
+    # This should never be reached due to the exception handling above
+    raise HTTPException(status_code=503, detail="Service temporarily unavailable")
+
+# Legacy function name for backward compatibility
 async def get_ai_analysis(prompt: str) -> dict:
-    """Get analysis from OpenAI GPT-4o mini"""
-    try:
-        print(f"🔍 Calling OpenAI API with model: gpt-4o-mini")
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are an expert resume reviewer. Always respond with valid JSON only."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=1500
-        )
-        
-        result = response.choices[0].message.content.strip()
-        print(f"✅ OpenAI API response received: {len(result)} characters")
-        
-        # Clean the response - remove markdown code blocks if present
-        if result.startswith('```json'):
-            result = result[7:]  # Remove ```json
-        if result.startswith('```'):
-            result = result[3:]   # Remove ```
-        if result.endswith('```'):
-            result = result[:-3]  # Remove trailing ```
-        
-        result = result.strip()
-        print(f"🧹 Cleaned response: {len(result)} characters")
-        
-        # Parse JSON to validate it's properly formatted
-        parsed_result = json.loads(result)
-        print(f"✅ JSON parsing successful")
-        return parsed_result
-        
-    except json.JSONDecodeError as e:
-        print(f"❌ JSON parsing error: {str(e)}")
-        print(f"Raw AI response: {result[:200]}...")
-        raise HTTPException(status_code=500, detail="Failed to parse AI response")
-    except Exception as e:
-        print(f"❌ OpenAI API error: {str(e)}")
-        print(f"Error type: {type(e).__name__}")
-        raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
+    """Legacy wrapper for get_ai_analysis_with_retry"""
+    return await get_ai_analysis_with_retry(prompt)
 
 @app.post("/api/check-resume")
 async def check_resume(
@@ -921,9 +978,20 @@ async def serve_frontend():
                 resultsSection.innerHTML = `
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Analyzing your resume...</p>
+                        <p id="loadingMessage">Analyzing your resume...</p>
+                        <p id="retryMessage" style="font-size: 0.9rem; color: #666; margin-top: 1rem; display: none;">
+                            For users with slower connections, this may take up to 3 minutes...
+                        </p>
                     </div>
                 `;
+                
+                // Show retry message after 10 seconds for slow connections
+                setTimeout(() => {
+                    const retryMsg = document.getElementById('retryMessage');
+                    if (retryMsg) {
+                        retryMsg.style.display = 'block';
+                    }
+                }, 10000);
 
                 const formData = new FormData();
                 formData.append('file', selectedFile);
@@ -979,11 +1047,52 @@ async def serve_frontend():
                     }
                     window.history.replaceState({}, document.title, url);
                     
+                    console.log('❌ Analysis error:', error);
+                    
+                    // Parse error response to get server message
+                    let errorMessage = "Something went wrong. Please try again.";
+                    let errorTitle = "Analysis Failed";
+                    let helpText = "Please check your internet connection and try again.";
+                    
+                    try {
+                        if (error.response && error.response.status === 503) {
+                            errorTitle = "Service Temporarily Busy";
+                            // Try to get the detailed error message from the server
+                            const errorData = await error.response.json();
+                            if (errorData.detail) {
+                                errorMessage = errorData.detail;
+                                if (errorMessage.includes("timeout") || errorMessage.includes("slow")) {
+                                    helpText = "Your connection appears slow. The analysis will retry automatically with a longer timeout.";
+                                } else if (errorMessage.includes("overloaded")) {
+                                    helpText = "Our AI service is experiencing high demand. Please wait a few minutes before trying again.";
+                                }
+                            }
+                        } else if (error.response && error.response.status >= 500) {
+                            errorTitle = "Server Error";
+                            errorMessage = "Our servers are experiencing issues. Please try again in a moment.";
+                        } else if (!navigator.onLine) {
+                            errorTitle = "No Internet Connection";
+                            errorMessage = "Please check your internet connection and try again.";
+                            helpText = "Make sure you're connected to the internet.";
+                        }
+                    } catch (e) {
+                        console.log('Error parsing error response:', e);
+                    }
+                    
                     resultsSection.innerHTML = `
-                        <div style="color: #f44336; text-align: center; padding: 2rem;">
-                            <h3>Analysis Failed</h3>
-                            <p>Something went wrong. Please try again.</p>
-                            <small>Error: ${error.message}</small>
+                        <div style="background: #fff5f5; border: 1px solid #feb2b2; border-radius: 8px; padding: 2rem; text-align: center;">
+                            <div style="color: #c53030; font-size: 2rem; margin-bottom: 1rem;">⚠️</div>
+                            <h3 style="color: #c53030; margin-bottom: 1rem;">${errorTitle}</h3>
+                            <p style="color: #4a5568; margin-bottom: 1rem; font-size: 1.1rem;">${errorMessage}</p>
+                            <p style="color: #718096; font-size: 0.9rem; margin-bottom: 1.5rem;">${helpText}</p>
+                            <button 
+                                onclick="analyzeResume()" 
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.8rem 2rem; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: transform 0.2s ease;"
+                                onmouseover="this.style.transform='translateY(-1px)'"
+                                onmouseout="this.style.transform='translateY(0px)'"
+                            >
+                                Try Again
+                            </button>
                         </div>
                     `;
                 }
