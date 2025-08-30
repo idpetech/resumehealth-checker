@@ -4,43 +4,43 @@
       "price": "$5",
       "currency": "USD",
       "amount": 5,
-      "stripe_url": "https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01"
+      "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
     },
     "HK": {
       "price": "HKD 35",
       "currency": "HKD", 
       "amount": 35,
-      "stripe_url": "https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01"
+      "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
     },
     "AE": {
       "price": "AED 20",
       "currency": "AED", 
       "amount": 20,
-      "stripe_url": "https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01"
+      "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
     },
     "PK": {
       "price": "₨599",
       "currency": "PKR",
       "amount": 599,
-      "stripe_url": "https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01"
+      "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
     },
     "IN": {
       "price": "₹300", 
       "currency": "INR",
       "amount": 300,
-      "stripe_url": "https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01"
+      "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
     },
     "BD": {
       "price": "৳408",
       "currency": "BDT", 
       "amount": 408,
-      "stripe_url": "https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01"
+      "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
     },
     "default": {
       "price": "$5",
       "currency": "USD",
       "amount": 5,
-      "stripe_url": "https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01"
+      "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
     }
   }
 }
