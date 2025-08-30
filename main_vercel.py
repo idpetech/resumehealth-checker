@@ -941,6 +941,9 @@ async def serve_frontend():
                     selectedFile = file;
                     document.getElementById('analyzeBtn').disabled = false;
                     
+                    // Clean up any lingering payment sessions to prevent premium leakage
+                    cleanupOldSessions();
+                    
                     // Update upload UI to show selected file
                     updateUploadUI(file.name, false);
                 }
@@ -1001,11 +1004,10 @@ async def serve_frontend():
                 const sessionId = urlParams.get('client_reference_id');
                 const paymentToken = urlParams.get('payment_token');
                 
-                // Determine if this is a paid analysis
+                // Determine if this is a paid analysis - ONLY check URL parameters, not localStorage
                 const isPaidAnalysis = sessionId || 
                                      paymentToken || 
                                      document.referrer.includes('stripe.com') ||
-                                     findAnyPendingPayment() ||
                                      window.location.hash.includes('session=');
                 
                 if (isPaidAnalysis) {
