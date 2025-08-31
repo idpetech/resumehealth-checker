@@ -1,0 +1,148 @@
+{
+  "metadata": {
+    "version": "2.0.0",
+    "last_updated": "2025-08-31",
+    "description": "Multi-product pricing with bundle options and hope-driven upselling"
+  },
+  "products": {
+    "resume_analysis": {
+      "name": "Resume Health Check",
+      "emoji": "📋",
+      "description": "Get your resume optimized with AI-powered analysis",
+      "benefits": [
+        "ATS optimization insights",
+        "Content enhancement suggestions", 
+        "Impact metrics improvements",
+        "Text rewrites with examples"
+      ],
+      "individual_price": {
+        "amount": 10,
+        "currency": "USD",
+        "display": "$10",
+        "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
+      },
+      "processing_time": "2-3 minutes"
+    },
+    "job_fit_analysis": {
+      "name": "Job Fit Analysis",
+      "emoji": "🎯",
+      "description": "See how perfectly your resume matches specific roles",
+      "benefits": [
+        "Job-specific optimization",
+        "Missing requirements identification",
+        "Strategic positioning advice",
+        "Keyword optimization"
+      ],
+      "individual_price": {
+        "amount": 12,
+        "currency": "USD", 
+        "display": "$12",
+        "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
+      },
+      "processing_time": "3-4 minutes"
+    },
+    "cover_letter": {
+      "name": "Cover Letter Generator",
+      "emoji": "✍️",
+      "description": "Create compelling cover letters that get interviews",
+      "benefits": [
+        "Personalized for each role",
+        "Strategic storytelling",
+        "Company research integration",
+        "Ready-to-send format"
+      ],
+      "individual_price": {
+        "amount": 8,
+        "currency": "USD",
+        "display": "$8", 
+        "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
+      },
+      "processing_time": "2-3 minutes"
+    }
+  },
+  "bundles": {
+    "career_boost": {
+      "name": "Career Boost Bundle",
+      "emoji": "🚀",
+      "description": "Complete job search optimization package",
+      "includes": ["resume_analysis", "job_fit_analysis"],
+      "individual_total": 22,
+      "bundle_price": {
+        "amount": 18,
+        "currency": "USD",
+        "display": "$18",
+        "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
+      },
+      "savings": {
+        "amount": 4,
+        "percentage": 18,
+        "display": "Save $4 (18%)"
+      },
+      "popular": true
+    },
+    "job_hunter": {
+      "name": "Job Hunter Bundle", 
+      "emoji": "🎯",
+      "description": "Everything you need to land interviews",
+      "includes": ["resume_analysis", "cover_letter"],
+      "individual_total": 18,
+      "bundle_price": {
+        "amount": 15,
+        "currency": "USD",
+        "display": "$15",
+        "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
+      },
+      "savings": {
+        "amount": 3,
+        "percentage": 17,
+        "display": "Save $3 (17%)"
+      }
+    },
+    "complete_package": {
+      "name": "Complete Job Search Package",
+      "emoji": "💼",
+      "description": "All-in-one solution for career success",
+      "includes": ["resume_analysis", "job_fit_analysis", "cover_letter"],
+      "individual_total": 30,
+      "bundle_price": {
+        "amount": 22,
+        "currency": "USD",
+        "display": "$22",
+        "stripe_url": "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02"
+      },
+      "savings": {
+        "amount": 8,
+        "percentage": 27,
+        "display": "Save $8 (27%)"
+      },
+      "best_value": true
+    }
+  },
+  "upselling": {
+    "messages": {
+      "single_to_bundle": "🌟 Get {savings} more value! Upgrade to {bundle_name} and get {additional_products} for just {additional_cost} more.",
+      "bundle_to_complete": "💫 Complete your job search toolkit! Add {missing_products} for just {additional_cost} more and save {total_savings}.",
+      "first_time_user": "🎯 Most users who choose individual products come back for bundles. Start with our {recommended_bundle} and save {savings} today!"
+    },
+    "recommendations": {
+      "resume_analysis": "career_boost",
+      "job_fit_analysis": "career_boost", 
+      "cover_letter": "job_hunter"
+    }
+  },
+  "hope_driven_messaging": {
+    "taglines": {
+      "resume_analysis": "Transform your resume into an interview magnet",
+      "job_fit_analysis": "Position yourself as the perfect candidate", 
+      "cover_letter": "Write cover letters that open doors",
+      "career_boost": "Accelerate your path to the perfect role",
+      "job_hunter": "Everything you need to land interviews",
+      "complete_package": "Your complete career transformation toolkit"
+    },
+    "success_stories": [
+      "92% of users get more interviews after using our analysis",
+      "Users land their dream job 3x faster with our complete package",
+      "Join 10,000+ professionals who transformed their careers with us"
+    ]
+  }
+}

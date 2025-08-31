@@ -1,0 +1,334 @@
+{
+  "products": {
+    "resume_analysis": "prod_Sy7dazphwCuS6A",
+    "job_fit_analysis": "prod_Sy7d4yf54g234o",
+    "cover_letter": "prod_Sy7dbIqrq6K89r",
+    "career_boost": "prod_Sy7dFkZ3S1jSYD",
+    "job_hunter": "prod_Sy7djnInzFj7GT",
+    "complete_package": "prod_Sy7dDVyZOA7wzG"
+  },
+  "prices": {
+    "resume_analysis": {
+      "US": {
+        "price_id": "price_1S2BOBEEk2SJOP4YidngE9GM",
+        "amount": 5,
+        "currency": "usd",
+        "display": "$5"
+      },
+      "PK": {
+        "price_id": "price_1S2BOCEEk2SJOP4YMxXev3hc",
+        "amount": 599,
+        "currency": "pkr",
+        "display": "\u20a8599"
+      },
+      "IN": {
+        "price_id": "price_1S2BODEEk2SJOP4YuQDvvMq3",
+        "amount": 300,
+        "currency": "inr",
+        "display": "\u20b9300"
+      },
+      "HK": {
+        "price_id": "price_1S2BODEEk2SJOP4YT6hMXMsb",
+        "amount": 35,
+        "currency": "hkd",
+        "display": "HKD 35"
+      },
+      "AE": {
+        "price_id": "price_1S2BOEEEk2SJOP4YNeXs49Wm",
+        "amount": 20,
+        "currency": "aed",
+        "display": "AED 20"
+      },
+      "BD": {
+        "price_id": "price_1S2BOFEEk2SJOP4YN4S4OUrv",
+        "amount": 408,
+        "currency": "bdt",
+        "display": "\u09f3408"
+      },
+      "default": {
+        "price_id": "price_1S2BOFEEk2SJOP4YNuv4nmTw",
+        "amount": 5,
+        "currency": "usd",
+        "display": "$5"
+      }
+    },
+    "job_fit_analysis": {
+      "US": {
+        "price_id": "price_1S2BOGEEk2SJOP4YwM3n22OI",
+        "amount": 6,
+        "currency": "usd",
+        "display": "$6"
+      },
+      "PK": {
+        "price_id": "price_1S2BOHEEk2SJOP4YS4ljlIdC",
+        "amount": 718,
+        "currency": "pkr",
+        "display": "\u20a8718"
+      },
+      "IN": {
+        "price_id": "price_1S2BOIEEk2SJOP4YVfrVEo2W",
+        "amount": 360,
+        "currency": "inr",
+        "display": "\u20b9360"
+      },
+      "HK": {
+        "price_id": "price_1S2BOIEEk2SJOP4YSa6Tx6sv",
+        "amount": 42,
+        "currency": "hkd",
+        "display": "HKD 42"
+      },
+      "AE": {
+        "price_id": "price_1S2BOJEEk2SJOP4Yitbx80Vk",
+        "amount": 24,
+        "currency": "aed",
+        "display": "AED 24"
+      },
+      "BD": {
+        "price_id": "price_1S2BOKEEk2SJOP4YrKQPEYBS",
+        "amount": 489,
+        "currency": "bdt",
+        "display": "\u09f3489"
+      },
+      "default": {
+        "price_id": "price_1S2BOKEEk2SJOP4YZX7zUFxJ",
+        "amount": 6,
+        "currency": "usd",
+        "display": "$6"
+      }
+    },
+    "cover_letter": {
+      "US": {
+        "price_id": "price_1S2BOLEEk2SJOP4Yx3lacDnw",
+        "amount": 4,
+        "currency": "usd",
+        "display": "$4"
+      },
+      "PK": {
+        "price_id": "price_1S2BOMEEk2SJOP4YWZosGVtu",
+        "amount": 479,
+        "currency": "pkr",
+        "display": "\u20a8479"
+      },
+      "IN": {
+        "price_id": "price_1S2BOMEEk2SJOP4YgmmqcssR",
+        "amount": 240,
+        "currency": "inr",
+        "display": "\u20b9240"
+      },
+      "HK": {
+        "price_id": "price_1S2BONEEk2SJOP4YPra71b82",
+        "amount": 28,
+        "currency": "hkd",
+        "display": "HKD 28"
+      },
+      "AE": {
+        "price_id": "price_1S2BOOEEk2SJOP4YEyavCCDP",
+        "amount": 16,
+        "currency": "aed",
+        "display": "AED 16"
+      },
+      "BD": {
+        "price_id": "price_1S2BOOEEk2SJOP4YcSwjBPNA",
+        "amount": 326,
+        "currency": "bdt",
+        "display": "\u09f3326"
+      },
+      "default": {
+        "price_id": "price_1S2BOPEEk2SJOP4YLmDVYxLo",
+        "amount": 4,
+        "currency": "usd",
+        "display": "$4"
+      }
+    },
+    "career_boost": {
+      "US": {
+        "price_id": "price_1S2BOQEEk2SJOP4YpqEdFuUZ",
+        "amount": 9,
+        "currency": "usd",
+        "display": "$9"
+      },
+      "PK": {
+        "price_id": "price_1S2BOREEk2SJOP4YLkOo0M5z",
+        "amount": 1078,
+        "currency": "pkr",
+        "display": "\u20a81,078"
+      },
+      "IN": {
+        "price_id": "price_1S2BOSEEk2SJOP4YBMksDVBe",
+        "amount": 540,
+        "currency": "inr",
+        "display": "\u20b9540"
+      },
+      "HK": {
+        "price_id": "price_1S2BOSEEk2SJOP4Y8tnawyS7",
+        "amount": 63,
+        "currency": "hkd",
+        "display": "HKD 63"
+      },
+      "AE": {
+        "price_id": "price_1S2BOTEEk2SJOP4YcSvmX5ay",
+        "amount": 36,
+        "currency": "aed",
+        "display": "AED 36"
+      },
+      "BD": {
+        "price_id": "price_1S2BOUEEk2SJOP4YeyAarrap",
+        "amount": 734,
+        "currency": "bdt",
+        "display": "\u09f3734"
+      },
+      "default": {
+        "price_id": "price_1S2BOUEEk2SJOP4YEyMXYh0X",
+        "amount": 9,
+        "currency": "usd",
+        "display": "$9"
+      }
+    },
+    "job_hunter": {
+      "US": {
+        "price_id": "price_1S2BOVEEk2SJOP4YQMqsz54E",
+        "amount": 7,
+        "currency": "usd",
+        "display": "$7"
+      },
+      "PK": {
+        "price_id": "price_1S2BOWEEk2SJOP4YhqKjEanU",
+        "amount": 898,
+        "currency": "pkr",
+        "display": "\u20a8898"
+      },
+      "IN": {
+        "price_id": "price_1S2BOXEEk2SJOP4Yg1zWwj86",
+        "amount": 450,
+        "currency": "inr",
+        "display": "\u20b9450"
+      },
+      "HK": {
+        "price_id": "price_1S2BOXEEk2SJOP4YmzCG4kW0",
+        "amount": 52,
+        "currency": "hkd",
+        "display": "HKD 52"
+      },
+      "AE": {
+        "price_id": "price_1S2BOYEEk2SJOP4YMUWv7jlz",
+        "amount": 30,
+        "currency": "aed",
+        "display": "AED 30"
+      },
+      "BD": {
+        "price_id": "price_1S2BOZEEk2SJOP4Yccl9xt1R",
+        "amount": 611,
+        "currency": "bdt",
+        "display": "\u09f3611"
+      },
+      "default": {
+        "price_id": "price_1S2BOZEEk2SJOP4YVFMwPYb2",
+        "amount": 7,
+        "currency": "usd",
+        "display": "$7"
+      }
+    },
+    "complete_package": {
+      "US": {
+        "price_id": "price_1S2BOaEEk2SJOP4YjWnodEBv",
+        "amount": 11,
+        "currency": "usd",
+        "display": "$11"
+      },
+      "PK": {
+        "price_id": "price_1S2BObEEk2SJOP4YD9uS5Bb0",
+        "amount": 1317,
+        "currency": "pkr",
+        "display": "\u20a81,317"
+      },
+      "IN": {
+        "price_id": "price_1S2BOcEEk2SJOP4YUN6QK97T",
+        "amount": 660,
+        "currency": "inr",
+        "display": "\u20b9660"
+      },
+      "HK": {
+        "price_id": "price_1S2BOcEEk2SJOP4Y4zDKOkv5",
+        "amount": 77,
+        "currency": "hkd",
+        "display": "HKD 77"
+      },
+      "AE": {
+        "price_id": "price_1S2BOdEEk2SJOP4Y17XmGPVH",
+        "amount": 44,
+        "currency": "aed",
+        "display": "AED 44"
+      },
+      "BD": {
+        "price_id": "price_1S2BOeEEk2SJOP4YCHdCsWep",
+        "amount": 897,
+        "currency": "bdt",
+        "display": "\u09f3897"
+      },
+      "default": {
+        "price_id": "price_1S2BOeEEk2SJOP4YadL4eM5x",
+        "amount": 11,
+        "currency": "usd",
+        "display": "$11"
+      }
+    }
+  },
+  "payment_links": {
+    "resume_analysis": {
+      "US": "https://buy.stripe.com/test_dRm8wPaXq2028FEgNQ0000F",
+      "PK": "https://buy.stripe.com/test_6oUfZh7LegUWf4269c0000G",
+      "IN": "https://buy.stripe.com/test_00w7sLe9CeMOcVU4140000H",
+      "HK": "https://buy.stripe.com/test_eVq3cv8PibACf4269c0000I",
+      "AE": "https://buy.stripe.com/test_fZu6oHc1u202cVUgNQ0000J",
+      "BD": "https://buy.stripe.com/test_dRm7sLfdGbAC7BAbtw0000K",
+      "default": "https://buy.stripe.com/test_00w4gz9Tm7km9JIdBE0000L"
+    },
+    "job_fit_analysis": {
+      "US": "https://buy.stripe.com/test_5kQdR91mQ5ce3lk1SW0000M",
+      "PK": "https://buy.stripe.com/test_7sY6oH4z25ce3lk7dg0000N",
+      "IN": "https://buy.stripe.com/test_3cIdR95D65cef42gNQ0000O",
+      "HK": "https://buy.stripe.com/test_00w5kDaXq0VY6xw7dg0000P",
+      "AE": "https://buy.stripe.com/test_00w28r9Tm202098gNQ0000Q",
+      "BD": "https://buy.stripe.com/test_aFa5kDaXqdIK7BAaps0000R",
+      "default": "https://buy.stripe.com/test_aFa7sLe9C346cVU5580000S"
+    },
+    "cover_letter": {
+      "US": "https://buy.stripe.com/test_dRm28raXqawy5ts0OS0000T",
+      "PK": "https://buy.stripe.com/test_8x2dR9e9C5ce7BAcxA0000U",
+      "IN": "https://buy.stripe.com/test_3cI7sL0iM5ce9JI2X00000V",
+      "HK": "https://buy.stripe.com/test_aFabJ19Tm5ceg868hk0000W",
+      "AE": "https://buy.stripe.com/test_3cI00j1mQ5ce9JIeFI0000X",
+      "BD": "https://buy.stripe.com/test_cNi00j9Tm8oq1dcdBE0000Y",
+      "default": "https://buy.stripe.com/test_eVq8wP2qU0VYdZYdBE0000Z"
+    },
+    "career_boost": {
+      "US": "https://buy.stripe.com/test_eVq4gzd5y9sucVUdBE00010",
+      "PK": "https://buy.stripe.com/test_00w00j7Le202aNM9lo00011",
+      "IN": "https://buy.stripe.com/test_7sY3cv6Ha5cecVU2X000012",
+      "HK": "https://buy.stripe.com/test_cNi3cve9C8oqcVU7dg00013",
+      "AE": "https://buy.stripe.com/test_fZuaEX5D620209869c00014",
+      "BD": "https://buy.stripe.com/test_9B68wP0iMgUW5tscxA00015",
+      "default": "https://buy.stripe.com/test_4gMeVd7LeawyaNMaps00016"
+    },
+    "job_hunter": {
+      "US": "https://buy.stripe.com/test_fZucN5fdG2023lkfJM00017",
+      "PK": "https://buy.stripe.com/test_5kQdR9aXq5ceaNM1SW00018",
+      "IN": "https://buy.stripe.com/test_dRm3cvaXq2027BAbtw00019",
+      "HK": "https://buy.stripe.com/test_28E4gz1mQgUWg86gNQ0001a",
+      "AE": "https://buy.stripe.com/test_00w3cv7Le7kmdZYaps0001b",
+      "BD": "https://buy.stripe.com/test_8x2bJ1aXqawybRQgNQ0001c",
+      "default": "https://buy.stripe.com/test_6oUfZh1mQ8oq2hg9lo0001d"
+    },
+    "complete_package": {
+      "US": "https://buy.stripe.com/test_fZu6oH9TmeMO8FE69c0001e",
+      "PK": "https://buy.stripe.com/test_fZu7sLfdG9su5tseFI0001f",
+      "IN": "https://buy.stripe.com/test_eVq5kD2qU9sucVU7dg0001g",
+      "HK": "https://buy.stripe.com/test_bJe6oHc1u5ce1dc1SW0001h",
+      "AE": "https://buy.stripe.com/test_5kQ9AT1mQ48abRQbtw0001i",
+      "BD": "https://buy.stripe.com/test_eVqeVd6HacEG5tsbtw0001j",
+      "default": "https://buy.stripe.com/test_dRm4gzc1uawy6xwbtw0001k"
+    }
+  },
+  "created_at": "2025-08-31T09:33:47.184745",
+  "test_mode": true
+}

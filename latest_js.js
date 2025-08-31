@@ -1,0 +1,842 @@
+            let selectedFile = null;
+            let currentAnalysis = null;
+            let currentPricing = { price: '$5', currency: 'USD', stripe_url: 'https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01' };
+
+            // Load pricing configuration and detect user's country
+            async function loadPricingConfig() {
+                try {
+                    const response = await fetch('/api/pricing-config');
+                    const config = await response.json();
+                    
+                    // Check if we're in test mode
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const testCountry = urlParams.get('test_country');
+                    
+                    let countryCode = 'US';
+                    
+                    if (testCountry) {
+                        // Use test country from URL parameter
+                        countryCode = testCountry.toUpperCase();
+                        console.log('🧪 TEST MODE: Simulating country:', countryCode);
+                    } else {
+                        // Normal geolocation detection
+                        try {
+                            const geoResponse = await fetch('https://ipapi.co/json/');
+                            const geoData = await geoResponse.json();
+                            if (geoData.country_code) {
+                                countryCode = geoData.country_code;
+                            }
+                            console.log('🌍 Detected country:', countryCode);
+                        } catch (e) {
+                            console.log('IP geolocation failed, using default USD pricing');
+                        }
+                    }
+                    
+                    // Set pricing based on country
+                    currentPricing = config.pricing[countryCode] || config.pricing.default;
+                    console.log('💰 Using pricing:', currentPricing);
+                    updatePricingDisplay();
+                    
+                } catch (error) {
+                    console.log('Failed to load pricing config, using default');
+                }
+            }
+            
+            function updatePricingDisplay() {
+                // Update price display elements
+                const priceElements = document.querySelectorAll('.price-display');
+                priceElements.forEach(el => {
+                    el.textContent = currentPricing.price;
+                });
+                
+                // Update any other dynamic price displays
+                const dynamicPriceElements = document.querySelectorAll('.dynamic-price');
+                dynamicPriceElements.forEach(el => {
+                    el.textContent = currentPricing.price;
+                });
+            }
+
+            // Function to find any pending payment sessions
+            function findAnyPendingPayment() {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('resume_meta_')) {
+                        const metadata = JSON.parse(localStorage.getItem(key));
+                        if (metadata.status === 'pending_payment') {
+                            // Check if it's not too old (24 hours max)
+                            const age = Date.now() - metadata.timestamp;
+                            if (age < 24 * 60 * 60 * 1000) {
+                                return metadata.sessionId;
+                            }
+                        }
+                    }
+                }
+                return null;
+            }
+
+            // Function to clean up old sessions
+            function cleanupOldSessions() {
+                const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith('resume_meta_') || key.startsWith('resume_session_'))) {
+                        const item = localStorage.getItem(key);
+                        try {
+                            const data = JSON.parse(item);
+                            if (data.timestamp && (Date.now() - data.timestamp > maxAge)) {
+                                localStorage.removeItem(key);
+                                console.log('🧹 Cleaned up old session:', key);
+                            }
+                        } catch (e) {
+                            // Invalid JSON, remove it
+                            localStorage.removeItem(key);
+                        }
+                    }
+                }
+            }
+
+            // Clean up old sessions on page load
+            cleanupOldSessions();
+
+            // Check for payment success - multiple detection methods
+            const urlParams = new URLSearchParams(window.location.search);
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const sessionId = urlParams.get('client_reference_id') || hashParams.get('session');
+            const paymentToken = urlParams.get('payment_token'); // Keep for backward compatibility
+            
+            // Detect payment return from multiple sources
+            const isPaymentReturn = document.referrer.includes('stripe.com') || 
+                                  sessionId || 
+                                  paymentToken ||
+                                  window.location.search.includes('payment') ||
+                                  window.location.hash.includes('session=') ||
+                                  findAnyPendingPayment();
+            
+            if (isPaymentReturn) {
+                console.log('🎉 Payment return detected');
+                
+                // Try to find stored file data using multiple methods
+                let savedFileData = null;
+                let storageKey = null;
+                let metadataKey = null;
+                let activeSessionId = null;
+                
+                // Method 1: Direct session ID (from URL hash or parameters)
+                if (sessionId) {
+                    activeSessionId = sessionId;
+                    storageKey = `resume_session_${sessionId}`;
+                    metadataKey = `resume_meta_${sessionId}`;
+                    savedFileData = localStorage.getItem(storageKey);
+                    console.log('📁 Trying direct session:', sessionId);
+                }
+                
+                // Method 2: Find any pending payment session
+                if (!savedFileData) {
+                    activeSessionId = findAnyPendingPayment();
+                    if (activeSessionId) {
+                        storageKey = `resume_session_${activeSessionId}`;
+                        metadataKey = `resume_meta_${activeSessionId}`;
+                        savedFileData = localStorage.getItem(storageKey);
+                        console.log('📁 Trying pending payment session:', activeSessionId);
+                    }
+                }
+                
+                // Method 3: Legacy fallbacks
+                if (!savedFileData) {
+                    // Try old session format
+                    const legacyKey = localStorage.getItem('latest_resume_key');
+                    if (legacyKey) {
+                        storageKey = legacyKey;
+                        savedFileData = localStorage.getItem(legacyKey);
+                        console.log('📁 Trying legacy latest key:', legacyKey);
+                    }
+                }
+                
+                if (!savedFileData && paymentToken) {
+                    storageKey = 'pendingResumeUpload';
+                    savedFileData = localStorage.getItem(storageKey);
+                    console.log('📁 Trying legacy upload key');
+                }
+                
+                console.log('📁 File data found:', savedFileData ? 'YES' : 'NO');
+                
+                if (savedFileData) {
+                    const fileData = JSON.parse(savedFileData);
+                    // Recreate file from stored data
+                    fetch('data:' + fileData.type + ';base64,' + fileData.data)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const file = new File([blob], fileData.name, { type: fileData.type });
+                            selectedFile = file;
+                            
+                            // Clear the stored file data and metadata
+                            if (storageKey) {
+                                localStorage.removeItem(storageKey);
+                            }
+                            if (metadataKey) {
+                                localStorage.removeItem(metadataKey);
+                            }
+                            // Clean up legacy trackers
+                            localStorage.removeItem('latest_resume_key');
+                            
+                            // Clear URL hash if it contains session info
+                            if (window.location.hash.includes('session=')) {
+                                window.location.hash = '';
+                            }
+                            
+                            // Update UI to show payment success
+                            updateUploadUI(file.name, true);
+                            
+                            // Force immediate paid analysis
+                            setTimeout(() => {
+                                console.log('🔄 Starting automatic paid analysis...');
+                                analyzeResume();
+                            }, 100);
+                        });
+                } else {
+                    console.log('⚠️ Payment return detected but no file data found');
+                }
+            }
+
+            // Handle file upload
+            function handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    selectedFile = file;
+                    updateAnalyzeButton();
+                    
+                    // Clean up any lingering payment sessions to prevent premium leakage
+                    cleanupOldSessions();
+                    
+                    // Update upload UI to show selected file
+                    updateUploadUI(file.name, false);
+                }
+            }
+
+            function updateAnalyzeButton() {
+                const analyzeBtn = document.getElementById('analyzeBtn');
+                const jobPostingText = document.getElementById('jobPostingText').value.trim();
+                
+                if (selectedFile) {
+                    analyzeBtn.disabled = false;
+                    if (jobPostingText) {
+                        analyzeBtn.textContent = 'Analyze Resume + Job Fit - FREE';
+                    } else {
+                        analyzeBtn.textContent = 'Analyze My Resume - FREE';
+                    }
+                } else {
+                    analyzeBtn.disabled = true;
+                    analyzeBtn.textContent = 'Analyze My Resume - FREE';
+                }
+            }
+
+            // Centralized function to update upload UI while preserving functionality
+            function updateUploadUI(fileName, isPaidAnalysis = false) {
+                const uploadDiv = document.querySelector('.file-upload');
+                const statusText = isPaidAnalysis ? 
+                    `<strong>Payment successful! Analyzing: ${fileName}</strong><br><small>Getting your detailed analysis...</small>` :
+                    `<strong>Selected: ${fileName}</strong><br><small>Click to change file</small>`;
+                    
+                uploadDiv.innerHTML = `
+                    <input type="file" id="fileInput" accept=".pdf,.docx" onchange="handleFileSelect(event)" style="display: none;">
+                    <div class="upload-text">
+                        ${statusText}
+                    </div>
+                `;
+                
+                // Re-add click handler to maintain upload functionality
+                uploadDiv.onclick = function() {
+                    document.getElementById('fileInput').click();
+                };
+            }
+
+
+            async function analyzeResume() {
+                if (!selectedFile) {
+                    alert('Please select a file first');
+                    return;
+                }
+
+                const resultsSection = document.getElementById('resultsSection');
+                resultsSection.style.display = 'block';
+                resultsSection.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p id="loadingMessage">Analyzing your resume...</p>
+                        <p id="retryMessage" style="font-size: 0.9rem; color: #666; margin-top: 1rem; display: none;">
+                            For users with slower connections, this may take up to 3 minutes...
+                        </p>
+                    </div>
+                `;
+                
+                // Show retry message after 10 seconds for slow connections
+                setTimeout(() => {
+                    const retryMsg = document.getElementById('retryMessage');
+                    if (retryMsg) {
+                        retryMsg.style.display = 'block';
+                    }
+                }, 10000);
+
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                
+                // Add job posting if provided
+                const jobPostingText = document.getElementById('jobPostingText').value.trim();
+                if (jobPostingText) {
+                    formData.append('job_posting', jobPostingText);
+                    console.log('📋 Job posting included in analysis');
+                }
+                
+                // Check for valid payment
+                const urlParams = new URLSearchParams(window.location.search);
+                const sessionId = urlParams.get('client_reference_id');
+                const paymentToken = urlParams.get('payment_token');
+                
+                // Determine if this is a paid analysis - ONLY check URL parameters, not localStorage
+                const isPaidAnalysis = sessionId || 
+                                     paymentToken || 
+                                     document.referrer.includes('stripe.com') ||
+                                     window.location.hash.includes('session=');
+                
+                if (isPaidAnalysis) {
+                    console.log('💰 Detected paid analysis - sending session_validated token');
+                    formData.append('payment_token', 'session_validated');
+                } else {
+                    console.log('🆓 Free analysis');
+                }
+
+                try {
+                    const response = await fetch('/api/check-resume', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const analysis = await response.json();
+                    currentAnalysis = analysis;
+                    
+                    // DEBUG: Log the full analysis to browser console
+                    console.log('=== FULL ANALYSIS RESPONSE ===');
+                    console.log('📊 Analysis type:', analysis.analysis_type);
+                    console.log('💰 Is paid analysis:', analysis.analysis_type === 'paid');
+                    console.log(analysis);
+                    console.log('================================');
+                    
+                    displayResults(analysis);
+
+                } catch (error) {
+                    // Clear payment parameters from URL to prevent premium leakage on retry
+                    const url = new URL(window.location);
+                    url.searchParams.delete('payment_token');
+                    url.searchParams.delete('client_reference_id');
+                    if (window.location.hash.includes('session=')) {
+                        window.location.hash = '';
+                    }
+                    window.history.replaceState({}, document.title, url);
+                    
+                    console.log('❌ Analysis error:', error);
+                    
+                    // Parse error response to get server message
+                    let errorMessage = "Something went wrong. Please try again.";
+                    let errorTitle = "Analysis Failed";
+                    let helpText = "Please check your internet connection and try again.";
+                    
+                    try {
+                        if (error.response && error.response.status === 503) {
+                            errorTitle = "Service Temporarily Busy";
+                            // Try to get the detailed error message from the server
+                            const errorData = await error.response.json();
+                            if (errorData.detail) {
+                                errorMessage = errorData.detail;
+                                if (errorMessage.includes("timeout") || errorMessage.includes("slow")) {
+                                    helpText = "Your connection appears slow. The analysis will retry automatically with a longer timeout.";
+                                } else if (errorMessage.includes("overloaded")) {
+                                    helpText = "Our AI service is experiencing high demand. Please wait a few minutes before trying again.";
+                                }
+                            }
+                        } else if (error.response && error.response.status >= 500) {
+                            errorTitle = "Server Error";
+                            errorMessage = "Our servers are experiencing issues. Please try again in a moment.";
+                        } else if (!navigator.onLine) {
+                            errorTitle = "No Internet Connection";
+                            errorMessage = "Please check your internet connection and try again.";
+                            helpText = "Make sure you're connected to the internet.";
+                        }
+                    } catch (e) {
+                        console.log('Error parsing error response:', e);
+                    }
+                    
+                    resultsSection.innerHTML = `
+                        <div style="background: #fff5f5; border: 1px solid #feb2b2; border-radius: 8px; padding: 2rem; text-align: center;">
+                            <div style="color: #c53030; font-size: 2rem; margin-bottom: 1rem;">⚠️</div>
+                            <h3 style="color: #c53030; margin-bottom: 1rem;">${errorTitle}</h3>
+                            <p style="color: #4a5568; margin-bottom: 1rem; font-size: 1.1rem;">${errorMessage}</p>
+                            <p style="color: #718096; font-size: 0.9rem; margin-bottom: 1.5rem;">${helpText}</p>
+                            <button 
+                                onclick="analyzeResume()" 
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.8rem 2rem; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: transform 0.2s ease;"
+                                onmouseover="this.style.transform='translateY(-1px)'"
+                                onmouseout="this.style.transform='translateY(0px)'"
+                            >
+                                Try Again
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+
+            function displayResults(analysis) {
+                const resultsSection = document.getElementById('resultsSection');
+                
+                // Determine if this is job matching analysis
+                const isJobMatching = 'job_fit_score' in analysis;
+                const score = parseInt(isJobMatching ? analysis.job_fit_score : analysis.overall_score);
+                const scoreClass = getScoreClass(score);
+
+                // Debug logging
+                console.log('Analysis type:', analysis.analysis_type);
+                console.log('Is job matching:', isJobMatching);
+                console.log('Has text_rewrites:', 'text_rewrites' in analysis);
+                console.log('Has sample_improvements:', 'sample_improvements' in analysis);
+                if (analysis.text_rewrites) {
+                    console.log('Number of rewrites:', analysis.text_rewrites.length);
+                }
+
+                if (analysis.analysis_type === 'free') {
+                    if (isJobMatching) {
+                        // Display job matching free analysis
+                        resultsSection.innerHTML = `
+                            <div style="text-align: center;">
+                                <div class="score-circle ${scoreClass}">
+                                    ${score}%
+                                </div>
+                                <h2>Job Fit Score</h2>
+                                <p style="margin: 1rem 0; color: #666;">Your resume's match for this specific job:</p>
+                            </div>
+                            
+                            <div style="margin: 2rem 0;">
+                                <h3 style="color: #ff6b6b; margin-bottom: 1rem;">Missing Requirements:</h3>
+                                <ul class="issues-list">
+                                    ${analysis.missing_requirements.map(req => `<li>${req}</li>`).join('')}
+                                </ul>
+                            </div>
+
+                            <div class="upgrade-section">
+                                <h3>Want Job-Specific Optimization?</h3>
+                                <p>${analysis.upgrade_message}</p>
+                                <p style="margin: 1rem 0;">Get job-specific improvements:</p>
+                                <ul style="text-align: left; max-width: 400px; margin: 1rem auto;">
+                                    <li>✓ Keywords to add for this role</li>
+                                    <li>✓ Experience highlights to emphasize</li>
+                                    <li>✓ Tailored text rewrites</li>
+                                    <li>✓ Competitive advantages for this job</li>
+                                    <li>✓ Ready-to-use optimized content</li>
+                                </ul>
+                                <a href="#" class="upgrade-btn" onclick="goToStripeCheckout()">
+                                    Get Job-Optimized Resume - <span class="price-display">${currentPricing.price}</span>
+                                </a>
+                            </div>
+                        `;
+                    } else {
+                        // Display regular free analysis
+                        resultsSection.innerHTML = `
+                            <div style="text-align: center;">
+                                <div class="score-circle ${scoreClass}">
+                                    ${score}/100
+                                </div>
+                                <h2>Your Resume Health Score</h2>
+                                <p style="margin: 1rem 0; color: #666;">Here are the major issues we found:</p>
+                            </div>
+                            
+                            <div style="margin: 2rem 0;">
+                                <h3 style="color: #ff6b6b; margin-bottom: 1rem;">Major Issues Found:</h3>
+                                <ul class="issues-list">
+                                    ${analysis.major_issues.map(issue => `<li>${issue}</li>`).join('')}
+                                </ul>
+                            </div>
+
+                            <div class="upgrade-section">
+                                <h3>Want the Complete Analysis?</h3>
+                                <p>${analysis.teaser_message}</p>
+                                <p style="margin: 1rem 0;">Get detailed feedback on:</p>
+                                <ul style="text-align: left; max-width: 400px; margin: 1rem auto;">
+                                    <li>✓ ATS optimization recommendations</li>
+                                    <li>✓ Content clarity improvements</li>
+                                    <li>✓ Impact metrics suggestions</li>
+                                    <li>✓ Formatting fixes</li>
+                                    <li>✓ Prioritized action plan</li>
+                                </ul>
+                                <a href="#" class="upgrade-btn" onclick="goToStripeCheckout()">
+                                    Unlock Full Report - <span class="price-display">${currentPricing.price}</span>
+                                </a>
+                            </div>
+                        `;
+                    }
+                } else {
+                    if (isJobMatching) {
+                        // Display job matching paid analysis
+                        resultsSection.innerHTML = `
+                            <div style="text-align: center;">
+                                <div class="score-circle ${scoreClass}">
+                                    ${score}%
+                                </div>
+                                <h2>🎯 Job-Optimized Resume Analysis</h2>
+                                <p style="margin: 1rem 0; color: #666;">Tailored specifically for this role</p>
+                            </div>
+
+                            <!-- Missing Requirements -->
+                            <div style="background: #fff5f5; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #ff6b6b; margin: 2rem 0;">
+                                <h3 style="color: #d32f2f; margin-bottom: 1rem;">📋 Missing Requirements</h3>
+                                <ul style="margin: 0; padding-left: 1rem;">
+                                    ${analysis.missing_requirements.map(req => `<li style="margin-bottom: 0.5rem;">${req}</li>`).join('')}
+                                </ul>
+                            </div>
+
+                            <!-- Keywords to Add -->
+                            <div style="background: #f0f8ff; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #2196F3; margin: 2rem 0;">
+                                <h3 style="color: #1976D2; margin-bottom: 1rem;">🔑 Keywords to Add</h3>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    ${analysis.optimization_keywords.map(keyword => `<span style="background: #e3f2fd; color: #1976D2; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.9rem;">${keyword}</span>`).join('')}
+                                </div>
+                            </div>
+
+                            <!-- Resume Improvements -->
+                            <div style="background: #f3e5f5; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #9c27b0; margin: 2rem 0;">
+                                <h3 style="color: #7b1fa2; margin-bottom: 1rem;">💡 Optimization Recommendations</h3>
+                                <ul style="margin: 0; padding-left: 1rem;">
+                                    ${analysis.resume_improvements.map(improvement => `<li style="margin-bottom: 0.8rem;">${improvement}</li>`).join('')}
+                                </ul>
+                            </div>
+
+                            <!-- Competitive Advantage -->
+                            <div style="background: #e8f5e8; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #4caf50; margin: 2rem 0;">
+                                <h3 style="color: #388e3c; margin-bottom: 1rem;">🌟 Your Competitive Advantage</h3>
+                                <p style="margin: 0; font-size: 1.1rem; line-height: 1.6;">${analysis.competitive_advantage}</p>
+                            </div>
+                        `;
+                        
+                        // Add text rewrites section if available
+                        if (analysis.text_rewrites && analysis.text_rewrites.length > 0) {
+                            resultsSection.innerHTML += `
+                                <div style="margin: 2rem 0;">
+                                    <h3 style="color: #2e7d32; margin-bottom: 1rem;">✍️ Ready-to-Use Text Improvements</h3>
+                                    ${analysis.text_rewrites.map(rewrite => `
+                                        <div class="text-rewrite" style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                                            <h4 style="color: #1976d2; margin-bottom: 1rem;">${rewrite.section}</h4>
+                                            <div style="background: #ffebee; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                                                <strong>Before:</strong> ${rewrite.original}
+                                            </div>
+                                            <div style="background: #e8f5e8; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                                                <strong>After:</strong> ${rewrite.improved}
+                                            </div>
+                                            <div style="color: #666; font-style: italic;">
+                                                <strong>Why:</strong> ${rewrite.reason}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                        }
+                    } else {
+                        // Display regular detailed paid analysis
+                        resultsSection.innerHTML = `
+                            <div style="text-align: center;">
+                                <div class="score-circle ${scoreClass}">
+                                    ${score}/100
+                                </div>
+                                <h2>🎯 Complete Resume Analysis</h2>
+                                <p style="margin: 1rem 0; color: #666;">Comprehensive breakdown with actionable improvements</p>
+                            </div>
+
+                        <!-- Free Analysis Recap -->
+                        <div style="background: #f0f8ff; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #2196F3; margin: 2rem 0;">
+                            <h3 style="color: #1976D2; margin-bottom: 1rem;">📋 Key Issues Summary</h3>
+                            <ul style="margin: 0; padding-left: 1rem;">
+                                ${analysis.major_issues.map(issue => `<li style="margin-bottom: 0.5rem;">${issue}</li>`).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="detailed-results">
+                            <div class="metric-card">
+                                <div class="metric-score">${analysis.ats_optimization.score}/100</div>
+                                <h3>ATS Optimization</h3>
+                                <h4>Issues:</h4>
+                                <ul>
+                                    ${analysis.ats_optimization.issues.map(issue => `<li>${issue}</li>`).join('')}
+                                </ul>
+                                <h4>Improvements:</h4>
+                                <ul>
+                                    ${analysis.ats_optimization.improvements.map(imp => `<li>${imp}</li>`).join('')}
+                                </ul>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-score">${analysis.content_clarity.score}/100</div>
+                                <h3>Content Clarity</h3>
+                                <h4>Issues:</h4>
+                                <ul>
+                                    ${analysis.content_clarity.issues.map(issue => `<li>${issue}</li>`).join('')}
+                                </ul>
+                                <h4>Improvements:</h4>
+                                <ul>
+                                    ${analysis.content_clarity.improvements.map(imp => `<li>${imp}</li>`).join('')}
+                                </ul>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-score">${analysis.impact_metrics.score}/100</div>
+                                <h3>Impact Metrics</h3>
+                                <h4>Issues:</h4>
+                                <ul>
+                                    ${analysis.impact_metrics.issues.map(issue => `<li>${issue}</li>`).join('')}
+                                </ul>
+                                <h4>Improvements:</h4>
+                                <ul>
+                                    ${analysis.impact_metrics.improvements.map(imp => `<li>${imp}</li>`).join('')}
+                                </ul>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-score">${analysis.formatting.score}/100</div>
+                                <h3>Formatting</h3>
+                                <h4>Issues:</h4>
+                                <ul>
+                                    ${analysis.formatting.issues.map(issue => `<li>${issue}</li>`).join('')}
+                                </ul>
+                                <h4>Improvements:</h4>
+                                <ul>
+                                    ${analysis.formatting.improvements.map(imp => `<li>${imp}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- NEW: Text Rewrites Section -->
+                        ${analysis.text_rewrites && analysis.text_rewrites.length > 0 ? `
+                            <div style="background: #f8f9fa; padding: 2rem; border-radius: 12px; margin: 2rem 0; border-left: 4px solid #28a745;">
+                                <h3 style="color: #155724; margin-bottom: 1.5rem;">✨ Ready-to-Use Text Improvements</h3>
+                                ${analysis.text_rewrites.map((rewrite, index) => `
+                                    <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                        <h4 style="color: #495057; margin-bottom: 1rem;">📝 ${rewrite.section}</h4>
+                                        
+                                        <div style="margin-bottom: 1rem;">
+                                            <strong style="color: #dc3545;">❌ Current:</strong>
+                                            <div style="background: #fff5f5; padding: 0.8rem; border-radius: 4px; margin: 0.5rem 0; font-style: italic; border-left: 3px solid #dc3545;">
+                                                "${rewrite.original}"
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="margin-bottom: 1rem;">
+                                            <strong style="color: #28a745;">✅ Improved:</strong>
+                                            <div style="background: #f0fff4; padding: 0.8rem; border-radius: 4px; margin: 0.5rem 0; border-left: 3px solid #28a745;">
+                                                "${rewrite.improved}"
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="font-size: 0.9rem; color: #6c757d; font-style: italic;">
+                                            💡 <strong>Why this works:</strong> ${rewrite.explanation}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        <!-- NEW: Sample Bullet Improvements -->
+                        ${analysis.sample_improvements ? `
+                            <div style="background: #e8f5e8; padding: 2rem; border-radius: 12px; margin: 2rem 0; border-left: 4px solid #4CAF50;">
+                                <h3 style="color: #2e7d32; margin-bottom: 1.5rem;">🎯 Bullet Point Makeover Examples</h3>
+                                
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1rem;">
+                                    <div>
+                                        <h4 style="color: #d32f2f; margin-bottom: 1rem;">❌ Weak Bullets</h4>
+                                        ${analysis.sample_improvements.weak_bullets.map(bullet => `
+                                            <div style="background: #fff; padding: 1rem; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #d32f2f;">
+                                                • ${bullet}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    
+                                    <div>
+                                        <h4 style="color: #388e3c; margin-bottom: 1rem;">✅ Strong Bullets</h4>
+                                        ${analysis.sample_improvements.strong_bullets.map(bullet => `
+                                            <div style="background: #fff; padding: 1rem; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #388e3c;">
+                                                • ${bullet}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div class="recommendations">
+                            <h3>🎯 Top Priority Action Plan</h3>
+                            <ol>
+                                ${analysis.top_recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                            </ol>
+                        </div>
+                        
+                        <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px; text-align: center; margin-top: 2rem;">
+                            <h4 style="color: #1565c0; margin-bottom: 0.5rem;">🚀 Ready to Implement?</h4>
+                            <p style="color: #424242; margin: 0;">Copy the improved text above and update your resume to increase your interview rate!</p>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <button onclick="resetForNewUpload()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem 2rem; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;">
+                                Analyze Another Resume
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+
+            function getScoreClass(score) {
+                if (score >= 80) return 'score-excellent';
+                if (score >= 60) return 'score-good';
+                if (score >= 40) return 'score-fair';
+                return 'score-poor';
+            }
+
+            function goToStripeCheckout() {
+                // Save the current file to localStorage before going to Stripe
+                if (selectedFile) {
+                    // Generate unique session ID
+                    const sessionId = crypto.randomUUID();
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const fileData = {
+                            name: selectedFile.name,
+                            type: selectedFile.type,
+                            data: e.target.result.split(',')[1] // Remove data URL prefix
+                        };
+                        // Store with unique session-based key for user isolation
+                        const storageKey = `resume_session_${sessionId}`;
+                        const metadataKey = `resume_meta_${sessionId}`;
+                        
+                        // Store file data
+                        localStorage.setItem(storageKey, JSON.stringify(fileData));
+                        
+                        // Store session metadata with timestamp for cleanup
+                        const metadata = {
+                            sessionId: sessionId,
+                            timestamp: Date.now(),
+                            fileName: fileData.name,
+                            status: 'pending_payment'
+                        };
+                        localStorage.setItem(metadataKey, JSON.stringify(metadata));
+                        
+                        // Store session ID in URL hash for retrieval after payment
+                        window.location.hash = `session=${sessionId}`;
+                        
+                        console.log('💾 Stored file with unique session:', sessionId);
+                        
+                        // Go to Stripe Payment Link (use dynamic pricing URL)
+                        const stripeUrl = currentPricing.stripe_url || 'https://buy.stripe.com/test_YOUR_TEST_PAYMENT_LINK_HERE';
+                        window.location.href = stripeUrl;
+                    };
+                    reader.readAsDataURL(selectedFile);
+                } else {
+                    alert('Please upload a resume first before upgrading.');
+                }
+            }
+
+            // Reset function for new uploads
+            function resetForNewUpload() {
+                console.log('Reset function called'); // Debug log
+                
+                // Clear current state
+                selectedFile = null;
+                currentAnalysis = null;
+                
+                // Clear URL parameters
+                const url = new URL(window.location);
+                url.searchParams.delete('payment_token');
+                url.searchParams.delete('client_reference_id');
+                window.history.replaceState({}, document.title, url);
+                
+                // Reset upload UI
+                const uploadDiv = document.querySelector('.file-upload');
+                if (uploadDiv) {
+                    uploadDiv.innerHTML = `
+                        <input type="file" id="fileInput" accept=".pdf,.docx" onchange="handleFileSelect(event)" style="display: none;">
+                        <div class="upload-text">
+                            <strong>Click to upload your resume</strong><br>
+                            or drag and drop it here
+                        </div>
+                        <div class="file-types">Supports PDF and Word documents</div>
+                    `;
+                    
+                    // Re-add click handler
+                    uploadDiv.onclick = function() {
+                        document.getElementById('fileInput').click();
+                    };
+                } else {
+                    console.error('Upload div not found');
+                }
+                
+                // Reset analyze button
+                const analyzeBtn = document.getElementById('analyzeBtn');
+                if (analyzeBtn) {
+                    analyzeBtn.disabled = true;
+                    analyzeBtn.textContent = 'Analyze My Resume - FREE';
+                } else {
+                    console.error('Analyze button not found');
+                }
+                
+                // Hide results section
+                const resultsSection = document.getElementById('resultsSection');
+                if (resultsSection) {
+                    resultsSection.style.display = 'none';
+                } else {
+                    console.error('Results section not found');
+                }
+                
+                // Re-add drag and drop functionality
+                setTimeout(() => setupDragAndDrop(), 100); // Small delay to ensure DOM is ready
+            }
+            
+            // Function to setup drag and drop (extracted for reuse)
+            function setupDragAndDrop() {
+                const fileUpload = document.querySelector('.file-upload');
+                
+                fileUpload.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    fileUpload.classList.add('dragover');
+                });
+                
+                fileUpload.addEventListener('dragleave', () => {
+                    fileUpload.classList.remove('dragover');
+                });
+                
+                fileUpload.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    fileUpload.classList.remove('dragover');
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const file = files[0];
+                        if (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                            selectedFile = file;
+                            document.getElementById('fileInput').files = files;
+                            handleFileSelect({ target: { files: [file] } });
+                        } else {
+                            alert('Please upload a PDF or Word document');
+                        }
+                    }
+                });
+            }
+            
+            // Initial setup of drag and drop
+            setupDragAndDrop();
+            
+            // Load pricing configuration on page load
+            loadPricingConfig();
+
+            // If payment token is present, automatically analyze the previously uploaded resume
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentPaymentToken = urlParams.get('payment_token');
+            if (currentPaymentToken && selectedFile) {
+                analyzeResume();
+            }

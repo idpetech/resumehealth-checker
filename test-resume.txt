@@ -1,15 +1,21 @@
 John Doe
 Software Engineer
+5 years experience in Python, React, and AWS
+Bachelor's degree in Computer Science
 
-Experience:
-- Worked at ABC Company for 3 years
-- Developed web applications using Python and JavaScript
-- Managed databases and APIs
+EXPERIENCE:
+Senior Software Developer at Tech Corp (2020-2025)
+- Developed scalable web applications using Python and React
+- Managed AWS infrastructure for microservices architecture
+- Led team of 3 developers on major product releases
 
-Skills:
-- Python, JavaScript, SQL
-- Web development
-- Database management
+Junior Developer at StartupCo (2018-2020)  
+- Built REST APIs using Django and Flask
+- Worked with PostgreSQL and Redis databases
+- Implemented CI/CD pipelines with Jenkins
 
-Education:
-- BS Computer Science, University of Technology
+EDUCATION:
+B.S. Computer Science, University of Technology (2018)
+
+SKILLS:
+Python, JavaScript, React, Node.js, AWS, Docker, PostgreSQL

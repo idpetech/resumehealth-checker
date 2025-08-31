@@ -1,0 +1,297 @@
+{
+  "sessions": {
+    "84086632-774c-4a32-a788-bb5ec43ed7aa": {
+      "payment_session_id": "84086632-774c-4a32-a788-bb5ec43ed7aa",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "John Doe, Software Engineer...",
+        "analysis_type": "resume",
+        "session_id": "test123"
+      },
+      "created_at": "2025-08-31T00:43:05.889565+00:00",
+      "status": "pending"
+    },
+    "8a9d8775-0c0a-47e2-95b6-bf5dc4adc066": {
+      "payment_session_id": "8a9d8775-0c0a-47e2-95b6-bf5dc4adc066",
+      "product_type": "bundle",
+      "product_id": "complete_package",
+      "price_amount": 22,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "John Doe, Software Engineer...",
+        "job_posting": "Software Engineer role",
+        "analysis_type": "multi",
+        "session_id": "test456"
+      },
+      "created_at": "2025-08-31T00:43:16.881794+00:00",
+      "status": "retrieved",
+      "retrieved_at": "2025-08-31T00:43:32.855613+00:00"
+    },
+    "4caaae5f-d8f0-4a26-b30d-1f6ad0cb4a5d": {
+      "payment_session_id": "4caaae5f-d8f0-4a26-b30d-1f6ad0cb4a5d",
+      "product_type": "bundle",
+      "product_id": "complete_package",
+      "price_amount": 22,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "John Doe Engineer...",
+        "job_posting": "Senior role",
+        "analysis_type": "multi",
+        "session_id": "final_test"
+      },
+      "created_at": "2025-08-31T00:54:35.261420+00:00",
+      "status": "retrieved",
+      "retrieved_at": "2025-08-31T00:54:35.273234+00:00"
+    },
+    "76c0e10f-b790-4dd4-80ee-14b8e4e8833b": {
+      "payment_session_id": "76c0e10f-b790-4dd4-80ee-14b8e4e8833b",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "John Doe, Software Engineer with 5 years experience...",
+        "analysis_type": "resume",
+        "session_id": "test_session_123"
+      },
+      "created_at": "2025-08-31T03:41:47.798878+00:00",
+      "status": "pending"
+    },
+    "e4f225b2-8dd8-4ed7-ac84-04109409b932": {
+      "payment_session_id": "e4f225b2-8dd8-4ed7-ac84-04109409b932",
+      "product_type": "bundle",
+      "product_id": "complete_package",
+      "price_amount": 22,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "John Doe, Software Engineer...",
+        "job_posting": "Senior Software Engineer at Google",
+        "analysis_type": "multi",
+        "session_id": "bundle_test_456"
+      },
+      "created_at": "2025-08-31T03:42:15.956174+00:00",
+      "status": "retrieved",
+      "retrieved_at": "2025-08-31T03:42:28.938449+00:00"
+    },
+    "a4e60f23-518c-447f-897c-ee73a611fcb5": {
+      "payment_session_id": "a4e60f23-518c-447f-897c-ee73a611fcb5",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume content...",
+        "analysis_type": "resume",
+        "session_id": "stripe_test_001"
+      },
+      "created_at": "2025-08-31T04:10:21.050383+00:00",
+      "status": "retrieved",
+      "retrieved_at": "2025-08-31T04:10:21.051415+00:00"
+    },
+    "24c5cf2c-40fe-43fd-8e58-46be05502fc2": {
+      "payment_session_id": "24c5cf2c-40fe-43fd-8e58-46be05502fc2",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "John Doe - Senior Software Engineer with 8 years experience in full-stack development...",
+        "analysis_type": "resume",
+        "session_id": "stripe_sandbox_test_001"
+      },
+      "created_at": "2025-08-31T13:59:15.131267+00:00",
+      "status": "retrieved",
+      "retrieved_at": "2025-08-31T13:59:31.892146+00:00"
+    },
+    "54f7cab2-7896-4849-9bfb-27759e45f02e": {
+      "payment_session_id": "54f7cab2-7896-4849-9bfb-27759e45f02e",
+      "product_type": "bundle",
+      "product_id": "complete_package",
+      "price_amount": 22,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume",
+        "job_posting": "Software Engineer at Google",
+        "analysis_type": "multi",
+        "session_id": "bundle_test_pk"
+      },
+      "created_at": "2025-08-31T14:00:06.802931+00:00",
+      "status": "pending"
+    },
+    "25f63887-e852-4fd1-aa76-e3e554c28fc4": {
+      "payment_session_id": "25f63887-e852-4fd1-aa76-e3e554c28fc4",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume content...",
+        "analysis_type": "resume",
+        "session_id": "stripe_test_001"
+      },
+      "created_at": "2025-08-31T14:05:38.194521+00:00",
+      "status": "pending"
+    },
+    "f18909dd-b645-401a-92d6-f80da11e2d2a": {
+      "payment_session_id": "f18909dd-b645-401a-92d6-f80da11e2d2a",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume content...",
+        "analysis_type": "resume",
+        "session_id": "stripe_test_001"
+      },
+      "created_at": "2025-08-31T14:08:30.508941+00:00",
+      "status": "pending"
+    },
+    "73784617-afec-40ba-b9a1-c16dfaec8fec": {
+      "payment_session_id": "73784617-afec-40ba-b9a1-c16dfaec8fec",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume content...",
+        "analysis_type": "resume",
+        "session_id": "stripe_test_001"
+      },
+      "created_at": "2025-08-31T18:29:57.751349+00:00",
+      "status": "retrieved",
+      "retrieved_at": "2025-08-31T18:29:57.755886+00:00"
+    },
+    "8b79639a-1c0b-4b8a-ac4f-0566c921aa5a": {
+      "payment_session_id": "8b79639a-1c0b-4b8a-ac4f-0566c921aa5a",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume for payment flow",
+        "session_id": "test_session_12345",
+        "user_region": "US"
+      },
+      "created_at": "2025-08-31T18:43:38.823024+00:00",
+      "status": "pending"
+    },
+    "6ba58fbb-217d-4bd3-bced-553f87f221af": {
+      "payment_session_id": "6ba58fbb-217d-4bd3-bced-553f87f221af",
+      "product_type": "individual",
+      "product_id": "job_fit_analysis",
+      "price_amount": 12,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume for payment flow",
+        "session_id": "test_session_67890",
+        "user_region": "PK"
+      },
+      "created_at": "2025-08-31T18:43:55.563736+00:00",
+      "status": "pending"
+    },
+    "3f685e13-5b39-446c-8863-535aa657c4c1": {
+      "payment_session_id": "3f685e13-5b39-446c-8863-535aa657c4c1",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "John Doe - Software Engineer with 5 years experience",
+        "session_id": "flow_test_001",
+        "user_region": "US",
+        "selected_product": "individual_resume_analysis"
+      },
+      "created_at": "2025-08-31T18:49:39.961034+00:00",
+      "status": "pending"
+    },
+    "2b304439-e4bd-4ac5-9e17-f42f5d7867ff": {
+      "payment_session_id": "2b304439-e4bd-4ac5-9e17-f42f5d7867ff",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume content",
+        "session_id": "test_session_e2e",
+        "user_region": "US",
+        "selected_product": "individual_resume_analysis"
+      },
+      "created_at": "2025-08-31T18:57:09.048802+00:00",
+      "status": "pending"
+    },
+    "bfa65c4f-ea44-4ffe-a511-e141fb580031": {
+      "payment_session_id": "bfa65c4f-ea44-4ffe-a511-e141fb580031",
+      "product_type": "bundle",
+      "product_id": "complete_package",
+      "price_amount": 22,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume content",
+        "session_id": "test_bundle_complete_package",
+        "user_region": "US"
+      },
+      "created_at": "2025-08-31T18:57:09.049801+00:00",
+      "status": "pending"
+    },
+    "ab13088a-8ca1-40ed-954d-422b25ccd3f8": {
+      "payment_session_id": "ab13088a-8ca1-40ed-954d-422b25ccd3f8",
+      "product_type": "bundle",
+      "product_id": "career_boost",
+      "price_amount": 18,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume content",
+        "session_id": "test_bundle_career_boost",
+        "user_region": "US"
+      },
+      "created_at": "2025-08-31T18:57:09.050556+00:00",
+      "status": "pending"
+    },
+    "8df88313-8693-4d28-9f34-c773bc71a9ce": {
+      "payment_session_id": "8df88313-8693-4d28-9f34-c773bc71a9ce",
+      "product_type": "bundle",
+      "product_id": "job_hunter",
+      "price_amount": 15,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume content",
+        "session_id": "test_bundle_job_hunter",
+        "user_region": "US"
+      },
+      "created_at": "2025-08-31T18:57:09.051281+00:00",
+      "status": "pending"
+    },
+    "64278ae3-e2be-40d0-98cb-6695a67d3db8": {
+      "payment_session_id": "64278ae3-e2be-40d0-98cb-6695a67d3db8",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Journey test resume",
+        "session_id": "journey_test_session",
+        "user_region": "US"
+      },
+      "created_at": "2025-08-31T18:57:11.936076+00:00",
+      "status": "pending"
+    },
+    "2817d5c0-89aa-426b-a2f7-3aa1ead338c2": {
+      "payment_session_id": "2817d5c0-89aa-426b-a2f7-3aa1ead338c2",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Placeholder resume text",
+        "session_id": "17dd5135-1a16-4d60-949c-4a1d31103e37",
+        "user_region": "US",
+        "selected_product": "individual_resume_analysis"
+      },
+      "created_at": "2025-08-31T19:05:37.632129+00:00",
+      "status": "pending"
+    }
+  }
+}

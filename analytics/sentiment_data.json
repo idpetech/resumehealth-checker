@@ -1,0 +1,192 @@
+{
+  "metadata": {
+    "created": "2025-08-31T00:07:36.366638+00:00",
+    "version": "1.0.0",
+    "description": "User sentiment tracking data"
+  },
+  "sessions": {
+    "a4084d79-eb42-409e-994c-d66050b308e3": {
+      "session_id": "a4084d79-eb42-409e-994c-d66050b308e3",
+      "product": "cover_letter",
+      "start_time": "2025-08-31T00:37:00.288772+00:00",
+      "user_agent": "API-Text",
+      "prompt_version": null,
+      "analysis_completed": false,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": []
+    },
+    "9d07b6bc-7503-4c47-b7ef-96e7b953be91": {
+      "session_id": "9d07b6bc-7503-4c47-b7ef-96e7b953be91",
+      "product": "cover_letter",
+      "start_time": "2025-08-31T00:37:31.696370+00:00",
+      "user_agent": "API-Text",
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-08-31T00:37:31.696918+00:00",
+          "data": {
+            "analysis_type": "cover_letter_free",
+            "processing_time": 1.9073486328125e-06
+          }
+        }
+      ],
+      "analysis_type": "cover_letter_free",
+      "analysis_completion_time": "2025-08-31T00:37:31.696915+00:00",
+      "processing_time_seconds": 1.9073486328125e-06
+    },
+    "196b96c7-ef2c-4d70-b515-b80d9eeb6322": {
+      "session_id": "196b96c7-ef2c-4d70-b515-b80d9eeb6322",
+      "product": "cover_letter",
+      "start_time": "2025-08-31T00:38:30.845940+00:00",
+      "user_agent": "API-Text",
+      "prompt_version": null,
+      "analysis_completed": false,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": []
+    },
+    "06af5600-275d-4723-b44e-69b585d341e9": {
+      "session_id": "06af5600-275d-4723-b44e-69b585d341e9",
+      "product": "cover_letter",
+      "start_time": "2025-08-31T00:39:26.356284+00:00",
+      "user_agent": "API-Text",
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-08-31T00:39:31.819949+00:00",
+          "data": {
+            "analysis_type": "cover_letter_free",
+            "processing_time": 5.46305513381958
+          }
+        }
+      ],
+      "analysis_type": "cover_letter_free",
+      "analysis_completion_time": "2025-08-31T00:39:31.819928+00:00",
+      "processing_time_seconds": 5.46305513381958
+    },
+    "6219896d-4709-4af9-8589-40f8de59391a": {
+      "session_id": "6219896d-4709-4af9-8589-40f8de59391a",
+      "product": "cover_letter",
+      "start_time": "2025-08-31T00:40:01.370802+00:00",
+      "user_agent": "API-Text",
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-08-31T00:40:06.951753+00:00",
+          "data": {
+            "analysis_type": "cover_letter_free",
+            "processing_time": 5.580214023590088
+          }
+        }
+      ],
+      "analysis_type": "cover_letter_free",
+      "analysis_completion_time": "2025-08-31T00:40:06.951731+00:00",
+      "processing_time_seconds": 5.580214023590088
+    },
+    "35616056-115c-4286-a5b8-aef4d57ec768": {
+      "session_id": "35616056-115c-4286-a5b8-aef4d57ec768",
+      "product": "cover_letter",
+      "start_time": "2025-08-31T00:40:23.172739+00:00",
+      "user_agent": "API-Text",
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-08-31T00:40:34.217083+00:00",
+          "data": {
+            "analysis_type": "cover_letter_premium",
+            "processing_time": 11.043678998947144
+          }
+        }
+      ],
+      "analysis_type": "cover_letter_premium",
+      "analysis_completion_time": "2025-08-31T00:40:34.217063+00:00",
+      "processing_time_seconds": 11.043678998947144
+    },
+    "d08b98c4-73be-435b-8e11-bae5276d7147": {
+      "session_id": "d08b98c4-73be-435b-8e11-bae5276d7147",
+      "product": "cover_letter",
+      "start_time": "2025-08-31T00:54:00.526367+00:00",
+      "user_agent": "API-Text",
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-08-31T00:54:12.205786+00:00",
+          "data": {
+            "analysis_type": "cover_letter_free",
+            "processing_time": 11.678860902786255
+          }
+        }
+      ],
+      "analysis_type": "cover_letter_free",
+      "analysis_completion_time": "2025-08-31T00:54:12.205775+00:00",
+      "processing_time_seconds": 11.678860902786255
+    }
+  },
+  "feedback": [
+    {
+      "feedback_id": "6b751376-a338-4b25-b599-6724a86f4b63",
+      "session_id": "test-session-123",
+      "timestamp": "2025-08-31T00:30:17.291318+00:00",
+      "sentiment_score": 5,
+      "sentiment_label": "motivated",
+      "specific_feedback": "This analysis really helped me understand what I need to fix!",
+      "product": "unknown",
+      "prompt_version": "unknown",
+      "analysis_type": "unknown"
+    },
+    {
+      "feedback_id": "d88d7ed9-5aae-4dc0-a597-ca9125c2e30e",
+      "session_id": "test-session-456",
+      "timestamp": "2025-08-31T00:32:04.127704+00:00",
+      "sentiment_score": 3,
+      "sentiment_label": "hopeful",
+      "specific_feedback": "Good insights but could be more specific",
+      "product": "unknown",
+      "prompt_version": "unknown",
+      "analysis_type": "unknown"
+    },
+    {
+      "feedback_id": "2e9e0ab9-f854-4a29-91c4-56cf286f9770",
+      "session_id": "test-session-789",
+      "timestamp": "2025-08-31T00:32:18.280422+00:00",
+      "sentiment_score": 4,
+      "sentiment_label": "confident",
+      "specific_feedback": "Really helpful, gave me clear next steps",
+      "product": "unknown",
+      "prompt_version": "unknown",
+      "analysis_type": "unknown"
+    },
+    {
+      "feedback_id": "9cca1389-c6dc-43a7-8146-35842702970d",
+      "session_id": "final_test_session",
+      "timestamp": "2025-08-31T00:55:37.112010+00:00",
+      "sentiment_score": 5,
+      "sentiment_label": "excited",
+      "specific_feedback": "This multi-product system is amazing! The hope-driven messaging really works.",
+      "product": "unknown",
+      "prompt_version": "unknown",
+      "analysis_type": "unknown"
+    }
+  ]
+}

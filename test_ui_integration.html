@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UI Integration Test</title>
+    <script>
+        // Test the complete UI integration flow
+        function testUIFlow() {
+            console.log('🧪 Testing UI Integration...');
+            
+            // Test 1: Verify product card functions are defined
+            if (typeof selectProduct === 'function') {
+                console.log('✅ selectProduct function is defined');
+            } else {
+                console.error('❌ selectProduct function is missing');
+            }
+            
+            if (typeof showBundles === 'function') {
+                console.log('✅ showBundles function is defined');  
+            } else {
+                console.error('❌ showBundles function is missing');
+            }
+            
+            if (typeof proceedToPayment === 'function') {
+                console.log('✅ proceedToPayment function is defined');
+            } else {
+                console.error('❌ proceedToPayment function is missing');
+            }
+            
+            // Test 2: Mock file selection
+            const mockFile = new Blob(['Test resume content'], {type: 'text/plain'});
+            mockFile.name = 'test-resume.txt';
+            selectedFile = mockFile;
+            console.log('✅ Mock file selected');
+            
+            // Test 3: Try product selection (should not redirect in test)
+            console.log('🎯 Testing product selection...');
+            try {
+                selectProduct('individual', 'resume_analysis', '$5');
+                console.log('✅ Product selection completed without errors');
+            } catch (error) {
+                console.error('❌ Product selection failed:', error);
+            }
+            
+            console.log('🏁 UI Integration test completed');
+        }
+        
+        // Run test after page loads
+        setTimeout(testUIFlow, 2000);
+    </script>
+</head>
+<body>
+    <h1>UI Integration Test</h1>
+    <p>Check console for test results...</p>
+    
+    <!-- Embed the actual application JavaScript for testing -->
+    <iframe src="http://localhost:8002/" width="100%" height="600" style="border:1px solid #ccc;"></iframe>
+</body>
+</html>

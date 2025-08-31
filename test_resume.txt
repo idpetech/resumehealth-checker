@@ -1,14 +1,21 @@
-John Doe
+John Smith
 Software Engineer
 
-Experience:
-- Worked at company for 3 years
-- Made some improvements to the system
-- Helped with various projects
-- Collaborated with team members
+EXPERIENCE
+Senior Software Engineer at TechCorp (2020-2023)
+- Developed web applications using Python and Django
+- Built REST APIs for mobile applications
+- Worked with MySQL databases and AWS cloud services
+- Collaborated with cross-functional teams on product development
 
-Skills:
-- Python
-- JavaScript 
-- Problem solving
-- Team player
+Software Developer at StartupInc (2018-2020)  
+- Created frontend components using React and JavaScript
+- Implemented user authentication and authorization systems
+- Optimized application performance and reduced load times by 30%
+
+EDUCATION
+Bachelor of Science in Computer Science
+University of Technology (2014-2018)
+
+SKILLS
+Python, Django, JavaScript, React, AWS, MySQL, Git, Docker

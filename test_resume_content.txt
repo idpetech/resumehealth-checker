@@ -1,0 +1,15 @@
+John Doe
+Software Engineer
+
+Experience:
+- 5 years developing web applications
+- Worked with Python, JavaScript, React
+- Led team of 3 developers
+
+Education:
+- BS Computer Science, University of California
+
+Skills:
+- Python, JavaScript, React, Node.js
+- Database design and optimization
+- Project management

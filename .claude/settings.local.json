@@ -16,7 +16,12 @@
       "Bash(aws s3 website:*)",
       "Bash(aws s3api put-bucket-policy:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(sed:*)",
+      "Bash(uvicorn:*)",
+      "Bash(curl:*)",
+      "Bash(./test_stripe_sandbox.sh:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
