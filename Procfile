@@ -1,1 +1,1 @@
-web: uvicorn main_vercel:app --host 0.0.0.0 --port $PORT
+web: uvicorn main_modular:app --host 0.0.0.0 --port $PORT

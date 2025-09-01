@@ -1,17 +1,17 @@
 {
   "functions": {
-    "main_vercel.py": {
+    "main_modular.py": {
       "runtime": "python3.9"
     }
   },
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/main_vercel.py"
+      "dest": "/main_modular.py"
     },
     {
       "src": "/(.*)",
-      "dest": "/main_vercel.py"
+      "dest": "/main_modular.py"
     }
   ]
 }

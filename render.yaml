@@ -3,7 +3,7 @@ services:
     name: resume-health-checker
     env: python
     buildCommand: "pip install -r requirements-deploy.txt"
-    startCommand: "uvicorn main_vercel:app --host 0.0.0.0 --port $PORT"
+    startCommand: "uvicorn main_modular:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.18

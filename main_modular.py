@@ -21,6 +21,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config.settings import settings, constants
 from app.routes.main import router as main_router
 from app.routes.analysis import router as analysis_router
+from app.routes.legacy_proxy import router as proxy_router
 
 # =============================================================================
 # LOGGING CONFIGURATION
@@ -97,6 +98,7 @@ STRIPE_PAYMENT_URL = settings.stripe_payment_url
 # Register route modules
 app.include_router(main_router)
 app.include_router(analysis_router)
+app.include_router(proxy_router)
 
 # =============================================================================
 # TEMPORARY IMPORTS FOR BACKWARD COMPATIBILITY
