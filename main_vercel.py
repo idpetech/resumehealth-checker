@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +7,7 @@ import json
 import io
 import asyncio
 import time
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 from dotenv import load_dotenv
@@ -16,6 +17,9 @@ import fitz  # PyMuPDF
 import tempfile
 from uuid import uuid4
 import stripe
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Import our new prompt management system
 from prompt_manager import prompt_manager, format_prompt, get_system_prompt, get_prompt
@@ -26,28 +30,124 @@ from analytics.sentiment_tracker import sentiment_tracker, track_session_start, 
 # Load environment variables
 load_dotenv()
 
-app = FastAPI(title="Resume Health Checker", version="1.0.0")
+# =============================================================================
+# CONFIGURATION & CONSTANTS
+# =============================================================================
 
-# Add CORS middleware
+class Settings:
+    """Centralized application settings"""
+    def __init__(self):
+        self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
+        self.stripe_test_key = os.getenv("STRIPE_SECRET_TEST_KEY", "")
+        self.stripe_live_key = os.getenv("STRIPE_SECRET_LIVE_KEY", "")
+        self.stripe_payment_url = os.getenv("STRIPE_PAYMENT_URL", "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02")
+        self.stripe_success_token = os.getenv("STRIPE_PAYMENT_SUCCESS_TOKEN", "payment_success_123")
+        self.environment = os.getenv("RAILWAY_ENVIRONMENT", "development")
+        
+        # Validate required settings
+        if not self.openai_api_key:
+            raise ValueError("OPENAI_API_KEY is required")
+
+class Constants:
+    """Application constants"""
+    # OpenAI Configuration
+    MODEL_NAME = "gpt-4o-mini"
+    TEMPERATURE = 0.7
+    MAX_TOKENS = 1500
+    
+    # File Processing
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt"}
+    ALLOWED_CONTENT_TYPES = {
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain"
+    }
+    
+    # Pricing
+    US_BASE_PRICE = 10.00
+    BUNDLE_DISCOUNT = 0.20  # 20% savings
+    
+    # Session Management
+    SESSION_TIMEOUT = 3600  # 1 hour
+    
+    # Rate Limiting
+    API_RATE_LIMIT = "10/minute"  # 10 requests per minute per IP
+    ANALYSIS_RATE_LIMIT = "3/minute"  # 3 analysis requests per minute per IP
+
+# Initialize settings
+settings = Settings()
+constants = Constants()
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+    ]
+)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="Resume Health Checker", version="3.1.0")
+
+# =============================================================================
+# MIDDLEWARE & RATE LIMITING
+# =============================================================================
+
+# Rate limiting setup
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS configuration based on environment
+allowed_origins = [
+    "https://web-production-f7f3.up.railway.app",
+    "http://localhost:8002",
+    "http://localhost:8001"
+] if settings.environment == "production" else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
+# Global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global exception on {request.url}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal server error", "detail": str(exc)}
+    )
+
+# =============================================================================
+# API CLIENT INITIALIZATION
+# =============================================================================
+
 # Initialize OpenAI client
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = settings.openai_api_key
+logger.info("OpenAI client initialized")
 
 # Stripe configuration
-STRIPE_SUCCESS_TOKEN = os.getenv("STRIPE_PAYMENT_SUCCESS_TOKEN", "payment_success_123")
-STRIPE_PAYMENT_URL = os.getenv("STRIPE_PAYMENT_URL", "https://buy.stripe.com/8x2cN4cC823I3qFcPWfMA02")
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY", os.getenv("STRIPE_SECRET_TEST_KEY", ""))
+stripe.api_key = settings.stripe_test_key or settings.stripe_live_key
+logger.info(f"Stripe client initialized for {settings.environment} environment")
+
+# Legacy constants for backward compatibility
+STRIPE_SUCCESS_TOKEN = settings.stripe_success_token
+STRIPE_PAYMENT_URL = settings.stripe_payment_url
 
 def extract_text_from_pdf(file_content: bytes) -> str:
     """Extract text from PDF file using PyMuPDF"""
     try:
+        logger.info(f"Processing PDF file, size: {len(file_content)} bytes")
+        
         # Create a temporary file to work with PyMuPDF
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
             tmp_file.write(file_content)
@@ -56,40 +156,67 @@ def extract_text_from_pdf(file_content: bytes) -> str:
             # Open PDF and extract text
             doc = fitz.open(tmp_file.name)
             text = ""
-            for page in doc:
+            for page_num, page in enumerate(doc):
                 text += page.get_text()
+                
             doc.close()
             
             # Clean up temporary file
             os.unlink(tmp_file.name)
             
+            logger.info(f"Successfully extracted {len(text)} characters from PDF")
             return text.strip()
+            
     except Exception as e:
+        logger.error(f"PDF processing error: {e}")
         raise HTTPException(status_code=400, detail=f"Error processing PDF: {str(e)}")
 
 def extract_text_from_docx(file_content: bytes) -> str:
     """Extract text from DOCX file using python-docx"""
     try:
+        logger.info(f"Processing DOCX file, size: {len(file_content)} bytes")
+        
         doc = Document(io.BytesIO(file_content))
         text = ""
         for paragraph in doc.paragraphs:
             text += paragraph.text + "\n"
+            
+        logger.info(f"Successfully extracted {len(text)} characters from DOCX")
         return text.strip()
+        
     except Exception as e:
+        logger.error(f"DOCX processing error: {e}")
         raise HTTPException(status_code=400, detail=f"Error processing DOCX: {str(e)}")
 
 def resume_to_text(file: UploadFile) -> str:
     """Convert uploaded resume file to text"""
+    logger.info(f"Processing file: {file.filename}, content_type: {file.content_type}")
+    
+    # Validate file size (check content length if available)
     file_content = file.file.read()
+    if len(file_content) > constants.MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size is {constants.MAX_FILE_SIZE // (1024*1024)}MB"
+        )
+    
+    # Validate content type
+    if file.content_type not in constants.ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=400, 
+            detail="Unsupported file format. Please upload a PDF, DOCX, or TXT file."
+        )
     
     if file.content_type == "application/pdf":
         return extract_text_from_pdf(file_content)
     elif file.content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         return extract_text_from_docx(file_content)
+    elif file.content_type == "text/plain":
+        return file_content.decode('utf-8')
     else:
         raise HTTPException(
             status_code=400, 
-            detail="Unsupported file format. Please upload a PDF or DOCX file."
+            detail="Unsupported file format. Please upload a PDF, DOCX, or TXT file."
         )
 
 def get_free_analysis_prompt(resume_text: str) -> str:
@@ -205,7 +332,9 @@ async def get_ai_analysis(prompt: str) -> dict:
     return await get_ai_analysis_with_retry(prompt)
 
 @app.post("/api/check-resume")
+@limiter.limit(constants.ANALYSIS_RATE_LIMIT)
 async def check_resume(
+    request: Request,
     file: UploadFile = File(...),
     payment_token: Optional[str] = Form(None),
     job_posting: Optional[str] = Form(None)
@@ -295,7 +424,8 @@ async def check_resume(
     return JSONResponse(content=analysis)
 
 @app.get("/", response_class=HTMLResponse)
-async def serve_frontend():
+@limiter.limit(constants.API_RATE_LIMIT)
+async def serve_frontend(request: Request):
     """Serve the main HTML page"""
     html_content = """
     <!DOCTYPE html>
@@ -3363,7 +3493,9 @@ async def get_multi_product_pricing():
         }
 
 @app.post("/api/create-payment-session")
+@limiter.limit(constants.ANALYSIS_RATE_LIMIT)
 async def create_payment_session(
+    request: Request,
     product_type: str = Form(...),  # "individual" or "bundle"
     product_id: str = Form(...),    # product name or bundle name
     session_data: str = Form(...)   # JSON string with user's analysis data

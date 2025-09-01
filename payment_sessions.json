@@ -292,6 +292,49 @@
       },
       "created_at": "2025-08-31T19:05:37.632129+00:00",
       "status": "pending"
+    },
+    "93b6f522-0f5f-4a51-9daf-523691e186c5": {
+      "payment_session_id": "93b6f522-0f5f-4a51-9daf-523691e186c5",
+      "product_type": "individual",
+      "product_id": "resume_analysis",
+      "price_amount": 10,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume content",
+        "session_id": "test_session_e2e",
+        "user_region": "US",
+        "selected_product": "individual_resume_analysis"
+      },
+      "created_at": "2025-09-01T02:11:46.510613+00:00",
+      "status": "pending"
+    },
+    "d3dc37ed-b1dc-44c6-babb-d1fb60304b22": {
+      "payment_session_id": "d3dc37ed-b1dc-44c6-babb-d1fb60304b22",
+      "product_type": "bundle",
+      "product_id": "complete_package",
+      "price_amount": 22,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume content",
+        "session_id": "test_bundle_complete_package",
+        "user_region": "US"
+      },
+      "created_at": "2025-09-01T02:11:46.511677+00:00",
+      "status": "pending"
+    },
+    "b44f2a22-6274-4d98-aef7-c5d28d8d6a4c": {
+      "payment_session_id": "b44f2a22-6274-4d98-aef7-c5d28d8d6a4c",
+      "product_type": "bundle",
+      "product_id": "career_boost",
+      "price_amount": 18,
+      "currency": "USD",
+      "user_session": {
+        "resume_text": "Test resume content",
+        "session_id": "test_bundle_career_boost",
+        "user_region": "US"
+      },
+      "created_at": "2025-09-01T02:11:46.512561+00:00",
+      "status": "pending"
     }
   }
 }

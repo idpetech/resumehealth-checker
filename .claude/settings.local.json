@@ -21,7 +21,8 @@
       "Bash(uvicorn:*)",
       "Bash(curl:*)",
       "Bash(./test_stripe_sandbox.sh:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []
