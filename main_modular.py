@@ -51,12 +51,20 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS configuration based on environment
+# CORS configuration - SECURITY FIX: No wildcards in production
 allowed_origins = [
     "https://web-production-f7f3.up.railway.app",
     "http://localhost:8002",
-    "http://localhost:8001"
-] if settings.environment == "production" else ["*"]
+    "http://localhost:8001",
+    "http://localhost:3000",  # For development frontends
+    "https://resumehealthchecker.com",  # Add your actual domain
+] if settings.environment == "production" else [
+    "http://localhost:8002",
+    "http://localhost:8001", 
+    "http://localhost:3000",
+    "http://127.0.0.1:8002",
+    "http://127.0.0.1:8001"
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -66,14 +74,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global exception handler
+# Global exception handler - SECURITY FIX: Hide error details in production
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Global exception on {request.url}: {exc}")
-    return JSONResponse(
-        status_code=500,
-        content={"error": "Internal server error", "detail": str(exc)}
-    )
+    
+    # Hide sensitive error details in production
+    if settings.environment == "production":
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "Internal server error", 
+                "message": "Something went wrong. Please try again."
+            }
+        )
+    else:
+        # Show details in development for debugging
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Internal server error", "detail": str(exc)}
+        )
 
 # =============================================================================
 # API CLIENT INITIALIZATION
