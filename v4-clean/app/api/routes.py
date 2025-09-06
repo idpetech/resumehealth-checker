@@ -28,11 +28,14 @@ router = APIRouter()
 @router.get("/health")
 async def health_check():
     """Health check endpoint for monitoring and load balancers"""
+    from ..core.config import config
+    import datetime
+    
     return {
         "status": "healthy",
         "service": "Resume Health Checker v4.0",
-        "environment": "local",
-        "timestamp": "2025-09-06T01:00:00Z"
+        "environment": config.environment,
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
     }
 
 @router.get("/premium/{analysis_id}")
