@@ -29,10 +29,22 @@ class AnalysisService:
         """Load AI prompts from JSON file"""
         try:
             prompts_file = Path(__file__).parent.parent / "data" / "prompts.json"
+            logger.info(f"🚀 FORCE DEPLOY TEST: Loading prompts from: {prompts_file}")
+            logger.info(f"🚀 FORCE DEPLOY TEST: Prompts file exists: {prompts_file.exists()}")
+            
             with open(prompts_file, 'r', encoding='utf-8') as f:
                 prompts_data = json.load(f)
             
-            logger.info("AI prompts loaded successfully")
+            logger.info("🚀 FORCE DEPLOY TEST: AI prompts loaded successfully")
+            logger.info(f"🚀 FORCE DEPLOY TEST: Premium prompt first 200 chars: {repr(prompts_data['resume_analysis']['premium']['user_prompt'][:200])}")
+            
+            # Add debug info to verify prompts are loaded correctly
+            premium_prompt = prompts_data['resume_analysis']['premium']['user_prompt']
+            if '{{' in premium_prompt and '}}' in premium_prompt:
+                logger.info("🚀 FORCE DEPLOY TEST: Premium prompt has properly escaped braces")
+            else:
+                logger.error("🚀 FORCE DEPLOY TEST: Premium prompt does NOT have properly escaped braces!")
+                
             return prompts_data
             
         except Exception as e:
@@ -135,6 +147,7 @@ class AnalysisService:
                 logger.info(f"🔍 DEBUG: Cleaned response first 500 chars: {repr(cleaned_response[:500])}")
                 
                 # Parse JSON response
+                logger.info(f"🚨 ABOUT TO PARSE JSON: {repr(cleaned_response[:100])}")
                 result = json.loads(cleaned_response)
                 logger.info(f"Analysis completed: {analysis_type}")
                 return result
@@ -178,7 +191,10 @@ class AnalysisService:
             raise AIAnalysisError("AI service is temporarily unavailable. Please try again later.")
         
         except Exception as e:
-            logger.error(f"Unexpected error in analysis: {e}")
+            logger.error(f"🚨 CRITICAL ERROR in analysis: {e}")
+            logger.error(f"🚨 Error type: {type(e)}")
+            import traceback
+            logger.error(f"🚨 Full traceback: {traceback.format_exc()}")
             raise AIAnalysisError(f"Analysis failed: {str(e)}")
     
     async def generate_cover_letter(
