@@ -33,15 +33,12 @@ class PaymentService:
                 logger.warning("⚠️ Using placeholder Stripe keys - mock payments enabled")
                 self.stripe_available = False
             else:
-                # Only test real keys
+                # Test real keys by making a simple API call
                 try:
-                    if stripe.checkout is not None:
-                        stripe.Balance.retrieve()
-                        logger.info("✅ Stripe connection verified")
-                        self.stripe_available = True
-                    else:
-                        logger.warning("⚠️ Stripe checkout not available - using mock payments")
-                        self.stripe_available = False
+                    # Test the connection by retrieving account balance
+                    stripe.Balance.retrieve()
+                    logger.info("✅ Stripe connection verified")
+                    self.stripe_available = True
                 except Exception as e:
                     logger.warning(f"⚠️ Stripe connection failed - using mock payments: {e}")
                     self.stripe_available = False
