@@ -87,7 +87,7 @@ class AnalysisService:
                 # Escape JSON braces in the prompt to prevent format string issues
                 # But preserve the {resume_text} placeholder
                 prompt_template = prompt_data["user_prompt"]
-                logger.info(f"🔍 DEBUG: Original prompt template length: {len(prompt_template)}")
+                logger.info(f"🚀 FORCE DEPLOY TEST: Original prompt template length: {len(prompt_template)}")
                 logger.info(f"🔍 DEBUG: Original prompt template first 200 chars: {repr(prompt_template[:200])}")
                 
                 # Replace JSON braces with escaped versions, but keep {resume_text}
