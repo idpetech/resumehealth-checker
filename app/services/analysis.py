@@ -77,7 +77,14 @@ class AnalysisService:
             else:
                 # Regular resume analysis
                 prompt_data = self.prompts["resume_analysis"][analysis_type]
-                user_prompt = prompt_data["user_prompt"].format(resume_text=resume_text)
+                # Escape JSON braces in the prompt to prevent format string issues
+                # But preserve the {resume_text} placeholder
+                prompt_template = prompt_data["user_prompt"]
+                # Replace JSON braces with escaped versions, but keep {resume_text}
+                prompt_template = prompt_template.replace("{resume_text}", "___RESUME_TEXT_PLACEHOLDER___")
+                prompt_template = prompt_template.replace("{", "{{").replace("}", "}}")
+                prompt_template = prompt_template.replace("___RESUME_TEXT_PLACEHOLDER___", "{resume_text}")
+                user_prompt = prompt_template.format(resume_text=resume_text)
             
             # Prepare messages for OpenAI
             messages = [
