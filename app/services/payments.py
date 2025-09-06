@@ -88,6 +88,12 @@ class PaymentService:
             # Calculate session expiry (30 minutes from now)
             expires_at = int((datetime.utcnow() + timedelta(minutes=30)).timestamp())
             
+            # Get URLs for logging
+            success_url = config.get_stripe_success_url(analysis_id, product_type)
+            cancel_url = config.get_stripe_cancel_url(analysis_id, product_type)
+            logger.info(f"Success URL: {success_url}")
+            logger.info(f"Cancel URL: {cancel_url}")
+            
             # Create Stripe session with bulletproof URLs
             session = stripe.checkout.Session.create(
                 mode='payment',
@@ -106,8 +112,8 @@ class PaymentService:
                 }],
                 
                 # CRITICAL: Bulletproof success/cancel URLs with all context
-                success_url=config.get_stripe_success_url(analysis_id, product_type),
-                cancel_url=config.get_stripe_cancel_url(analysis_id, product_type),
+                success_url=success_url,
+                cancel_url=cancel_url,
                 
                 # Session configuration
                 expires_at=expires_at,
@@ -177,6 +183,9 @@ class PaymentService:
         
         except Exception as e:
             logger.error(f"Unexpected error creating payment session: {e}")
+            logger.error(f"Error type: {type(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             raise PaymentError(f"Payment session creation failed: {str(e)}")
     
     async def verify_payment_session(self, session_id: str) -> Dict[str, Any]:

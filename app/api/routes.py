@@ -267,14 +267,22 @@ async def create_payment_session(
         logger.info(f"About to create payment session with: analysis_id={analysis_id}, amount={amount}, currency={currency}")
         payment_service = get_payment_service()
         logger.info(f"Payment service obtained: {payment_service}")
-        session_data = await payment_service.create_payment_session(
-            analysis_id=analysis_id,
-            product_type=product_type,
-            amount=amount,
-            currency=currency,
-            product_name=product_name
-        )
-        logger.info(f"Payment session created: {session_data}")
+        
+        try:
+            session_data = await payment_service.create_payment_session(
+                analysis_id=analysis_id,
+                product_type=product_type,
+                amount=amount,
+                currency=currency,
+                product_name=product_name
+            )
+            logger.info(f"Payment session created: {session_data}")
+        except Exception as e:
+            logger.error(f"Error in create_payment_session: {e}")
+            logger.error(f"Error type: {type(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            raise
         
         return {
             "payment_session": session_data,
