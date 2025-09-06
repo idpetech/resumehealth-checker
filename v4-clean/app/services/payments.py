@@ -81,8 +81,12 @@ class PaymentService:
         
         # Check if Stripe is available
         if not self.stripe_available:
-            logger.warning("Stripe not available - returning mock payment session for testing")
-            return self._create_mock_payment_session(analysis_id, product_type, amount, currency, product_name)
+            if self.environment == "local":
+                logger.warning("Stripe not available - returning mock payment session for local development")
+                return self._create_mock_payment_session(analysis_id, product_type, amount, currency, product_name)
+            else:
+                logger.error(f"CRITICAL: Stripe not available in {self.environment} environment - payment processing disabled")
+                raise PaymentError(f"Payment processing is not available in {self.environment} environment. Please contact support.")
         
         try:
             # Generate unique session reference
@@ -349,7 +353,13 @@ class PaymentService:
         currency: str,
         product_name: str
     ) -> Dict[str, Any]:
-        """Create a mock payment session for testing when Stripe is not available"""
+        """
+        Create a mock payment session for LOCAL DEVELOPMENT ONLY.
+        
+        SECURITY NOTE: This should NEVER be used in staging or production environments.
+        Mock payments are only allowed in local development to prevent accidental
+        real payments during testing.
+        """
         session_ref = f"mock_analysis_{analysis_id}_{uuid.uuid4().hex[:8]}"
         expires_at = int((datetime.utcnow() + timedelta(minutes=30)).timestamp())
         
@@ -369,7 +379,7 @@ class PaymentService:
             'product_type': product_type,
             'environment': self.environment,
             'mock': True,
-            'message': 'This is a mock payment session for testing. Stripe keys are not configured.'
+            'message': 'This is a mock payment session for LOCAL DEVELOPMENT ONLY. Stripe keys are not configured.'
         }
 
 # Singleton instance - lazy initialization
