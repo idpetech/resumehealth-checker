@@ -70,7 +70,14 @@ class AnalysisService:
             if job_posting:
                 # Job fit analysis
                 prompt_data = self.prompts["job_fit"][analysis_type]
-                user_prompt = prompt_data["user_prompt"].format(
+                # Escape JSON braces in the prompt to prevent format string issues
+                prompt_template = prompt_data["user_prompt"]
+                prompt_template = prompt_template.replace("{resume_text}", "___RESUME_TEXT_PLACEHOLDER___")
+                prompt_template = prompt_template.replace("{job_posting}", "___JOB_POSTING_PLACEHOLDER___")
+                prompt_template = prompt_template.replace("{", "{{").replace("}", "}}")
+                prompt_template = prompt_template.replace("___RESUME_TEXT_PLACEHOLDER___", "{resume_text}")
+                prompt_template = prompt_template.replace("___JOB_POSTING_PLACEHOLDER___", "{job_posting}")
+                user_prompt = prompt_template.format(
                     resume_text=resume_text, 
                     job_posting=job_posting
                 )
@@ -190,7 +197,14 @@ class AnalysisService:
             
             # Get cover letter prompt
             prompt_data = self.prompts["cover_letter"][analysis_type]
-            user_prompt = prompt_data["user_prompt"].format(
+            # Escape JSON braces in the prompt to prevent format string issues
+            prompt_template = prompt_data["user_prompt"]
+            prompt_template = prompt_template.replace("{resume_text}", "___RESUME_TEXT_PLACEHOLDER___")
+            prompt_template = prompt_template.replace("{job_posting}", "___JOB_POSTING_PLACEHOLDER___")
+            prompt_template = prompt_template.replace("{", "{{").replace("}", "}}")
+            prompt_template = prompt_template.replace("___RESUME_TEXT_PLACEHOLDER___", "{resume_text}")
+            prompt_template = prompt_template.replace("___JOB_POSTING_PLACEHOLDER___", "{job_posting}")
+            user_prompt = prompt_template.format(
                 resume_text=resume_text,
                 job_posting=job_posting
             )
