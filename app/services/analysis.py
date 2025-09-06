@@ -87,11 +87,20 @@ class AnalysisService:
                 # Escape JSON braces in the prompt to prevent format string issues
                 # But preserve the {resume_text} placeholder
                 prompt_template = prompt_data["user_prompt"]
+                logger.info(f"Original prompt template length: {len(prompt_template)}")
+                logger.info(f"Original prompt template first 200 chars: {repr(prompt_template[:200])}")
+                
                 # Replace JSON braces with escaped versions, but keep {resume_text}
                 prompt_template = prompt_template.replace("{resume_text}", "___RESUME_TEXT_PLACEHOLDER___")
                 prompt_template = prompt_template.replace("{", "{{").replace("}", "}}")
                 prompt_template = prompt_template.replace("___RESUME_TEXT_PLACEHOLDER___", "{resume_text}")
+                
+                logger.info(f"Escaped prompt template length: {len(prompt_template)}")
+                logger.info(f"Escaped prompt template first 200 chars: {repr(prompt_template[:200])}")
+                
                 user_prompt = prompt_template.format(resume_text=resume_text)
+                logger.info(f"Final user prompt length: {len(user_prompt)}")
+                logger.info(f"Final user prompt first 200 chars: {repr(user_prompt[:200])}")
             
             # Prepare messages for OpenAI
             messages = [
@@ -116,10 +125,14 @@ class AnalysisService:
             
             # Extract and parse response
             ai_response = response.choices[0].message.content
+            logger.info(f"AI response length: {len(ai_response) if ai_response else 0}")
+            logger.info(f"AI response first 500 chars: {repr(ai_response[:500]) if ai_response else 'None'}")
             
             try:
                 # Clean the response by removing markdown formatting
                 cleaned_response = self._clean_json_response(ai_response)
+                logger.info(f"Cleaned response length: {len(cleaned_response)}")
+                logger.info(f"Cleaned response first 500 chars: {repr(cleaned_response[:500])}")
                 
                 # Parse JSON response
                 result = json.loads(cleaned_response)
