@@ -328,6 +328,9 @@ async def payment_success(
         if not analysis:
             return HTMLResponse(content="<h1>Analysis Not Found</h1>", status_code=404)
         
+        logger.info(f"Retrieved analysis for {analysis_id}: {analysis.get('id', 'no-id')}")
+        logger.info(f"Analysis premium_result: {analysis.get('premium_result', 'None')}")
+        
         # Mark as paid and trigger premium analysis if needed
         amount_paid = verification['amount_total']
         currency = verification['currency'].upper()
@@ -367,6 +370,11 @@ async def payment_success(
         AnalysisDB.update_premium_result(analysis_id, premium_result)
         analysis['premium_result'] = premium_result
         logger.info(f"Premium analysis result created for {analysis_id}")
+        logger.info(f"Analysis premium_result after update: {analysis.get('premium_result', 'None')}")
+        
+        # Re-retrieve analysis to ensure we have the latest data
+        analysis = AnalysisDB.get(analysis_id)
+        logger.info(f"Re-retrieved analysis premium_result: {analysis.get('premium_result', 'None')}")
         
         # Return success page with results
         success_html = f"""
