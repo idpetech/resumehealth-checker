@@ -38,6 +38,20 @@ async def health_check():
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
     }
 
+@router.get("/debug/payment")
+async def debug_payment_service():
+    """Debug endpoint to check PaymentService status"""
+    from ..core.config import config
+    payment_service = get_payment_service()
+    
+    return {
+        "environment": config.environment,
+        "stripe_secret_key_prefix": config.stripe_secret_key[:10] + "..." if config.stripe_secret_key else "None",
+        "stripe_secret_key_length": len(config.stripe_secret_key) if config.stripe_secret_key else 0,
+        "stripe_available": payment_service.stripe_available,
+        "use_stripe_test_keys": config.use_stripe_test_keys
+    }
+
 @router.get("/premium/{analysis_id}")
 async def get_premium_service(analysis_id: str, product_type: str = "resume_analysis"):
     """
