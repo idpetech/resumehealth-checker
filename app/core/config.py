@@ -79,11 +79,11 @@ class Config:
     
     def get_stripe_success_url(self, analysis_id: str, product_type: str) -> str:
         """Generate Stripe success URL with parameters"""
-        return f"{self.base_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}&analysis_id={analysis_id}&product_type={product_type}"
+        return f"{self.base_url}/api/v1/payment/success?session_id={{CHECKOUT_SESSION_ID}}&analysis_id={analysis_id}&product_type={product_type}"
     
     def get_stripe_cancel_url(self, analysis_id: str, product_type: str) -> str:
         """Generate Stripe cancel URL with parameters"""
-        return f"{self.base_url}/payment/cancel?analysis_id={analysis_id}&product_type={product_type}"
+        return f"{self.base_url}/api/v1/payment/cancel?analysis_id={analysis_id}&product_type={product_type}"
 
 # Global configuration instance
 config = Config()
