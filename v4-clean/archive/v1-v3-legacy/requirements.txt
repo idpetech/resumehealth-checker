@@ -1,0 +1,8 @@
+# Resume Health Checker v4.0 - Minimal Dependencies
+# Only 5 packages for maximum simplicity and security
+
+fastapi==0.104.1           # Modern async web framework
+uvicorn[standard]==0.24.0  # ASGI server with standard extras
+python-multipart==0.0.6    # File upload support
+stripe==7.8.0              # Payment processing
+openai==1.3.5              # AI analysis integration

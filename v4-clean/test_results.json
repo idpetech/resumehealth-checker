@@ -1,0 +1,86 @@
+{
+  "total_tests": 6,
+  "passed_tests": 6,
+  "failed_tests": 0,
+  "success_rate": 100.0,
+  "test_results": [
+    {
+      "test": "Health Check",
+      "success": true,
+      "details": "Status: healthy",
+      "timestamp": 1757122857.4173608
+    },
+    {
+      "test": "File Upload - ResumeLAW.docx",
+      "success": true,
+      "details": "Analysis ID: b4d7e3b7-8a3e-4754-b1ff-b07ab1d59b76",
+      "timestamp": 1757122862.4776
+    },
+    {
+      "test": "File Upload & Analysis",
+      "success": true,
+      "details": "Successfully processed 1/1 files",
+      "timestamp": 1757122862.477612
+    },
+    {
+      "test": "Payment Session Creation",
+      "success": true,
+      "details": "Session ID: mock_mock_analysis_b4d7e3b7-8a3e-4754-b1ff-b07ab1d59b76_f04beb16",
+      "timestamp": 1757122862.4871109
+    },
+    {
+      "test": "Payment Session URL",
+      "success": true,
+      "details": "URL: http://localhost:8000/payment/mock?session_id=mock_mock_analysis_b4d7e3b7-8a3e-4754-b1ff-b07ab1d59b76_f04beb16&analysis_id=b4d7e3b7-8a3e-4754-b1ff-b07ab1d59b76&product_type=resume_analysis",
+      "timestamp": 1757122862.4871192
+    },
+    {
+      "test": "Regional Pricing - US",
+      "success": true,
+      "details": "Currency: USD",
+      "timestamp": 1757122862.4908311
+    },
+    {
+      "test": "Regional Pricing - PK",
+      "success": true,
+      "details": "Currency: PKR",
+      "timestamp": 1757122862.49419
+    },
+    {
+      "test": "Regional Pricing - IN",
+      "success": true,
+      "details": "Currency: INR",
+      "timestamp": 1757122862.4968178
+    },
+    {
+      "test": "Regional Pricing - HK",
+      "success": true,
+      "details": "Currency: HKD",
+      "timestamp": 1757122862.5010948
+    },
+    {
+      "test": "Regional Pricing - AE",
+      "success": true,
+      "details": "Currency: AED",
+      "timestamp": 1757122862.5046499
+    },
+    {
+      "test": "Regional Pricing - BD",
+      "success": true,
+      "details": "Currency: BDT",
+      "timestamp": 1757122862.5088582
+    },
+    {
+      "test": "Analysis Retrieval",
+      "success": true,
+      "details": "Type: free, Status: pending",
+      "timestamp": 1757122862.512297
+    },
+    {
+      "test": "Webhook Endpoint",
+      "success": true,
+      "details": "Endpoint exists and validates signatures",
+      "timestamp": 1757122862.51527
+    }
+  ]
+}
