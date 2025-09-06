@@ -117,6 +117,20 @@ class AnalysisService:
                 logger.warning(f"AI response was not valid JSON: {e}")
                 logger.warning(f"Raw AI response: {ai_response[:500]}...")
                 logger.warning(f"Cleaned response: {cleaned_response[:500]}...")
+                
+                # Try to extract any valid JSON parts
+                try:
+                    # Look for any valid JSON object in the response
+                    import re
+                    json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
+                    if json_match:
+                        partial_json = json_match.group()
+                        result = json.loads(partial_json)
+                        logger.info("Successfully extracted partial JSON from malformed response")
+                        return result
+                except:
+                    pass
+                
                 return {
                     "analysis_type": analysis_type,
                     "raw_response": ai_response,
@@ -251,6 +265,13 @@ class AnalysisService:
         
         if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
             response = response[first_brace:last_brace + 1]
+        else:
+            # If no proper JSON braces found, try to fix common issues
+            logger.warning(f"No proper JSON braces found in response: {response[:200]}...")
+            # Try to add missing opening brace if response starts with a field
+            if response.strip().startswith('"') and not response.strip().startswith('{'):
+                response = '{' + response.strip() + '}'
+                logger.info("Attempted to fix malformed JSON by adding braces")
         
         return response
 
