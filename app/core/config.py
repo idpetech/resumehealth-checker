@@ -64,6 +64,11 @@ class Config:
         
     def _get_base_url(self) -> str:
         """Get the appropriate base URL for the current environment"""
+        # Allow explicit override via PUBLIC_BASE_URL
+        public_base_url = os.getenv("PUBLIC_BASE_URL")
+        if public_base_url:
+            return public_base_url.rstrip('/')
+        
         if self.environment == "local":
             port = os.getenv("PORT", "8000")
             return f"http://localhost:{port}"

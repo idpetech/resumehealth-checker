@@ -18,10 +18,8 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 # Import our modular components
-from app.config.settings import settings, constants
-from app.routes.main import router as main_router
-from app.routes.analysis import router as analysis_router
-from app.routes.legacy_proxy import router as proxy_router
+from app.core.config import config
+from app.api.routes import router as api_router
 
 # =============================================================================
 # LOGGING CONFIGURATION
@@ -58,7 +56,7 @@ allowed_origins = [
     "http://localhost:8001",
     "http://localhost:3000",  # For development frontends
     "https://resumehealthchecker.com",  # Add your actual domain
-] if settings.environment == "production" else [
+] if config.environment == "production" else [
     "http://localhost:8002",
     "http://localhost:8001", 
     "http://localhost:3000",
@@ -80,7 +78,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Global exception on {request.url}: {exc}")
     
     # Hide sensitive error details in production
-    if settings.environment == "production":
+    if config.environment == "production":
         return JSONResponse(
             status_code=500,
             content={
@@ -100,25 +98,23 @@ async def global_exception_handler(request: Request, exc: Exception):
 # =============================================================================
 
 # Initialize OpenAI client
-openai.api_key = settings.openai_api_key
+openai.api_key = config.openai_api_key
 logger.info("OpenAI client initialized")
 
 # Stripe configuration
-stripe.api_key = settings.stripe_test_key or settings.stripe_live_key
-logger.info(f"Stripe client initialized for {settings.environment} environment")
+stripe.api_key = config.stripe_secret_key
+logger.info(f"Stripe client initialized for {config.environment} environment")
 
-# Legacy constants for backward compatibility
-STRIPE_SUCCESS_TOKEN = settings.stripe_success_token
-STRIPE_PAYMENT_URL = settings.stripe_payment_url
+# Legacy constants for backward compatibility (if needed)
+STRIPE_SUCCESS_TOKEN = "payment_success_123"  # Default value
+STRIPE_PAYMENT_URL = "https://buy.stripe.com/test_placeholder"  # Default value
 
 # =============================================================================
 # ROUTE REGISTRATION
 # =============================================================================
 
 # Register route modules
-app.include_router(main_router)
-app.include_router(analysis_router)
-app.include_router(proxy_router)
+app.include_router(api_router, prefix="/api/v1")
 
 # =============================================================================
 # TEMPORARY IMPORTS FOR BACKWARD COMPATIBILITY

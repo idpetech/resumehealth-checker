@@ -28,20 +28,20 @@ class PaymentService:
             
             logger.info(f"Payment service initialized for {self.environment} environment")
             
-            # Always use mock payments for testing with placeholder keys
-            if "placeholder" in config.stripe_secret_key or not config.stripe_secret_key:
-                logger.warning("⚠️ Using placeholder Stripe keys - mock payments enabled")
+            # Check if we have valid Stripe keys
+            if not config.stripe_secret_key or "placeholder" in config.stripe_secret_key or "your-" in config.stripe_secret_key:
+                logger.warning("⚠️ No valid Stripe keys configured - mock payments enabled")
                 self.stripe_available = False
             else:
-                # Only test real keys
+                # Test real Stripe keys
                 try:
-                    if stripe.checkout is not None:
-                        stripe.Balance.retrieve()
-                        logger.info("✅ Stripe connection verified")
-                        self.stripe_available = True
-                    else:
-                        logger.warning("⚠️ Stripe checkout not available - using mock payments")
-                        self.stripe_available = False
+                    # Test the connection by retrieving account balance
+                    stripe.Balance.retrieve()
+                    logger.info("✅ Stripe connection verified with real keys")
+                    self.stripe_available = True
+                except stripe.error.AuthenticationError as e:
+                    logger.warning(f"⚠️ Stripe authentication failed - using mock payments: {e}")
+                    self.stripe_available = False
                 except Exception as e:
                     logger.warning(f"⚠️ Stripe connection failed - using mock payments: {e}")
                     self.stripe_available = False
