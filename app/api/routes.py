@@ -313,28 +313,36 @@ async def payment_success(
     logger.info(f"Payment success: session {session_id}, analysis {analysis_id}")
     
     try:
-        # For local testing, check database first
+        # Check environment - use database verification only for local testing
+        from app.core.config import config
         from app.core.database import PaymentDB
-        db_payment = PaymentDB.get_by_session_id(session_id)
         
-        if db_payment and db_payment.get('status') == 'paid':
-            logger.info(f"Payment verified from database: {session_id}")
-            verification = {
-                'payment_status': 'paid',
-                'session_id': session_id,
-                'amount_total': db_payment.get('amount', 0),
-                'currency': db_payment.get('currency', 'usd')
-            }
-        else:
-            # Verify payment with Stripe
-            verification = await get_payment_service().verify_payment_session(session_id)
+        if config.environment == "local":
+            # Local testing: check database first
+            db_payment = PaymentDB.get_by_session_id(session_id)
             
-            if verification['payment_status'] != 'paid':
-                logger.warning(f"Payment not completed: {verification['payment_status']}")
-                return HTMLResponse(
-                    content=f"<h1>Payment Not Completed</h1><p>Payment status: {verification['payment_status']}</p>",
-                    status_code=400
-                )
+            if db_payment and db_payment.get('status') == 'paid':
+                logger.info(f"Payment verified from database (local): {session_id}")
+                verification = {
+                    'payment_status': 'paid',
+                    'session_id': session_id,
+                    'amount_total': db_payment.get('amount', 0),
+                    'currency': db_payment.get('currency', 'usd')
+                }
+            else:
+                # Fallback to Stripe verification for local
+                verification = await get_payment_service().verify_payment_session(session_id)
+        else:
+            # Production/Staging: verify payment with Stripe directly
+            logger.info(f"Verifying payment with Stripe (production): {session_id}")
+            verification = await get_payment_service().verify_payment_session(session_id)
+        
+        if verification['payment_status'] != 'paid':
+            logger.warning(f"Payment not completed: {verification['payment_status']}")
+            return HTMLResponse(
+                content=f"<h1>Payment Not Completed</h1><p>Payment status: {verification['payment_status']}</p>",
+                status_code=400
+            )
         
         # Get analysis
         analysis = AnalysisDB.get(analysis_id)
