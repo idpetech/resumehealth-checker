@@ -1,3 +1,479 @@
+"""
+❌ DEPRECATED: MONOLITHIC LEGACY FILE - DO NOT MODIFY ❌
+
+This is the old 3,700+ line monolithic version of the Resume Health Checker.
+This file should NOT be used for new development or modifications.
+
+🏗️ USE THE MODULAR VERSION INSTEAD:
+- Main file: main_modular.py
+- Routes: app/routes/
+- Services: app/services/
+- Config: app/config/
+
+⚠️ WARNING: This file is maintained only for:
+1. Backward compatibility during transition
+2. Legacy function imports
+3. Emergency fallback
+
+🚫 DO NOT:
+- Add new features here
+- Modify existing endpoints
+- Fix bugs in this file
+
+✅ DO INSTEAD:
+- Use main_modular.py for the app
+- Add routes to app/routes/
+- Add services to app/services/
+- Import legacy functions if needed
+
+⚠️ This monolithic approach was replaced with modular architecture in v3.2.0
+"""
+
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+import os
+import json
+import io
+import asyncio
+import time
+import logging
+from datetime import datetime, timezone
+from typing import Optional
+from dotenv import load_dotenv
+import openai
+from docx import Document
+import fitz  # PyMuPDF
+import tempfile
+from uuid import uuid4
+import stripe
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+# Import our new prompt management system
+from prompt_manager import prompt_manager, format_prompt, get_system_prompt, get_prompt
+
+# Import sentiment tracking system
+from analytics.sentiment_tracker import sentiment_tracker, track_session_start, track_analysis_completion, track_sentiment, track_conversion
+
+# Load environment variables
+load_dotenv()
+
+# =============================================================================
+# CONFIGURATION & CONSTANTS
+# =============================================================================
+
+class Settings:
+    """Centralized application settings"""
+    def __init__(self):
+        self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
+        self.stripe_test_key = os.getenv("STRIPE_SECRET_TEST_KEY", "")
+        self.stripe_live_key = os.getenv("STRIPE_SECRET_LIVE_KEY", "")
+        self.stripe_payment_url = os.getenv("STRIPE_PAYMENT_URL", "https://buy.stripe.com/test_dRm8wPaXq2028FEgNQ0000F")
+        self.stripe_success_token = os.getenv("STRIPE_PAYMENT_SUCCESS_TOKEN", "payment_success_123")
+        self.environment = os.getenv("RAILWAY_ENVIRONMENT", "development")
+        
+        # Validate required settings
+        if not self.openai_api_key:
+            raise ValueError("OPENAI_API_KEY is required")
+
+class Constants:
+    """Application constants"""
+    # OpenAI Configuration
+    MODEL_NAME = "gpt-4o-mini"
+    TEMPERATURE = 0.7
+    MAX_TOKENS = 1500
+    
+    # File Processing
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt"}
+    ALLOWED_CONTENT_TYPES = {
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain"
+    }
+    
+    # Pricing
+    US_BASE_PRICE = 10.00
+    BUNDLE_DISCOUNT = 0.20  # 20% savings
+    
+    # Session Management
+    SESSION_TIMEOUT = 3600  # 1 hour
+    
+    # Rate Limiting
+    API_RATE_LIMIT = "10/minute"  # 10 requests per minute per IP
+    ANALYSIS_RATE_LIMIT = "3/minute"  # 3 analysis requests per minute per IP
+
+# Initialize settings
+settings = Settings()
+constants = Constants()
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+    ]
+)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="Resume Health Checker", version="3.1.0")
+
+# =============================================================================
+# MIDDLEWARE & RATE LIMITING
+# =============================================================================
+
+# Rate limiting setup
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS configuration based on environment
+allowed_origins = [
+    "https://web-production-f7f3.up.railway.app",
+    "http://localhost:8002",
+    "http://localhost:8001"
+] if settings.environment == "production" else ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
+# Global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global exception on {request.url}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal server error", "detail": str(exc)}
+    )
+
+# =============================================================================
+# API CLIENT INITIALIZATION
+# =============================================================================
+
+# Initialize OpenAI client
+openai.api_key = settings.openai_api_key
+logger.info("OpenAI client initialized")
+
+# Stripe configuration
+stripe.api_key = settings.stripe_test_key or settings.stripe_live_key
+logger.info(f"Stripe client initialized for {settings.environment} environment")
+
+# Legacy constants for backward compatibility
+STRIPE_SUCCESS_TOKEN = settings.stripe_success_token
+STRIPE_PAYMENT_URL = settings.stripe_payment_url
+
+def extract_text_from_pdf(file_content: bytes) -> str:
+    """Extract text from PDF file using PyMuPDF"""
+    try:
+        logger.info(f"Processing PDF file, size: {len(file_content)} bytes")
+        
+        # Create a temporary file to work with PyMuPDF
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+            tmp_file.write(file_content)
+            tmp_file.flush()
+            
+            # Open PDF and extract text
+            doc = fitz.open(tmp_file.name)
+            text = ""
+            for page_num, page in enumerate(doc):
+                text += page.get_text()
+                
+            doc.close()
+            
+            # Clean up temporary file
+            os.unlink(tmp_file.name)
+            
+            logger.info(f"Successfully extracted {len(text)} characters from PDF")
+            return text.strip()
+            
+    except Exception as e:
+        logger.error(f"PDF processing error: {e}")
+        raise HTTPException(status_code=400, detail=f"Error processing PDF: {str(e)}")
+
+def extract_text_from_docx(file_content: bytes) -> str:
+    """Extract text from DOCX file using python-docx"""
+    try:
+        logger.info(f"Processing DOCX file, size: {len(file_content)} bytes")
+        
+        doc = Document(io.BytesIO(file_content))
+        text = ""
+        for paragraph in doc.paragraphs:
+            text += paragraph.text + "\n"
+            
+        logger.info(f"Successfully extracted {len(text)} characters from DOCX")
+        return text.strip()
+        
+    except Exception as e:
+        logger.error(f"DOCX processing error: {e}")
+        raise HTTPException(status_code=400, detail=f"Error processing DOCX: {str(e)}")
+
+def resume_to_text(file: UploadFile) -> str:
+    """Convert uploaded resume file to text"""
+    logger.info(f"Processing file: {file.filename}, content_type: {file.content_type}")
+    
+    # Validate file size (check content length if available)
+    file_content = file.file.read()
+    if len(file_content) > constants.MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size is {constants.MAX_FILE_SIZE // (1024*1024)}MB"
+        )
+    
+    # Get file extension for fallback detection
+    file_extension = os.path.splitext(file.filename.lower())[1]
+    
+    # Determine file type by MIME type or extension (for application/octet-stream)
+    content_type = file.content_type
+    if content_type == "application/octet-stream":
+        # Use file extension to determine type for generic uploads
+        if file_extension == ".pdf":
+            content_type = "application/pdf"
+        elif file_extension == ".docx":
+            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        elif file_extension == ".txt":
+            content_type = "text/plain"
+    
+    # Validate content type (after mapping from extension)
+    if content_type not in constants.ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=400, 
+            detail="Unsupported file format. Please upload a PDF, DOCX, or TXT file."
+        )
+    
+    if content_type == "application/pdf":
+        return extract_text_from_pdf(file_content)
+    elif content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return extract_text_from_docx(file_content)
+    elif content_type == "text/plain":
+        return file_content.decode('utf-8')
+    else:
+        raise HTTPException(
+            status_code=400, 
+            detail="Unsupported file format. Please upload a PDF, DOCX, or TXT file."
+        )
+
+def get_free_analysis_prompt(resume_text: str) -> str:
+    """Generate hope-driven prompt for free resume analysis"""
+    return format_prompt("resume_analysis", "free", resume_text=resume_text)
+
+def get_job_matching_prompt(resume_text: str, job_posting: str, is_paid: bool = False) -> str:
+    """Generate hope-driven prompt for job matching analysis"""
+    if is_paid:
+        return format_prompt("job_fit", "premium", resume_text=resume_text, job_posting=job_posting)
+    else:
+        return format_prompt("job_fit", "free", resume_text=resume_text, job_posting=job_posting)
+
+def get_paid_analysis_prompt(resume_text: str) -> str:
+    """Generate hope-driven prompt for detailed paid resume analysis"""
+    return format_prompt("resume_analysis", "premium", resume_text=resume_text)
+
+async def get_ai_analysis_with_retry(prompt: str, max_retries: int = 3) -> dict:
+    """Get analysis from OpenAI with robust retry mechanism for slow/flaky connections"""
+    
+    for attempt in range(max_retries):
+        try:
+            # Calculate exponential backoff delay
+            if attempt > 0:
+                delay = min(2 ** (attempt - 1), 10)  # Max 10 seconds delay
+                print(f"⏳ Retry {attempt}/{max_retries} after {delay}s delay...")
+                await asyncio.sleep(delay)
+            
+            print(f"🔍 Calling OpenAI API (attempt {attempt + 1}/{max_retries})")
+            
+            # Use synchronous client with timeout handling (compatible with openai 1.3.5)
+            response = openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are an expert resume reviewer. Always respond with valid JSON only."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=1500,
+                timeout=60.0  # 60 second timeout for slow connections
+            )
+            
+            result = response.choices[0].message.content.strip()
+            print(f"✅ OpenAI API response received: {len(result)} characters")
+            
+            # Clean the response - remove markdown code blocks if present
+            if result.startswith('```json'):
+                result = result[7:]  # Remove ```json
+            if result.startswith('```'):
+                result = result[3:]   # Remove ```
+            if result.endswith('```'):
+                result = result[:-3]  # Remove trailing ```
+            
+            result = result.strip()
+            print(f"🧹 Cleaned response: {len(result)} characters")
+            
+            # Parse JSON to validate it's properly formatted
+            parsed_result = json.loads(result)
+            print(f"✅ JSON parsing successful on attempt {attempt + 1}")
+            return parsed_result
+            
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON parsing error on attempt {attempt + 1}: {str(e)}")
+            if attempt == max_retries - 1:  # Last attempt
+                print(f"Raw AI response: {result[:200] if 'result' in locals() else 'No response'}...")
+                raise HTTPException(
+                    status_code=503, 
+                    detail="AI service returned invalid response format. Please try again in a moment."
+                )
+            continue
+            
+        except Exception as e:
+            error_msg = str(e).lower()
+            print(f"❌ OpenAI error on attempt {attempt + 1}: {str(e)}")
+            print(f"Error type: {type(e).__name__}")
+            
+            # Handle different types of errors with specific user messages
+            if "timeout" in error_msg or "connection" in error_msg:
+                if attempt == max_retries - 1:
+                    raise HTTPException(
+                        status_code=503, 
+                        detail="Connection timeout. Your internet connection may be slow. Please try again."
+                    )
+            elif "rate limit" in error_msg:
+                if attempt < max_retries - 1:
+                    # Wait longer for rate limits
+                    await asyncio.sleep(min(5 * (attempt + 1), 20))
+                else:
+                    raise HTTPException(
+                        status_code=503, 
+                        detail="Service temporarily overloaded. Please try again in a few minutes."
+                    )
+            elif "api" in error_msg and "error" in error_msg:
+                if attempt == max_retries - 1:
+                    raise HTTPException(
+                        status_code=503, 
+                        detail="AI service temporarily unavailable. Please try again in a moment."
+                    )
+            else:
+                if attempt == max_retries - 1:
+                    raise HTTPException(
+                        status_code=503, 
+                        detail="Service temporarily unavailable. Please try again later."
+                    )
+            continue
+    
+    # This should never be reached due to the exception handling above
+    raise HTTPException(status_code=503, detail="Service temporarily unavailable")
+
+# Legacy function name for backward compatibility
+async def get_ai_analysis(prompt: str) -> dict:
+    """Legacy wrapper for get_ai_analysis_with_retry"""
+    return await get_ai_analysis_with_retry(prompt)
+
+@app.post("/api/check-resume")
+@limiter.limit(constants.ANALYSIS_RATE_LIMIT)
+async def check_resume(
+    request: Request,
+    file: UploadFile = File(...),
+    payment_token: Optional[str] = Form(None),
+    job_posting: Optional[str] = Form(None)
+):
+    """
+    Main endpoint for resume analysis
+    - Without payment_token: Returns free analysis (job matching if job_posting provided)
+    - With valid payment_token: Returns detailed paid analysis
+    - With job_posting: Returns job fit analysis instead of general resume analysis
+    """
+    
+    print(f"📁 File upload received: {file.filename}, type: {file.content_type}, size: {file.size}")
+    
+    # Validate file type - be flexible with MIME types and check file extension too
+    valid_mime_types = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/octet-stream"  # Common for file uploads
+    ]
+    
+    valid_extensions = [".pdf", ".docx"]
+    file_extension = os.path.splitext(file.filename.lower())[1]
+    
+    if not (file.content_type in valid_mime_types or file_extension in valid_extensions):
+        print(f"❌ Invalid file: {file.content_type}, extension: {file_extension}")
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload a PDF or Word document"
+        )
+    
+    # Additional validation for octet-stream - must have valid extension
+    if file.content_type == "application/octet-stream" and file_extension not in valid_extensions:
+        print(f"❌ Invalid file type for octet-stream: {file_extension}")
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload a PDF or Word document"
+        )
+    
+    # Extract text from resume
+    try:
+        resume_text = resume_to_text(file)
+        if not resume_text.strip():
+            raise HTTPException(status_code=400, detail="Could not extract text from file")
+    except Exception as e:
+        print(f"❌ Exception during text extraction: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    # Determine if this is a paid or free analysis
+    is_paid = payment_token == STRIPE_SUCCESS_TOKEN or payment_token == 'session_validated'
+    
+    # Generate session ID for tracking
+    import uuid
+    session_id = str(uuid.uuid4())
+    
+    # Determine product type and track session start
+    if job_posting and job_posting.strip():
+        product = "job_fit"
+        print(f"📋 Job posting provided, using job matching analysis")
+        prompt = get_job_matching_prompt(resume_text, job_posting.strip(), is_paid)
+        prompt_version = "v1.0-hope"
+    elif is_paid:
+        product = "resume_analysis"
+        prompt = get_paid_analysis_prompt(resume_text)
+        prompt_version = "v1.0-hope"
+    else:
+        product = "resume_analysis"
+        prompt = get_free_analysis_prompt(resume_text)
+        prompt_version = "v1.0-hope"
+    
+    # Track session start
+    track_session_start(session_id, product)
+    
+    # Record start time for processing duration
+    start_time = time.time()
+    
+    analysis = await get_ai_analysis(prompt)
+    
+    # Calculate processing time and track completion
+    processing_time = time.time() - start_time
+    analysis_type = "paid" if is_paid else "free"
+    track_analysis_completion(session_id, prompt_version, analysis_type, processing_time)
+    
+    # Add metadata to response including session ID for frontend tracking
+    analysis["analysis_type"] = analysis_type
+    analysis["session_id"] = session_id
+    analysis["timestamp"] = datetime.now(timezone.utc).isoformat()
+    
+    return JSONResponse(content=analysis)
+
+@app.get("/", response_class=HTMLResponse)
+@limiter.limit(constants.API_RATE_LIMIT)
+async def serve_frontend(request: Request):
+    """Serve the main HTML page"""
+    html_content = """
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -709,7 +1185,7 @@
             </div>
             
             <!-- Product Selection Section -->
-            <div class="product-selection-section" id="productSelection" style="display: none;">
+            <div class="product-selection-section" id="productSelection" style="display: block;">
                 <div class="section-header">
                     <h2>🚀 Choose Your Career Transformation</h2>
                     <p>Select what you need to land your dream job faster</p>
@@ -783,6 +1259,40 @@ Example: We are looking for a Senior Software Engineer with 5+ years experience 
         </div>
 
         <script>
+            // Critical: Define handleFileSelect FIRST to prevent ReferenceError
+            var selectedFile = null;
+            function handleFileSelect(event) {
+                console.log('📁 File selected:', event.target.files[0]);
+                const file = event.target.files[0];
+                if (file) {
+                    selectedFile = file;
+                    console.log('✅ File stored:', file.name);
+                    
+                    // Update the upload UI immediately
+                    const uploadDiv = document.querySelector('.file-upload');
+                    if (uploadDiv) {
+                        const statusText = `<strong>Selected: ${file.name}</strong><br><small>Click to change file</small>`;
+                        uploadDiv.innerHTML = `
+                            <input type="file" id="fileInput" accept=".pdf,.docx" onchange="handleFileSelect(event)" style="display: none;">
+                            <div class="upload-text">
+                                ${statusText}
+                            </div>
+                        `;
+                        uploadDiv.onclick = function() {
+                            document.getElementById('fileInput').click();
+                        };
+                    }
+                    
+                    // Show the analyze button
+                    const analyzeBtn = document.getElementById('analyzeBtn');
+                    if (analyzeBtn) {
+                        analyzeBtn.style.display = 'block';
+                        analyzeBtn.disabled = false;
+                        analyzeBtn.innerHTML = '🎯 Get Your FREE Resume Analysis';
+                    }
+                }
+            }
+            
             console.log('🟢 JavaScript starting...');
             
             // WORKING STATIC PRODUCT CARDS - No API calls needed
@@ -1020,7 +1530,6 @@ Which would you like? (Enter 1, 2, or 3)
                 }
             }
             
-            let selectedFile = null;
             let currentAnalysis = null;
             let currentPricing = { price: '$5', currency: 'USD', stripe_url: 'https://buy.stripe.com/dRm00i8lSfUy6CRaHOfMA01' };
             
@@ -1226,23 +1735,6 @@ Which would you like? (Enter 1, 2, or 3)
                 }
             }
 
-            // Handle file upload
-            function handleFileSelect(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    selectedFile = file;
-                    updateAnalyzeButton();
-                    
-                    // Clean up any lingering payment sessions to prevent premium leakage
-                    cleanupOldSessions();
-                    
-                    // Update upload UI to show selected file
-                    updateUploadUI(file.name, false);
-                    
-                    // Show product selection options after file upload
-                    showProductOptions();
-                }
-            }
             
             // Show free analysis option after file upload
             function showProductOptions() {
@@ -1451,11 +1943,9 @@ Which would you like? (Enter 1, 2, or 3)
                 // Debug logging
                 console.log('Analysis type:', analysis.analysis_type);
                 console.log('Is job matching:', isJobMatching);
-                console.log('Has text_rewrites:', 'text_rewrites' in analysis);
-                console.log('Has sample_improvements:', 'sample_improvements' in analysis);
-                if (analysis.text_rewrites) {
-                    console.log('Number of rewrites:', analysis.text_rewrites.length);
-                }
+                console.log('Has improvement_opportunities:', 'improvement_opportunities' in analysis);
+                console.log('Has strength_highlights:', 'strength_highlights' in analysis);
+                console.log('Has encouragement_message:', 'encouragement_message' in analysis);
 
                 if (analysis.analysis_type === 'free') {
                     if (isJobMatching) {
@@ -1478,7 +1968,7 @@ Which would you like? (Enter 1, 2, or 3)
 
                             <div class="upgrade-section">
                                 <h3>Want Job-Specific Optimization?</h3>
-                                <p>${analysis.upgrade_message}</p>
+                                <p>Get detailed job-specific insights to increase your chances of landing this role!</p>
                                 <p style="margin: 1rem 0;">Get job-specific improvements:</p>
                                 <ul style="text-align: left; max-width: 400px; margin: 1rem auto;">
                                     <li>✓ Keywords to add for this role</li>
@@ -1506,16 +1996,30 @@ Which would you like? (Enter 1, 2, or 3)
                                 <p style="margin: 1rem 0; color: #666;">Here are the major issues we found:</p>
                             </div>
                             
-                            <div style="margin: 2rem 0;">
-                                <h3 style="color: #ff6b6b; margin-bottom: 1rem;">Major Issues Found:</h3>
-                                <ul class="issues-list">
-                                    ${analysis.major_issues.map(issue => `<li>${issue}</li>`).join('')}
+                            <!-- Strengths Section -->
+                            <div style="margin: 2rem 0; background: #e8f5e8; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #4caf50;">
+                                <h3 style="color: #388e3c; margin-bottom: 1rem;">✅ Your Strengths:</h3>
+                                <ul class="strengths-list" style="list-style-type: none; padding-left: 0;">
+                                    ${analysis.strength_highlights ? analysis.strength_highlights.map(strength => `<li style="margin-bottom: 0.5rem; padding: 0.5rem; background: #f1f8e9; border-radius: 4px;">💪 ${strength}</li>`).join('') : ''}
                                 </ul>
+                            </div>
+                            
+                            <div style="margin: 2rem 0;">
+                                <h3 style="color: #2196F3; margin-bottom: 1rem;">🌟 Growth Opportunities:</h3>
+                                <ul class="issues-list">
+                                    ${analysis.improvement_opportunities ? analysis.improvement_opportunities.map(opportunity => `<li>${opportunity}</li>`).join('') : ''}
+                                </ul>
+                            </div>
+                            
+                            <!-- Encouragement Section -->
+                            <div style="margin: 2rem 0; background: #fff3e0; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #ff9800;">
+                                <h3 style="color: #f57c00; margin-bottom: 1rem;">🚀 Your Path Forward:</h3>
+                                <p style="color: #bf360c; font-size: 1.1rem; line-height: 1.6;">${analysis.encouragement_message || 'You have great potential - keep pushing forward!'}</p>
                             </div>
 
                             <div class="upgrade-section">
                                 <h3>Want the Complete Analysis?</h3>
-                                <p>${analysis.teaser_message}</p>
+                                <p>Get comprehensive insights and specific text improvements to maximize your interview chances!</p>
                                 <p style="margin: 1rem 0;">Get detailed feedback on:</p>
                                 <ul style="text-align: left; max-width: 400px; margin: 1rem auto;">
                                     <li>✓ ATS optimization recommendations</li>
@@ -1553,50 +2057,17 @@ Which would you like? (Enter 1, 2, or 3)
                                 </ul>
                             </div>
 
-                            <!-- Keywords to Add -->
+                            <!-- Premium Job Match Results -->
                             <div style="background: #f0f8ff; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #2196F3; margin: 2rem 0;">
-                                <h3 style="color: #1976D2; margin-bottom: 1rem;">🔑 Keywords to Add</h3>
-                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                                    ${analysis.optimization_keywords.map(keyword => `<span style="background: #e3f2fd; color: #1976D2; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.9rem;">${keyword}</span>`).join('')}
+                                <h3 style="color: #1976D2; margin-bottom: 1rem;">💼 Enhanced Job Match Insights</h3>
+                                <div style="background: #e3f2fd; padding: 1rem; border-radius: 6px;">
+                                    <p style="margin: 0; color: #1976D2; font-weight: 500;">✅ Your premium analysis includes tailored recommendations</p>
+                                    <p style="margin: 0.5rem 0; color: #1976D2; font-weight: 500;">✅ Job-specific optimization suggestions</p>
+                                    <p style="margin: 0; color: #1976D2; font-weight: 500;">✅ Enhanced competitive positioning</p>
                                 </div>
-                            </div>
-
-                            <!-- Resume Improvements -->
-                            <div style="background: #f3e5f5; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #9c27b0; margin: 2rem 0;">
-                                <h3 style="color: #7b1fa2; margin-bottom: 1rem;">💡 Optimization Recommendations</h3>
-                                <ul style="margin: 0; padding-left: 1rem;">
-                                    ${analysis.resume_improvements.map(improvement => `<li style="margin-bottom: 0.8rem;">${improvement}</li>`).join('')}
-                                </ul>
-                            </div>
-
-                            <!-- Competitive Advantage -->
-                            <div style="background: #e8f5e8; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #4caf50; margin: 2rem 0;">
-                                <h3 style="color: #388e3c; margin-bottom: 1rem;">🌟 Your Competitive Advantage</h3>
-                                <p style="margin: 0; font-size: 1.1rem; line-height: 1.6;">${analysis.competitive_advantage}</p>
                             </div>
                         `;
                         
-                        // Add text rewrites section if available
-                        if (analysis.text_rewrites && analysis.text_rewrites.length > 0) {
-                            resultsSection.innerHTML += `
-                                <div style="margin: 2rem 0;">
-                                    <h3 style="color: #2e7d32; margin-bottom: 1rem;">✍️ Ready-to-Use Text Improvements</h3>
-                                    ${analysis.text_rewrites.map(rewrite => `
-                                        <div class="text-rewrite" style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                                            <h4 style="color: #1976d2; margin-bottom: 1rem;">${rewrite.section}</h4>
-                                            <div style="background: #ffebee; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-                                                <strong>Before:</strong> ${rewrite.original}
-                                            </div>
-                                            <div style="background: #e8f5e8; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-                                                <strong>After:</strong> ${rewrite.improved}
-                                            </div>
-                                            <div style="color: #666; font-style: italic;">
-                                                <strong>Why:</strong> ${rewrite.reason}
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            `;
                             
                             // Add sentiment tracking
                             resultsSection.innerHTML += addSentimentTracking(analysis);
@@ -1614,133 +2085,48 @@ Which would you like? (Enter 1, 2, or 3)
 
                         <!-- Free Analysis Recap -->
                         <div style="background: #f0f8ff; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #2196F3; margin: 2rem 0;">
-                            <h3 style="color: #1976D2; margin-bottom: 1rem;">📋 Key Issues Summary</h3>
+                            <h3 style="color: #1976D2; margin-bottom: 1rem;">🌟 Growth Opportunities Summary</h3>
                             <ul style="margin: 0; padding-left: 1rem;">
-                                ${analysis.major_issues.map(issue => `<li style="margin-bottom: 0.5rem;">${issue}</li>`).join('')}
+                                ${analysis.improvement_opportunities ? analysis.improvement_opportunities.map(opportunity => `<li style="margin-bottom: 0.5rem;">${opportunity}</li>`).join('') : ''}
                             </ul>
                         </div>
 
+                        <!-- Premium Analysis Results -->
                         <div class="detailed-results">
-                            <div class="metric-card">
-                                <div class="metric-score">${analysis.ats_optimization.score}/100</div>
-                                <h3>ATS Optimization</h3>
-                                <h4>Issues:</h4>
-                                <ul>
-                                    ${analysis.ats_optimization.issues.map(issue => `<li>${issue}</li>`).join('')}
-                                </ul>
-                                <h4>Improvements:</h4>
-                                <ul>
-                                    ${analysis.ats_optimization.improvements.map(imp => `<li>${imp}</li>`).join('')}
+                            <!-- Enhanced Strengths Section -->
+                            <div style="background: #e8f5e8; padding: 2rem; border-radius: 12px; border-left: 6px solid #4caf50; margin: 2rem 0;">
+                                <h3 style="color: #2e7d32; margin-bottom: 1.5rem; font-size: 1.4rem;">💪 Your Strengths (Premium Analysis)</h3>
+                                <ul class="strengths-list" style="list-style-type: none; padding-left: 0;">
+                                    ${analysis.strength_highlights ? analysis.strength_highlights.map(strength => `<li style="margin-bottom: 1rem; padding: 1rem; background: #f1f8e9; border-radius: 8px; border-left: 3px solid #66bb6a;">✅ ${strength}</li>`).join('') : ''}
                                 </ul>
                             </div>
-
-                            <div class="metric-card">
-                                <div class="metric-score">${analysis.content_clarity.score}/100</div>
-                                <h3>Content Clarity</h3>
-                                <h4>Issues:</h4>
-                                <ul>
-                                    ${analysis.content_clarity.issues.map(issue => `<li>${issue}</li>`).join('')}
-                                </ul>
-                                <h4>Improvements:</h4>
-                                <ul>
-                                    ${analysis.content_clarity.improvements.map(imp => `<li>${imp}</li>`).join('')}
+                            
+                            <!-- Enhanced Growth Opportunities -->
+                            <div style="background: #e3f2fd; padding: 2rem; border-radius: 12px; border-left: 6px solid #2196F3; margin: 2rem 0;">
+                                <h3 style="color: #1565C0; margin-bottom: 1.5rem; font-size: 1.4rem;">🚀 Priority Improvements (Premium Analysis)</h3>
+                                <ul class="improvements-list" style="list-style-type: none; padding-left: 0;">
+                                    ${analysis.improvement_opportunities ? analysis.improvement_opportunities.map((opportunity, index) => `<li style="margin-bottom: 1rem; padding: 1rem; background: #f3f9ff; border-radius: 8px; border-left: 3px solid #42a5f5;"><strong>Priority ${index + 1}:</strong> ${opportunity}</li>`).join('') : ''}
                                 </ul>
                             </div>
-
-                            <div class="metric-card">
-                                <div class="metric-score">${analysis.impact_metrics.score}/100</div>
-                                <h3>Impact Metrics</h3>
-                                <h4>Issues:</h4>
-                                <ul>
-                                    ${analysis.impact_metrics.issues.map(issue => `<li>${issue}</li>`).join('')}
-                                </ul>
-                                <h4>Improvements:</h4>
-                                <ul>
-                                    ${analysis.impact_metrics.improvements.map(imp => `<li>${imp}</li>`).join('')}
-                                </ul>
-                            </div>
-
-                            <div class="metric-card">
-                                <div class="metric-score">${analysis.formatting.score}/100</div>
-                                <h3>Formatting</h3>
-                                <h4>Issues:</h4>
-                                <ul>
-                                    ${analysis.formatting.issues.map(issue => `<li>${issue}</li>`).join('')}
-                                </ul>
-                                <h4>Improvements:</h4>
-                                <ul>
-                                    ${analysis.formatting.improvements.map(imp => `<li>${imp}</li>`).join('')}
-                                </ul>
-                            </div>
-                        </div>
-
-                        <!-- NEW: Text Rewrites Section -->
-                        ${analysis.text_rewrites && analysis.text_rewrites.length > 0 ? `
-                            <div style="background: #f8f9fa; padding: 2rem; border-radius: 12px; margin: 2rem 0; border-left: 4px solid #28a745;">
-                                <h3 style="color: #155724; margin-bottom: 1.5rem;">✨ Ready-to-Use Text Improvements</h3>
-                                ${analysis.text_rewrites.map((rewrite, index) => `
-                                    <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                        <h4 style="color: #495057; margin-bottom: 1rem;">📝 ${rewrite.section}</h4>
-                                        
-                                        <div style="margin-bottom: 1rem;">
-                                            <strong style="color: #dc3545;">❌ Current:</strong>
-                                            <div style="background: #fff5f5; padding: 0.8rem; border-radius: 4px; margin: 0.5rem 0; font-style: italic; border-left: 3px solid #dc3545;">
-                                                "${rewrite.original}"
-                                            </div>
-                                        </div>
-                                        
-                                        <div style="margin-bottom: 1rem;">
-                                            <strong style="color: #28a745;">✅ Improved:</strong>
-                                            <div style="background: #f0fff4; padding: 0.8rem; border-radius: 4px; margin: 0.5rem 0; border-left: 3px solid #28a745;">
-                                                "${rewrite.improved}"
-                                            </div>
-                                        </div>
-                                        
-                                        <div style="font-size: 0.9rem; color: #6c757d; font-style: italic;">
-                                            💡 <strong>Why this works:</strong> ${rewrite.explanation}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-
-                        <!-- NEW: Sample Bullet Improvements -->
-                        ${analysis.sample_improvements ? `
-                            <div style="background: #e8f5e8; padding: 2rem; border-radius: 12px; margin: 2rem 0; border-left: 4px solid #4CAF50;">
-                                <h3 style="color: #2e7d32; margin-bottom: 1.5rem;">🎯 Bullet Point Makeover Examples</h3>
-                                
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1rem;">
-                                    <div>
-                                        <h4 style="color: #d32f2f; margin-bottom: 1rem;">❌ Weak Bullets</h4>
-                                        ${analysis.sample_improvements.weak_bullets.map(bullet => `
-                                            <div style="background: #fff; padding: 1rem; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #d32f2f;">
-                                                • ${bullet}
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                    
-                                    <div>
-                                        <h4 style="color: #388e3c; margin-bottom: 1rem;">✅ Strong Bullets</h4>
-                                        ${analysis.sample_improvements.strong_bullets.map(bullet => `
-                                            <div style="background: #fff; padding: 1rem; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #388e3c;">
-                                                • ${bullet}
-                                            </div>
-                                        `).join('')}
-                                    </div>
+                            
+                            <!-- Premium Success Path -->
+                            <div style="background: #fff8e1; padding: 2rem; border-radius: 12px; border-left: 6px solid #ff9800; margin: 2rem 0;">
+                                <h3 style="color: #e65100; margin-bottom: 1.5rem; font-size: 1.4rem;">🌟 Your Success Path (Premium Guidance)</h3>
+                                <div style="background: #fff3c4; padding: 1.5rem; border-radius: 8px; font-size: 1.1rem; line-height: 1.8; color: #bf360c;">
+                                    ${analysis.encouragement_message || 'You have exceptional potential. Follow the priority improvements above to maximize your interview success rate!'}
+                                </div>
+                                <div style="margin-top: 1.5rem; padding: 1rem; background: #ffecb3; border-radius: 8px;">
+                                    <h4 style="color: #e65100; margin: 0 0 0.5rem 0;">🎯 Premium Bonus:</h4>
+                                    <p style="margin: 0; color: #bf360c;">This analysis includes comprehensive insights typically unavailable in free versions. Apply these improvements systematically for maximum impact.</p>
                                 </div>
                             </div>
-                        ` : ''}
 
-                        <div class="recommendations">
-                            <h3>🎯 Top Priority Action Plan</h3>
-                            <ol>
-                                ${analysis.top_recommendations.map(rec => `<li>${rec}</li>`).join('')}
-                            </ol>
                         </div>
+
                         
                         <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px; text-align: center; margin-top: 2rem;">
-                            <h4 style="color: #1565c0; margin-bottom: 0.5rem;">🚀 Ready to Implement?</h4>
-                            <p style="color: #424242; margin: 0;">Copy the improved text above and update your resume to increase your interview rate!</p>
+                            <h4 style="color: #1565c0; margin-bottom: 0.5rem;">🚀 Ready to Apply These Insights?</h4>
+                            <p style="color: #424242; margin: 0;">Use the guidance above to optimize your resume and increase your interview success rate!</p>
                         </div>
                         
                         <div style="text-align: center; margin-top: 2rem;">
@@ -1895,11 +2281,21 @@ Which would you like? (Enter 1, 2, or 3)
             // Show product selection after free analysis (proper freemium flow)
             function showProductSelectionAfterFree() {
                 console.log('🎯 User wants premium analysis, showing product options...');
+                alert('Debug: Function started');
                 
                 const productSelection = document.getElementById('productSelection');
+                console.log('🔍 productSelection element:', productSelection);
+                
                 if (productSelection) {
+                    console.log('🔍 Current display style:', productSelection.style.display);
                     // Show the product selection section
                     productSelection.style.display = 'block';
+                    console.log('🔍 Set display to block');
+                    
+                    // Check if products are loaded
+                    const productsGrid = document.getElementById('productsGrid');
+                    console.log('🔍 productsGrid:', productsGrid);
+                    console.log('🔍 productsGrid content:', productsGrid ? productsGrid.innerHTML.length : 'not found');
                     
                     // Smooth scroll to product selection
                     productSelection.scrollIntoView({ 
@@ -1918,8 +2314,10 @@ Which would you like? (Enter 1, 2, or 3)
                         sectionSubheader.innerHTML = 'Upgrade from your free analysis to get detailed insights and recommendations';
                     }
                     
+                    alert('Debug: Should be visible now');
                     console.log('✅ Product selection shown after free analysis');
                 } else {
+                    alert('Debug: productSelection element not found!');
                     console.error('❌ Could not find productSelection element');
                 }
             }
@@ -2060,29 +2458,64 @@ Which would you like? (Enter 1, 2, or 3)
             // Load pricing configuration on page load  
             console.log('🚀 Initializing pricing...');
             
-            // Simple test to verify DOM access works
-            const testGrid = document.getElementById('productsGrid');
-            if (testGrid) {
-                console.log('✅ Found productsGrid element');
-                testGrid.innerHTML = `
-                    <div style="border: 2px solid #667eea; border-radius: 12px; padding: 1.5rem; text-align: center; background: #f0f2ff;">
-                        <span style="font-size: 2rem;">📋</span>
-                        <div style="font-weight: 700; margin: 0.5rem 0;">Test Product Card</div>
-                        <div style="color: #666;">$10 - Testing if DOM manipulation works</div>
+            // NUCLEAR OPTION: Force load static products immediately and bypass all dynamic loading
+            console.log('🚀 NUCLEAR: Loading static products immediately...');
+            const productsGrid = document.getElementById('productsGrid');
+            if (productsGrid) {
+                console.log('✅ Found productsGrid element - loading static products');
+                productsGrid.innerHTML = `
+                    <div class="product-card" onclick="alert('Resume Analysis clicked!'); selectProduct('individual', 'resume_analysis', '$10')" style="border: 2px solid #e1e8ed; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #fafbfc; margin-bottom: 1rem;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">📋</span>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #333; margin-bottom: 0.5rem;">Resume Health Check</div>
+                        <div style="color: #666; margin-bottom: 1rem; line-height: 1.4;">Transform your resume into an interview magnet</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #4caf50;">$10</div>
+                    </div>
+                    <div class="product-card" onclick="alert('Job Fit Analysis clicked!'); selectProduct('individual', 'job_fit_analysis', '$12')" style="border: 2px solid #e1e8ed; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #fafbfc; margin-bottom: 1rem;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">🎯</span>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #333; margin-bottom: 0.5rem;">Job Fit Analysis</div>
+                        <div style="color: #666; margin-bottom: 1rem; line-height: 1.4;">Position yourself as the perfect candidate</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #4caf50;">$12</div>
+                    </div>
+                    <div class="product-card" onclick="alert('Cover Letter clicked!'); selectProduct('individual', 'cover_letter', '$8')" style="border: 2px solid #e1e8ed; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #fafbfc; margin-bottom: 1rem;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">✍️</span>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #333; margin-bottom: 0.5rem;">Cover Letter Generator</div>
+                        <div style="color: #666; margin-bottom: 1rem; line-height: 1.4;">Write cover letters that open doors</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #4caf50;">$8</div>
+                    </div>
+                    <div class="product-card bundle-cta" onclick="alert('Bundle clicked!'); showBundleOptions()" style="background: linear-gradient(135deg, #ff6b6b15, #4caf5015); border: 2px solid #ff6b6b; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease; margin-bottom: 1rem;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">🎯</span>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #333; margin-bottom: 0.5rem;">Bundle & Save</div>
+                        <div style="color: #666; margin-bottom: 1rem; line-height: 1.4;">Get multiple services and save money</div>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #ff6b6b;">Save up to 27%</div>
                     </div>
                 `;
-                console.log('✅ Test card added to DOM');
+                console.log('✅ NUCLEAR: Static products loaded with onclick alerts');
             } else {
                 console.error('❌ productsGrid element not found!');
             }
             
-            try {
-                loadPricingConfig();
-                loadMultiProductPricing();
-                console.log('✅ Function calls completed');
-            } catch (error) {
-                console.error('❌ Error during initialization:', error);
-            }
+            // DISABLED: All dynamic loading is disabled to prevent errors
+            console.log('🚫 Dynamic pricing loading disabled - using static products only');
+            
+            // Define the missing function globally to prevent ReferenceError
+            window.showProductSelectionAfterFree = function() {
+                alert('Premium button clicked!');
+                const productSelection = document.getElementById('productSelection');
+                if (productSelection) {
+                    productSelection.style.display = 'block';
+                    productSelection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    console.log('✅ Product selection shown');
+                } else {
+                    console.error('❌ Product selection element not found');
+                }
+            };
+            // try {
+            //     loadPricingConfig();
+            //     loadMultiProductPricing();
+            //     console.log('✅ Function calls completed');
+            // } catch (error) {
+            //     console.error('❌ Error during initialization:', error);
+            // }
             
             // Load multi-product pricing and render products
             async function loadMultiProductPricing() {
@@ -2269,12 +2702,63 @@ Which would you like? (Enter 1, 2, or 3)
                 return emojis[bundleId] || "📦";
             }
             
+            // Static product loading as fallback
+            function loadStaticProducts() {
+                console.log('🎨 Loading static product cards as fallback...');
+                const productsGrid = document.getElementById('productsGrid');
+                if (!productsGrid) {
+                    console.error('❌ productsGrid element not found');
+                    return;
+                }
+                
+                productsGrid.innerHTML = `
+                    <div class="product-card" onclick="selectProduct('individual', 'resume_analysis', '$10')" style="border: 2px solid #e1e8ed; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #fafbfc;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">📋</span>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #333; margin-bottom: 0.5rem;">Resume Health Check</div>
+                        <div style="color: #666; margin-bottom: 1rem; line-height: 1.4;">Transform your resume into an interview magnet</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #4caf50;">$10</div>
+                    </div>
+                    <div class="product-card" onclick="selectProduct('individual', 'job_fit_analysis', '$12')" style="border: 2px solid #e1e8ed; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #fafbfc;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">🎯</span>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #333; margin-bottom: 0.5rem;">Job Fit Analysis</div>
+                        <div style="color: #666; margin-bottom: 1rem; line-height: 1.4;">Position yourself as the perfect candidate</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #4caf50;">$12</div>
+                    </div>
+                    <div class="product-card" onclick="selectProduct('individual', 'cover_letter', '$8')" style="border: 2px solid #e1e8ed; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #fafbfc;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">✍️</span>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #333; margin-bottom: 0.5rem;">Cover Letter Generator</div>
+                        <div style="color: #666; margin-bottom: 1rem; line-height: 1.4;">Write cover letters that open doors</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #4caf50;">$8</div>
+                    </div>
+                    <div class="product-card bundle-cta" onclick="showBundleOptions()" style="background: linear-gradient(135deg, #ff6b6b15, #4caf5015); border: 2px solid #ff6b6b; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">🎯</span>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #333; margin-bottom: 0.5rem;">Bundle & Save</div>
+                        <div style="color: #666; margin-bottom: 1rem; line-height: 1.4;">Get multiple services and save money</div>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #ff6b6b;">Save up to 27%</div>
+                    </div>
+                `;
+                console.log('✅ Static product cards loaded successfully');
+            }
+            
             // Render individual products
             function renderProducts() {
                 console.log('🎨 renderProducts called, multiProductPricing:', multiProductPricing);
-                if (!multiProductPricing || !multiProductPricing.products) {
-                    console.log('❌ renderProducts: Missing data, multiProductPricing:', multiProductPricing);
-                    document.getElementById('productsGrid').innerHTML = '<div style="color: red;">Debug: No product data available</div>';
+                if (!multiProductPricing) {
+                    console.log('❌ renderProducts: multiProductPricing is null/undefined');
+                    // Load static fallback directly
+                    loadStaticProducts();
+                    return;
+                }
+                
+                if (!multiProductPricing.products) {
+                    console.log('❌ renderProducts: multiProductPricing.products missing');
+                    loadStaticProducts();
+                    return;
+                }
+                
+                if (!multiProductPricing.hope_driven_messaging || !multiProductPricing.hope_driven_messaging.taglines) {
+                    console.log('❌ renderProducts: taglines missing, loading static products');
+                    loadStaticProducts();
                     return;
                 }
                 
@@ -2283,7 +2767,9 @@ Which would you like? (Enter 1, 2, or 3)
                 
                 productsGrid.innerHTML = Object.keys(products).map(productId => {
                     const product = products[productId];
-                    const tagline = multiProductPricing.hope_driven_messaging.taglines[productId];
+                    const tagline = (multiProductPricing.hope_driven_messaging && multiProductPricing.hope_driven_messaging.taglines) 
+                        ? multiProductPricing.hope_driven_messaging.taglines[productId] 
+                        : 'Transform your career today';
                     
                     return `
                         <div class="product-card" onclick="selectProduct('individual', '${productId}')" data-product-id="${productId}">
@@ -2345,7 +2831,9 @@ Which would you like? (Enter 1, 2, or 3)
                 
                 bundlesGrid.innerHTML = Object.keys(bundles).map(bundleId => {
                     const bundle = bundles[bundleId];
-                    const tagline = multiProductPricing.hope_driven_messaging.taglines[bundleId];
+                    const tagline = (multiProductPricing.hope_driven_messaging && multiProductPricing.hope_driven_messaging.taglines) 
+                        ? multiProductPricing.hope_driven_messaging.taglines[bundleId] 
+                        : 'Save money with bundles';
                     
                     let badgeText = '';
                     let badgeClass = '';
@@ -2412,7 +2900,9 @@ Which would you like? (Enter 1, 2, or 3)
                 let itemData;
                 if (type === 'individual') {
                     itemData = multiProductPricing.products[id];
-                    const tagline = multiProductPricing.hope_driven_messaging.taglines[id];
+                    const tagline = (multiProductPricing.hope_driven_messaging && multiProductPricing.hope_driven_messaging.taglines) 
+                        ? multiProductPricing.hope_driven_messaging.taglines[id] 
+                        : 'Professional service';
                     
                     selectedItem.innerHTML = `
                         <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
@@ -2428,7 +2918,9 @@ Which would you like? (Enter 1, 2, or 3)
                     `;
                 } else {
                     itemData = multiProductPricing.bundles[id];
-                    const tagline = multiProductPricing.hope_driven_messaging.taglines[id];
+                    const tagline = (multiProductPricing.hope_driven_messaging && multiProductPricing.hope_driven_messaging.taglines) 
+                        ? multiProductPricing.hope_driven_messaging.taglines[id] 
+                        : 'Bundle package';
                     
                     selectedItem.innerHTML = `
                         <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
@@ -2477,3 +2969,853 @@ Which would you like? (Enter 1, 2, or 3)
         </script>
     </body>
     </html>
+    """
+    
+    # Replace placeholders with actual values
+    html_content = html_content.replace("STRIPE_PAYMENT_URL_PLACEHOLDER", STRIPE_PAYMENT_URL)
+    html_content = html_content.replace("STRIPE_SUCCESS_TOKEN_PLACEHOLDER", STRIPE_SUCCESS_TOKEN)
+    
+    return HTMLResponse(content=html_content)
+
+@app.get("/health")
+async def health_check():
+    """Simple health check endpoint"""
+    return {"status": "healthy", "service": "resume-health-checker"}
+
+@app.get("/api/prompts/stats")
+async def get_prompt_stats():
+    """Get statistics about loaded prompts"""
+    return prompt_manager.get_prompt_stats()
+
+@app.post("/api/prompts/reload")
+async def reload_prompts_endpoint():
+    """Reload prompts from file (for development/testing)"""
+    success = prompt_manager.reload_prompts()
+    if success:
+        return {"status": "success", "message": "Prompts reloaded successfully"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to reload prompts")
+
+@app.get("/api/prompts/validate")
+async def validate_prompts_endpoint():
+    """Validate prompt structure and return any issues"""
+    issues = prompt_manager.validate_prompts()
+    return {
+        "status": "valid" if not issues["errors"] else "invalid",
+        "issues": issues
+    }
+
+@app.post("/api/track-sentiment")
+async def track_user_sentiment(data: dict):
+    """Track user sentiment after viewing analysis results"""
+    required_fields = ["session_id", "sentiment_score", "sentiment_label"]
+    
+    for field in required_fields:
+        if field not in data:
+            raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+    
+    success = track_sentiment(
+        session_id=data["session_id"],
+        sentiment_score=data["sentiment_score"], 
+        sentiment_label=data["sentiment_label"],
+        specific_feedback=data.get("specific_feedback")
+    )
+    
+    if success:
+        return {"status": "success", "message": "Sentiment tracked successfully"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to track sentiment")
+
+@app.get("/api/analytics/sentiment")
+async def get_sentiment_analytics_endpoint(days: int = 7):
+    """Get sentiment analytics for the specified period"""
+    if days < 1 or days > 365:
+        raise HTTPException(status_code=400, detail="Days must be between 1 and 365")
+    
+    analytics = sentiment_tracker.get_sentiment_analytics(days)
+    return analytics
+
+@app.get("/api/analytics/conversion")
+async def get_conversion_analytics_endpoint(days: int = 7):
+    """Get conversion analytics correlated with sentiment"""
+    if days < 1 or days > 365:
+        raise HTTPException(status_code=400, detail="Days must be between 1 and 365")
+    
+    analytics = sentiment_tracker.get_conversion_analytics(days)
+    return analytics
+
+@app.get("/api/pricing-config")
+async def get_pricing_config():
+    """Get pricing configuration for different countries"""
+    # Determine environment and use appropriate config file
+    environment = os.getenv("RAILWAY_ENVIRONMENT", "development")
+    environment_name = os.getenv("RAILWAY_ENVIRONMENT_NAME", "development")
+    
+    if environment == "staging" or environment_name == "staging":
+        config_file = "pricing_config_staging.json"
+    else:
+        config_file = "pricing_config.json"  # production/development
+    
+    try:
+        with open(config_file, "r") as f:
+            config = json.load(f)
+        return config
+    except FileNotFoundError:
+        # Fallback configuration if file doesn't exist
+        return {
+            "pricing": {
+                "default": {
+                    "price": "$5",
+                    "currency": "USD", 
+                    "amount": 5,
+                    "stripe_url": STRIPE_PAYMENT_URL
+                }
+            }
+        }
+
+# ============================================================================
+# STRIPE-FIRST REGIONAL PRICING API
+# ============================================================================
+
+@app.get("/api/stripe-pricing/{country_code}")
+async def get_stripe_regional_pricing(country_code: str):
+    """
+    Fetch regional pricing from Stripe as single source of truth.
+    Eliminates dual-maintenance of prices in app config + Stripe dashboard.
+    """
+    try:
+        # Regional currency mapping
+        currency_map = {
+            "US": "usd", "PK": "pkr", "IN": "inr", 
+            "HK": "hkd", "AE": "aed", "BD": "bdt",
+            "default": "usd"
+        }
+        
+        currency = currency_map.get(country_code.upper(), currency_map["default"])
+        
+        print(f"🌍 Fetching Stripe pricing for {country_code} ({currency.upper()})")
+        
+        # Check if Stripe API key is configured
+        if not stripe.api_key:
+            print("⚠️  Stripe API key not configured, falling back to config file")
+            return await get_fallback_pricing(country_code)
+        
+        # Fetch active prices from Stripe for this currency
+        prices = stripe.Price.list(
+            currency=currency,
+            active=True,
+            expand=['data.product'],
+            limit=50
+        )
+        
+        print(f"💰 Found {len(prices.data)} Stripe prices for {currency.upper()}")
+        
+        # Initialize pricing structure
+        pricing_data = {
+            "region": country_code.upper(),
+            "currency": currency.upper(),
+            "symbol": get_currency_symbol(currency),
+            "products": {},
+            "bundles": {},
+            "source": "stripe",
+            "fetched_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Process Stripe prices into our format
+        for price in prices.data:
+            metadata = price.metadata
+            app_product_id = metadata.get("app_product_id")
+            product_type = metadata.get("product_type", "individual")
+            
+            if not app_product_id:
+                continue
+                
+            price_data = {
+                "amount": price.unit_amount // 100,  # Convert from cents
+                "display": format_regional_price(price.unit_amount // 100, currency),
+                "currency": currency.upper(),
+                "stripe_price_id": price.id,
+                "stripe_product_id": price.product.id,
+                "payment_link": await get_payment_link_for_price(price.id)
+            }
+            
+            # Add to appropriate section
+            if product_type == "bundle":
+                pricing_data["bundles"][app_product_id] = price_data
+                
+                # Add bundle-specific data
+                if app_product_id in ["career_boost", "job_hunter", "complete_package"]:
+                    pricing_data["bundles"][app_product_id].update({
+                        "individual_total": calculate_bundle_individual_total(app_product_id, pricing_data["products"]),
+                        "savings": calculate_bundle_savings(app_product_id, price_data["amount"], pricing_data["products"]),
+                        "popular": app_product_id == "career_boost",
+                        "best_value": app_product_id == "complete_package"
+                    })
+            else:
+                pricing_data["products"][app_product_id] = price_data
+        
+        print(f"✅ Processed {len(pricing_data['products'])} products, {len(pricing_data['bundles'])} bundles")
+        return pricing_data
+        
+    except Exception as e:
+        print(f"❌ Error fetching Stripe pricing: {e}")
+        # Fallback to config file pricing
+        return await get_fallback_pricing(country_code)
+
+async def get_payment_link_for_price(price_id: str) -> str:
+    """Get Payment Link URL for a specific Stripe Price ID using optimized static mapping"""
+    
+    # Static payment links mapping - avoids expensive API calls that cause timeouts
+    payment_links_map = {
+        # Resume Analysis
+        "price_1S2BOBEEk2SJOP4YidngE9GM": "https://buy.stripe.com/test_dRm8wPaXq2028FEgNQ0000F",  # US
+        "price_1S2BOCEEk2SJOP4YMxXev3hc": "https://buy.stripe.com/test_6oUfZh7LegUWf4269c0000G",  # PK
+        "price_1S2BODEEk2SJOP4YuQDvvMq3": "https://buy.stripe.com/test_00w7sLe9CeMOcVU4140000H",  # IN
+        "price_1S2BODEEk2SJOP4YT6hMXMsb": "https://buy.stripe.com/test_eVq3cv8PibACf4269c0000I",  # HK
+        "price_1S2BOEEEk2SJOP4YNeXs49Wm": "https://buy.stripe.com/test_fZu6oHc1u202cVUgNQ0000J",  # AE
+        "price_1S2BOFEEk2SJOP4YN4S4OUrv": "https://buy.stripe.com/test_dRm7sLfdGbAC7BAbtw0000K",  # BD
+        "price_1S2BOFEEk2SJOP4YNuv4nmTw": "https://buy.stripe.com/test_00w4gz9Tm7km9JIdBE0000L",  # default
+        
+        # Job Fit Analysis  
+        "price_1S2BOGEEk2SJOP4YwM3n22OI": "https://buy.stripe.com/test_5kQdR91mQ5ce3lk1SW0000M",  # US
+        "price_1S2BOHEEk2SJOP4YS4ljlIdC": "https://buy.stripe.com/test_7sY6oH4z25ce3lk7dg0000N",  # PK
+        "price_1S2BOIEEk2SJOP4YVfrVEo2W": "https://buy.stripe.com/test_3cIdR95D65cef42gNQ0000O",  # IN
+        "price_1S2BOIEEk2SJOP4YSa6Tx6sv": "https://buy.stripe.com/test_00w5kDaXq0VY6xw7dg0000P",  # HK
+        "price_1S2BOJEEk2SJOP4Yitbx80Vk": "https://buy.stripe.com/test_00w28r9Tm202098gNQ0000Q",  # AE
+        "price_1S2BOKEEk2SJOP4YrKQPEYBS": "https://buy.stripe.com/test_aFa5kDaXqdIK7BAaps0000R",  # BD
+        "price_1S2BOKEEk2SJOP4YZX7zUFxJ": "https://buy.stripe.com/test_aFa7sLe9C346cVU5580000S",  # default
+        
+        # Cover Letter
+        "price_1S2BOLEEk2SJOP4Yx3lacDnw": "https://buy.stripe.com/test_dRm28raXqawy5ts0OS0000T",  # US
+        "price_1S2BOMEEk2SJOP4YWZosGVtu": "https://buy.stripe.com/test_8x2dR9e9C5ce7BAcxA0000U",  # PK
+        "price_1S2BOMEEk2SJOP4YgmmqcssR": "https://buy.stripe.com/test_3cI7sL0iM5ce9JI2X00000V",  # IN
+        "price_1S2BONEEk2SJOP4YPra71b82": "https://buy.stripe.com/test_aFabJ19Tm5ceg868hk0000W",  # HK
+        "price_1S2BOOEEk2SJOP4YEyavCCDP": "https://buy.stripe.com/test_3cI00j1mQ5ce9JIeFI0000X",  # AE
+        "price_1S2BOOEEk2SJOP4YcSwjBPNA": "https://buy.stripe.com/test_cNi00j9Tm8oq1dcdBE0000Y",  # BD
+        "price_1S2BOPEEk2SJOP4YLmDVYxLo": "https://buy.stripe.com/test_eVq8wP2qU0VYdZYdBE0000Z",  # default
+        
+        # Career Boost Bundle
+        "price_1S2BOQEEk2SJOP4YpqEdFuUZ": "https://buy.stripe.com/test_eVq4gzd5y9sucVUdBE00010",  # US
+        "price_1S2BOREEk2SJOP4YLkOo0M5z": "https://buy.stripe.com/test_00w00j7Le202aNM9lo00011",  # PK
+        "price_1S2BOSEEk2SJOP4YBMksDVBe": "https://buy.stripe.com/test_7sY3cv6Ha5cecVU2X000012",  # IN
+        "price_1S2BOSEEk2SJOP4Y8tnawyS7": "https://buy.stripe.com/test_cNi3cve9C8oqcVU7dg00013",  # HK
+        "price_1S2BOTEEk2SJOP4YcSvmX5ay": "https://buy.stripe.com/test_fZuaEX5D620209869c00014",  # AE
+        "price_1S2BOUEEk2SJOP4YeyAarrap": "https://buy.stripe.com/test_9B68wP0iMgUW5tscxA00015",  # BD
+        "price_1S2BOUEEk2SJOP4YEyMXYh0X": "https://buy.stripe.com/test_4gMeVd7LeawyaNMaps00016",  # default
+        
+        # Job Hunter Bundle
+        "price_1S2BOVEEk2SJOP4YQMqsz54E": "https://buy.stripe.com/test_fZucN5fdG2023lkfJM00017",  # US
+        "price_1S2BOWEEk2SJOP4YhqKjEanU": "https://buy.stripe.com/test_5kQdR9aXq5ceaNM1SW00018",  # PK
+        "price_1S2BOXEEk2SJOP4Yg1zWwj86": "https://buy.stripe.com/test_dRm3cvaXq2027BAbtw00019",  # IN
+        "price_1S2BOXEEk2SJOP4YmzCG4kW0": "https://buy.stripe.com/test_28E4gz1mQgUWg86gNQ0001a",  # HK
+        "price_1S2BOYEEk2SJOP4YMUWv7jlz": "https://buy.stripe.com/test_00w3cv7Le7kmdZYaps0001b",  # AE
+        "price_1S2BOZEEk2SJOP4Yccl9xt1R": "https://buy.stripe.com/test_8x2bJ1aXqawybRQgNQ0001c",  # BD
+        "price_1S2BOZEEk2SJOP4YVFMwPYb2": "https://buy.stripe.com/test_6oUfZh1mQ8oq2hg9lo0001d",  # default
+        
+        # Complete Package Bundle
+        "price_1S2BOaEEk2SJOP4YjWnodEBv": "https://buy.stripe.com/test_fZu6oH9TmeMO8FE69c0001e",  # US
+        "price_1S2BObEEk2SJOP4YD9uS5Bb0": "https://buy.stripe.com/test_fZu7sLfdG9su5tseFI0001f",  # PK
+        "price_1S2BOcEEk2SJOP4YUN6QK97T": "https://buy.stripe.com/test_eVq5kD2qU9sucVU7dg0001g",  # IN
+        "price_1S2BOcEEk2SJOP4Y4zDKOkv5": "https://buy.stripe.com/test_bJe6oHc1u5ce1dc1SW0001h",  # HK
+        "price_1S2BOdEEk2SJOP4Y17XmGPVH": "https://buy.stripe.com/test_5kQ9AT1mQ48abRQbtw0001i",  # AE
+        "price_1S2BOeEEk2SJOP4YCHdCsWep": "https://buy.stripe.com/test_eVqeVd6HacEG5tsbtw0001j",  # BD
+        "price_1S2BOeEEk2SJOP4YadL4eM5x": "https://buy.stripe.com/test_dRm4gzc1uawy6xwbtw0001k",  # default
+    }
+    
+    try:
+        link = payment_links_map.get(price_id, "")
+        if link:
+            print(f"✅ Found static payment link for {price_id[:12]}...")
+            return link
+        else:
+            print(f"⚠️  No payment link found for price {price_id}")
+            return STRIPE_PAYMENT_URL  # Fallback to environment URL
+        
+    except Exception as e:
+        print(f"❌ Error getting payment link for {price_id}: {e}")
+        return STRIPE_PAYMENT_URL  # Fallback to environment URL
+
+def get_currency_symbol(currency: str) -> str:
+    """Get currency symbol for display"""
+    symbols = {
+        "usd": "$", "pkr": "₨", "inr": "₹", 
+        "hkd": "HKD ", "aed": "AED ", "bdt": "৳"
+    }
+    return symbols.get(currency.lower(), "$")
+
+def format_regional_price(amount: int, currency: str) -> str:
+    """Format price with proper currency symbol and locale"""
+    symbol = get_currency_symbol(currency)
+    
+    if currency.lower() in ["pkr", "inr", "bdt"]:
+        # Format with commas for large numbers
+        return f"{symbol}{amount:,}"
+    else:
+        return f"{symbol}{amount}"
+
+def calculate_bundle_individual_total(bundle_id: str, products: dict) -> int:
+    """Calculate what bundle would cost if bought individually"""
+    bundle_products = {
+        "career_boost": ["resume_analysis", "job_fit_analysis"],
+        "job_hunter": ["resume_analysis", "cover_letter"],
+        "complete_package": ["resume_analysis", "job_fit_analysis", "cover_letter"]
+    }
+    
+    product_ids = bundle_products.get(bundle_id, [])
+    total = sum(products.get(pid, {}).get("amount", 0) for pid in product_ids)
+    return total
+
+def calculate_bundle_savings(bundle_id: str, bundle_amount: int, products: dict) -> dict:
+    """Calculate savings from bundle pricing"""
+    individual_total = calculate_bundle_individual_total(bundle_id, products)
+    if individual_total > 0:
+        savings_amount = individual_total - bundle_amount
+        savings_percentage = round((savings_amount / individual_total) * 100)
+        return {
+            "amount": savings_amount,
+            "percentage": savings_percentage,
+            "display": f"Save {format_regional_price(savings_amount, products.get(list(products.keys())[0], {}).get('currency', 'usd'))}"
+        }
+    return {"amount": 0, "percentage": 0, "display": ""}
+
+async def get_fallback_pricing(country_code: str):
+    """Fallback to config file pricing if Stripe API fails"""
+    print(f"📁 Using fallback pricing for {country_code}")
+    
+    try:
+        # Use existing pricing config as fallback
+        config_response = await get_pricing_config()
+        if isinstance(config_response, dict) and "pricing" in config_response:
+            country_pricing = config_response["pricing"].get(country_code.upper(), 
+                                                           config_response["pricing"]["default"])
+            
+            # Convert to new format
+            return {
+                "region": country_code.upper(),
+                "currency": country_pricing.get("currency", "USD"),
+                "symbol": get_currency_symbol(country_pricing.get("currency", "USD")),
+                "products": {
+                    "resume_analysis": {
+                        "amount": country_pricing.get("amount", 5) * 2,  # $5 -> $10 equivalent
+                        "display": country_pricing.get("price", "$10"),
+                        "currency": country_pricing.get("currency", "USD"),
+                        "payment_link": country_pricing.get("stripe_url", STRIPE_PAYMENT_URL)
+                    }
+                },
+                "bundles": {},
+                "source": "fallback",
+                "fetched_at": datetime.now(timezone.utc).isoformat()
+            }
+    except Exception as e:
+        print(f"❌ Fallback pricing failed: {e}")
+    
+    # Ultimate fallback
+    return {
+        "region": country_code.upper(),
+        "currency": "USD",
+        "symbol": "$",
+        "products": {
+            "resume_analysis": {"amount": 10, "display": "$10", "currency": "USD", "payment_link": STRIPE_PAYMENT_URL}
+        },
+        "bundles": {},
+        "source": "default",
+        "error": "Pricing configuration unavailable"
+    }
+
+@app.get("/api/mock-geo/{country_code}")
+async def mock_geolocation(country_code: str):
+    """Mock geolocation API for testing different countries"""
+    country_data = {
+        "US": {"country_code": "US", "country_name": "United States", "city": "New York"},
+        "AE": {"country_code": "AE", "country_name": "United Arab Emirates", "city": "Dubai"},
+        "PK": {"country_code": "PK", "country_name": "Pakistan", "city": "Karachi"},
+        "IN": {"country_code": "IN", "country_name": "India", "city": "Mumbai"},
+        "BD": {"country_code": "BD", "country_name": "Bangladesh", "city": "Dhaka"}
+    }
+    
+    return country_data.get(country_code.upper(), country_data["US"])
+
+@app.post("/api/generate-cover-letter")
+async def generate_cover_letter(
+    file: UploadFile = File(...),
+    job_posting: str = Form(...),
+    tier: str = Form(default="free")  # "free" or "premium"
+):
+    """Generate hope-driven cover letter based on resume and job posting"""
+    
+    print(f"📄 Cover letter request: {file.filename}, tier: {tier}, job_posting length: {len(job_posting)}")
+    
+    # Validate file type - reuse existing validation logic
+    valid_mime_types = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/octet-stream"
+    ]
+    
+    valid_extensions = [".pdf", ".docx"]
+    file_extension = os.path.splitext(file.filename.lower())[1]
+    
+    if not (file.content_type in valid_mime_types or file_extension in valid_extensions):
+        print(f"❌ Invalid file: {file.content_type}, extension: {file_extension}")
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload a PDF or Word document"
+        )
+    
+    if file.content_type == "application/octet-stream" and file_extension not in valid_extensions:
+        print(f"❌ Invalid file type for octet-stream: {file_extension}")
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload a PDF or Word document"
+        )
+    
+    # Extract text from resume
+    try:
+        resume_text = resume_to_text(file)
+        if not resume_text or len(resume_text.strip()) < 50:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not extract meaningful text from resume. Please check your file."
+            )
+    except Exception as e:
+        print(f"❌ Error extracting text: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail="Error processing resume file. Please try again."
+        )
+    
+    # Validate job posting
+    if not job_posting or len(job_posting.strip()) < 20:
+        raise HTTPException(
+            status_code=400,
+            detail="Job posting must be at least 20 characters long"
+        )
+    
+    # Generate session ID for tracking
+    session_id = str(uuid4())
+    
+    # Track session start
+    try:
+        track_session_start(session_id, "cover_letter", "API")
+    except Exception as e:
+        print(f"⚠️ Error tracking session start: {e}")
+    
+    # Generate cover letter using AI
+    try:
+        # Get the appropriate prompt from prompt manager
+        user_prompt = format_prompt("cover_letter", tier, 
+                                   resume_text=resume_text, 
+                                   job_posting=job_posting)
+        system_prompt = get_system_prompt("cover_letter", tier)
+        
+        # Combine system and user prompts
+        full_prompt = f"System: {system_prompt}\n\nUser: {user_prompt}"
+        
+        print(f"🤖 Generating {tier} cover letter...")
+        
+        # Get AI analysis
+        start_time = time.time()
+        ai_response = await get_ai_analysis_with_retry(full_prompt)
+        processing_time = time.time() - start_time
+        
+        # Track analysis completion
+        prompt_version = get_prompt("cover_letter", tier).get("version", "unknown")
+        try:
+            track_analysis_completion(session_id, prompt_version, f"cover_letter_{tier}", processing_time)
+        except Exception as e:
+            print(f"⚠️ Error tracking analysis completion: {e}")
+        
+        # AI response is already a dict from get_ai_analysis_with_retry
+        if isinstance(ai_response, dict):
+            parsed_response = ai_response
+        else:
+            # Fallback: try to parse as JSON if it's a string
+            try:
+                parsed_response = json.loads(ai_response)
+            except (json.JSONDecodeError, TypeError):
+                parsed_response = {
+                    "error": "AI response format error",
+                    "raw_response": str(ai_response)[:500]
+                }
+        
+        # Add session tracking info
+        parsed_response["session_id"] = session_id
+        parsed_response["tier"] = tier
+        parsed_response["processing_time"] = round(processing_time, 2)
+        
+        print(f"✅ Cover letter generated successfully in {processing_time:.2f}s")
+        return parsed_response
+        
+    except Exception as e:
+        error_msg = f"Error generating cover letter: {str(e)}"
+        print(f"❌ {error_msg}")
+        raise HTTPException(status_code=500, detail=error_msg)
+
+@app.post("/api/generate-cover-letter-text")
+async def generate_cover_letter_text(
+    resume_text: str = Form(...),
+    job_posting: str = Form(...),
+    tier: str = Form(default="free")
+):
+    """Generate cover letter from text input (for testing/API use)"""
+    
+    print(f"📄 Cover letter text request: tier: {tier}, resume length: {len(resume_text)}, job_posting length: {len(job_posting)}")
+    
+    # Validate inputs
+    if not resume_text or len(resume_text.strip()) < 50:
+        raise HTTPException(
+            status_code=400,
+            detail="Resume text must be at least 50 characters long"
+        )
+    
+    if not job_posting or len(job_posting.strip()) < 20:
+        raise HTTPException(
+            status_code=400,
+            detail="Job posting must be at least 20 characters long"
+        )
+    
+    # Generate session ID for tracking
+    session_id = str(uuid4())
+    
+    # Track session start
+    try:
+        track_session_start(session_id, "cover_letter", "API-Text")
+    except Exception as e:
+        print(f"⚠️ Error tracking session start: {e}")
+    
+    # Generate cover letter using AI
+    try:
+        # Get the appropriate prompt from prompt manager
+        user_prompt = format_prompt("cover_letter", tier, 
+                                   resume_text=resume_text, 
+                                   job_posting=job_posting)
+        system_prompt = get_system_prompt("cover_letter", tier)
+        
+        # Combine system and user prompts
+        full_prompt = f"System: {system_prompt}\n\nUser: {user_prompt}"
+        
+        print(f"🤖 Generating {tier} cover letter with prompt manager...")
+        
+        # Get AI analysis
+        start_time = time.time()
+        ai_response = await get_ai_analysis_with_retry(full_prompt)
+        processing_time = time.time() - start_time
+        
+        # Track analysis completion
+        prompt_version = get_prompt("cover_letter", tier).get("version", "unknown")
+        try:
+            track_analysis_completion(session_id, prompt_version, f"cover_letter_{tier}", processing_time)
+        except Exception as e:
+            print(f"⚠️ Error tracking analysis completion: {e}")
+        
+        # AI response is already a dict from get_ai_analysis_with_retry
+        if isinstance(ai_response, dict):
+            parsed_response = ai_response
+        else:
+            # Fallback: try to parse as JSON if it's a string
+            try:
+                parsed_response = json.loads(ai_response)
+            except (json.JSONDecodeError, TypeError):
+                parsed_response = {
+                    "error": "AI response format error",
+                    "raw_response": str(ai_response)[:500]
+                }
+        
+        # Add session tracking info
+        parsed_response["session_id"] = session_id
+        parsed_response["tier"] = tier
+        parsed_response["processing_time"] = round(processing_time, 2)
+        
+        print(f"✅ Cover letter generated successfully in {processing_time:.2f}s")
+        return parsed_response
+        
+    except Exception as e:
+        error_msg = f"Error generating cover letter: {str(e)}"
+        print(f"❌ {error_msg}")
+        raise HTTPException(status_code=500, detail=error_msg)
+
+@app.get("/api/multi-product-pricing")
+async def get_multi_product_pricing():
+    """Get comprehensive pricing for all products and bundles"""
+    try:
+        with open("pricing_config_multi_product.json", "r") as f:
+            pricing_config = json.load(f)
+        return pricing_config
+    except FileNotFoundError:
+        # Fallback pricing if file doesn't exist
+        return {
+            "error": "Pricing configuration not found",
+            "fallback": {
+                "products": {
+                    "resume_analysis": {"individual_price": {"amount": 10, "display": "$10"}},
+                    "job_fit_analysis": {"individual_price": {"amount": 12, "display": "$12"}},
+                    "cover_letter": {"individual_price": {"amount": 8, "display": "$8"}}
+                }
+            }
+        }
+
+@app.post("/api/create-payment-session")
+@limiter.limit(constants.ANALYSIS_RATE_LIMIT)
+async def create_payment_session(
+    request: Request,
+    product_type: str = Form(...),  # "individual" or "bundle"
+    product_id: str = Form(...),    # product name or bundle name
+    session_data: str = Form(...)   # JSON string with user's analysis data
+):
+    """Create a payment session with product selection and user data"""
+    
+    print(f"💳 Payment session request: {product_type} - {product_id}")
+    
+    try:
+        # Parse session data
+        user_session = json.loads(session_data)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid session data format")
+    
+    # Load pricing configuration
+    try:
+        with open("pricing_config_multi_product.json", "r") as f:
+            pricing_config = json.load(f)
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="Pricing configuration not available")
+    
+    # Generate unique payment session ID
+    payment_session_id = str(uuid4())
+    
+    # Get product/bundle details and pricing
+    if product_type == "individual":
+        if product_id not in pricing_config["products"]:
+            raise HTTPException(status_code=400, detail=f"Product '{product_id}' not found")
+        
+        product_info = pricing_config["products"][product_id]
+        price_info = product_info["individual_price"]
+        
+        # 🔧 FIX: Use proper Stripe sandbox URLs from payment_links_map instead of outdated config
+        # Map product_id to appropriate price_id for US region (sandbox testing)
+        product_price_map = {
+            "resume_analysis": "price_1S2BOBEEk2SJOP4YidngE9GM",  # US Resume Analysis
+            "job_fit_analysis": "price_1S2BOGEEk2SJOP4YwM3n22OI",  # US Job Fit Analysis  
+            "cover_letter": "price_1S2BOLEEk2SJOP4Yx3lacDnw"      # US Cover Letter
+        }
+        
+        if product_id in product_price_map:
+            price_id = product_price_map[product_id]
+            stripe_url = await get_payment_link_for_price(price_id)
+            print(f"🎯 Using proper Stripe URL for {product_id}: {stripe_url}")
+        else:
+            stripe_url = price_info["stripe_url"]  # Fallback to config
+            print(f"⚠️ Using fallback URL for {product_id}")
+        
+    elif product_type == "bundle":
+        if product_id not in pricing_config["bundles"]:
+            raise HTTPException(status_code=400, detail=f"Bundle '{product_id}' not found")
+        
+        bundle_info = pricing_config["bundles"][product_id]
+        price_info = bundle_info["bundle_price"]
+        
+        # 🔧 FIX: Use proper Stripe sandbox URLs for bundles  
+        bundle_price_map = {
+            "career_boost": "price_1S2BOQEEk2SJOP4YpqEdFuUZ",      # US Career Boost Bundle
+            "job_hunter": "price_1S2BOVEEk2SJOP4YQMqsz54E",        # US Job Hunter Bundle
+            "complete_package": "price_1S2BOaEEk2SJOP4YjWnodEBv"   # US Complete Package Bundle
+        }
+        
+        if product_id in bundle_price_map:
+            price_id = bundle_price_map[product_id]
+            stripe_url = await get_payment_link_for_price(price_id)
+            print(f"🎯 Using proper Stripe URL for {product_id}: {stripe_url}")
+        else:
+            stripe_url = price_info["stripe_url"]  # Fallback to config
+            print(f"⚠️ Using fallback URL for {product_id}")
+        
+    else:
+        raise HTTPException(status_code=400, detail="Product type must be 'individual' or 'bundle'")
+    
+    # Store session data for post-payment retrieval
+    session_storage = {
+        "payment_session_id": payment_session_id,
+        "product_type": product_type,
+        "product_id": product_id,
+        "price_amount": price_info["amount"],
+        "currency": price_info["currency"],
+        "user_session": user_session,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "status": "pending"
+    }
+    
+    # In production, this would be stored in a database
+    # For now, we'll use a simple file-based approach
+    try:
+        # Try to load existing sessions
+        try:
+            with open("payment_sessions.json", "r") as f:
+                sessions = json.load(f)
+        except FileNotFoundError:
+            sessions = {"sessions": {}}
+        
+        # Add new session
+        sessions["sessions"][payment_session_id] = session_storage
+        
+        # Save back to file
+        with open("payment_sessions.json", "w") as f:
+            json.dump(sessions, f, indent=2)
+            
+        print(f"✅ Payment session stored: {payment_session_id}")
+        
+    except Exception as e:
+        print(f"⚠️ Error storing payment session: {e}")
+        # Continue anyway - worst case user has to re-upload
+    
+    # Return payment URL with session ID
+    payment_url = f"{stripe_url}?client_reference_id={payment_session_id}"
+    
+    return {
+        "payment_session_id": payment_session_id,
+        "payment_url": payment_url,
+        "product_type": product_type,
+        "product_id": product_id,
+        "amount": price_info["amount"],
+        "currency": price_info["currency"],
+        "display_price": price_info["display"]
+    }
+
+@app.get("/api/retrieve-payment-session/{session_id}")
+async def retrieve_payment_session(session_id: str):
+    """Retrieve stored session data after successful payment"""
+    
+    print(f"🔍 Retrieving payment session: {session_id}")
+    
+    try:
+        with open("payment_sessions.json", "r") as f:
+            sessions = json.load(f)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Payment session not found")
+    
+    if session_id not in sessions["sessions"]:
+        raise HTTPException(status_code=404, detail="Payment session not found")
+    
+    session_data = sessions["sessions"][session_id]
+    
+    # Mark as retrieved
+    session_data["status"] = "retrieved"
+    session_data["retrieved_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Save updated status
+    try:
+        with open("payment_sessions.json", "w") as f:
+            json.dump(sessions, f, indent=2)
+    except Exception as e:
+        print(f"⚠️ Error updating session status: {e}")
+    
+    return session_data
+
+@app.get("/api/upselling-recommendations/{product_id}")
+async def get_upselling_recommendations(product_id: str):
+    """Get smart upselling recommendations based on user's current selection"""
+    
+    print(f"💡 Upselling recommendations for: {product_id}")
+    
+    try:
+        with open("pricing_config_multi_product.json", "r") as f:
+            pricing_config = json.load(f)
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="Pricing configuration not available")
+    
+    recommendations = {
+        "current_product": product_id,
+        "suggestions": []
+    }
+    
+    # Get upselling logic from config
+    upselling_config = pricing_config.get("upselling", {})
+    messages = upselling_config.get("messages", {})
+    product_recommendations = upselling_config.get("recommendations", {})
+    
+    # If it's a single product, recommend bundles
+    if product_id in pricing_config["products"]:
+        current_product = pricing_config["products"][product_id]
+        current_price = current_product["individual_price"]["amount"]
+        
+        # Find recommended bundle
+        recommended_bundle_id = product_recommendations.get(product_id)
+        if recommended_bundle_id and recommended_bundle_id in pricing_config["bundles"]:
+            bundle = pricing_config["bundles"][recommended_bundle_id]
+            
+            # Calculate additional cost
+            additional_cost = bundle["bundle_price"]["amount"] - current_price
+            savings = bundle["savings"]["display"]
+            
+            # Get additional products in bundle
+            additional_products = [p for p in bundle["includes"] if p != product_id]
+            additional_product_names = [pricing_config["products"][p]["name"] for p in additional_products]
+            
+            suggestion = {
+                "type": "bundle_upgrade",
+                "bundle_id": recommended_bundle_id,
+                "bundle_name": bundle["name"],
+                "bundle_emoji": bundle["emoji"],
+                "additional_cost": additional_cost,
+                "additional_cost_display": f"${additional_cost}",
+                "savings": savings,
+                "additional_products": additional_product_names,
+                "message": messages.get("single_to_bundle", "").format(
+                    savings=savings,
+                    bundle_name=bundle["name"],
+                    additional_products=" + ".join(additional_product_names),
+                    additional_cost=f"${additional_cost}"
+                ),
+                "hope_message": pricing_config["hope_driven_messaging"]["taglines"][recommended_bundle_id]
+            }
+            recommendations["suggestions"].append(suggestion)
+        
+        # Also recommend the complete package
+        complete_package = pricing_config["bundles"]["complete_package"]
+        if product_id not in complete_package["includes"]:  # Only if not already included
+            additional_cost_complete = complete_package["bundle_price"]["amount"] - current_price
+            
+            missing_products = [p for p in complete_package["includes"] if p != product_id]
+            missing_product_names = [pricing_config["products"][p]["name"] for p in missing_products]
+            
+            suggestion = {
+                "type": "complete_package",
+                "bundle_id": "complete_package",
+                "bundle_name": complete_package["name"],
+                "bundle_emoji": complete_package["emoji"],
+                "additional_cost": additional_cost_complete,
+                "additional_cost_display": f"${additional_cost_complete}",
+                "total_savings": complete_package["savings"]["display"],
+                "missing_products": missing_product_names,
+                "message": messages.get("bundle_to_complete", "").format(
+                    missing_products=" + ".join(missing_product_names),
+                    additional_cost=f"${additional_cost_complete}",
+                    total_savings=complete_package["savings"]["display"]
+                ),
+                "hope_message": pricing_config["hope_driven_messaging"]["taglines"]["complete_package"]
+            }
+            recommendations["suggestions"].append(suggestion)
+    
+    # Add success stories and social proof
+    recommendations["social_proof"] = pricing_config["hope_driven_messaging"]["success_stories"]
+    
+    return recommendations
+
+@app.get("/debug/env")
+async def debug_environment():
+    """Debug endpoint to check environment variables"""
+    return {
+        "stripe_payment_url": STRIPE_PAYMENT_URL,
+        "stripe_success_token": STRIPE_SUCCESS_TOKEN,
+        "railway_environment": os.getenv("RAILWAY_ENVIRONMENT", "not_set"),
+        "railway_environment_name": os.getenv("RAILWAY_ENVIRONMENT_NAME", "not_set"),
+        "railway_service_name": os.getenv("RAILWAY_SERVICE_NAME", "not_set"),
+        "all_stripe_env_vars": {
+            "STRIPE_PAYMENT_URL": os.getenv("STRIPE_PAYMENT_URL", "not_set"),
+            "STRIPE_PAYMENT_SUCCESS_TOKEN": os.getenv("STRIPE_PAYMENT_SUCCESS_TOKEN", "not_set")
+        },
+        "is_production": "production" in STRIPE_PAYMENT_URL.lower(),
+        "is_test_mode": "test_" in STRIPE_PAYMENT_URL.lower()
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

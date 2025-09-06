@@ -5,7 +5,8 @@ const API_CONFIG = {
         baseUrl: 'http://localhost:8000',
         endpoints: {
             checkResume: '/api/check-resume',
-            health: '/api/health'
+            health: '/api/health',
+            createPaymentSession: '/api/create-payment-session'
         }
     },
     
@@ -14,7 +15,8 @@ const API_CONFIG = {
         baseUrl: 'https://q752325o84.execute-api.us-east-1.amazonaws.com/Prod',
         endpoints: {
             checkResume: '/api/check-resume',
-            health: '/api/health'
+            health: '/api/health',
+            createPaymentSession: '/api/create-payment-session'
         }
     }
 };
@@ -29,7 +31,7 @@ const API = API_CONFIG[ENVIRONMENT];
 
 // Stripe Configuration
 const STRIPE_CONFIG = {
-    paymentUrl: 'https://buy.stripe.com/eVqaEWfOk37Mf9ncPWfMA00',
+    paymentUrl: 'https://buy.stripe.com/test_dRm8wPaXq2028FEgNQ0000F',
     successToken: 'payment_success_123'
 };
 

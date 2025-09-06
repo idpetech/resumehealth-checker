@@ -6,6 +6,30 @@ let currentAnalysis = null;
 // Check for payment success token in URL
 const urlParams = new URLSearchParams(window.location.search);
 const paymentToken = urlParams.get('payment_token');
+const sessionRestored = urlParams.get('session_restored');
+
+// Check for restored session data
+if (sessionRestored === 'true') {
+    const storedAnalysis = localStorage.getItem('premiumAnalysis');
+    const storedPaymentToken = localStorage.getItem('paymentToken');
+    
+    if (storedAnalysis && storedPaymentToken) {
+        try {
+            currentAnalysis = JSON.parse(storedAnalysis);
+            // Display the premium analysis
+            displayResults(currentAnalysis, true);
+            
+            // Clean up localStorage
+            localStorage.removeItem('premiumAnalysis');
+            localStorage.removeItem('paymentToken');
+            
+            // Show success message
+            showNotification('Premium analysis restored successfully!', 'success');
+        } catch (error) {
+            console.error('Error parsing stored analysis:', error);
+        }
+    }
+}
 
 // Handle file upload
 function handleFileSelect(event) {
@@ -87,12 +111,20 @@ async function analyzeResume() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const analysis = await response.json();
-        currentAnalysis = analysis;
+        const responseData = await response.json();
+        currentAnalysis = responseData;
+        
+        // Extract the analysis data from the response
+        const analysis = responseData.analysis || responseData;
         
         // DEBUG: Log the full analysis to browser console
         console.log('=== FULL ANALYSIS RESPONSE ===');
-        console.log(analysis);
+        console.log('Response data:', responseData);
+        console.log('Analysis data:', analysis);
+        console.log('Analysis type:', analysis.analysis_type);
+        console.log('Overall score:', analysis.overall_score);
+        console.log('Major issues:', analysis.major_issues);
+        console.log('Teaser message:', analysis.teaser_message);
         console.log('================================');
         
         displayResults(analysis);
@@ -114,12 +146,18 @@ function displayResults(analysis) {
     const scoreClass = getScoreClass(score);
 
     // Debug logging
+    console.log('=== DISPLAY RESULTS DEBUG ===');
     console.log('Analysis type:', analysis.analysis_type);
+    console.log('Overall score:', analysis.overall_score);
+    console.log('Score parsed:', score);
+    console.log('Major issues:', analysis.major_issues);
+    console.log('Teaser message:', analysis.teaser_message);
     console.log('Has text_rewrites:', 'text_rewrites' in analysis);
     console.log('Has sample_improvements:', 'sample_improvements' in analysis);
     if (analysis.text_rewrites) {
         console.log('Number of rewrites:', analysis.text_rewrites.length);
     }
+    console.log('==============================');
 
     if (analysis.analysis_type === 'free') {
         // Display free analysis with upgrade prompt
@@ -150,9 +188,9 @@ function displayResults(analysis) {
                     <li>✓ Formatting fixes</li>
                     <li>✓ Prioritized action plan</li>
                 </ul>
-                <a href="${STRIPE_CONFIG.paymentUrl}?success_url=${encodeURIComponent(window.location.origin + '/?payment_token=' + STRIPE_CONFIG.successToken)}" class="upgrade-btn">
+                <button onclick="createPaymentSession()" class="upgrade-btn">
                     Unlock Full Report - $5
-                </a>
+                </button>
             </div>
         `;
     } else {
@@ -305,6 +343,85 @@ function getScoreClass(score) {
     if (score >= 60) return 'score-good';
     if (score >= 40) return 'score-fair';
     return 'score-poor';
+}
+
+// Create payment session and redirect to Stripe
+async function createPaymentSession() {
+    if (!currentAnalysis) {
+        alert('Please analyze your resume first');
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('product_type', 'individual');
+        formData.append('product_id', 'resume_analysis');
+        formData.append('session_data', JSON.stringify(currentAnalysis));
+        
+        const response = await fetch(getApiUrl('createPaymentSession'), {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const paymentData = await response.json();
+        console.log('Payment session created:', paymentData);
+        
+        // Redirect to Stripe payment URL
+        window.location.href = paymentData.payment_url;
+        
+    } catch (error) {
+        console.error('Payment session creation failed:', error);
+        alert('Failed to create payment session. Please try again.');
+    }
+}
+
+// Show notification function
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        font-size: 0.9rem;
+        max-width: 300px;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+    
+    // Add animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Remove after 5 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideIn 0.3s ease-out reverse';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 5000);
 }
 
 // If payment token is present, automatically analyze the previously uploaded resume

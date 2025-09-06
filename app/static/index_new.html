@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Resume Analyzer</title>
+   <!-- Use Tailwind CSS for rapid styling -->
+   <script src="https://cdn.tailwindcss.com"></script>
+   <style>
+       body {
+           font-family: 'Inter', sans-serif;
+           background-color: #f7f9fc;
+       }
+       /* Custom CSS for the message box */
+       #message-box {
+           position: fixed;
+           bottom: 20px;
+           left: 50%;
+           transform: translateX(-50%);
+           padding: 1rem 2rem;
+           background-color: #4CAF50;
+           color: white;
+           border-radius: 9999px;
+           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+           font-weight: 600;
+           z-index: 1000;
+           opacity: 0;
+           transition: opacity 0.5s ease-in-out;
+       }
+       .message-box-show {
+           opacity: 1;
+       }
+       /* Loading overlay */
+       .loading-overlay {
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           background-color: rgba(0, 0, 0, 0.5);
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           z-index: 9999;
+           opacity: 0;
+           visibility: hidden;
+           transition: all 0.3s ease;
+       }
+       .loading-overlay.show {
+           opacity: 1;
+           visibility: visible;
+       }
+       .hourglass {
+           width: 50px;
+           height: 50px;
+           border: 3px solid #f3f3f3;
+           border-top: 3px solid #3498db;
+           border-radius: 50%;
+           animation: spin 1s linear infinite;
+       }
+       @keyframes spin {
+           0% { transform: rotate(0deg); }
+           100% { transform: rotate(360deg); }
+       }
+       /* File upload area */
+       .file-upload-area {
+           border: 2px dashed #d1d5db;
+           transition: all 0.3s ease;
+       }
+       .file-upload-area.dragover {
+           border-color: #3b82f6;
+           background-color: #eff6ff;
+       }
+       /* Results panel */
+       .results-panel {
+           max-height: 70vh;
+           overflow-y: auto;
+       }
+   </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+   <div class="max-w-4xl w-full mx-auto p-6 lg:p-12 bg-white rounded-xl shadow-lg">
+
+       <!-- Header Section -->
+       <header class="text-center mb-10">
+           <h1 class="text-3xl lg:text-4xl font-extrabold text-gray-900 mb-2">Resume Analyzer</h1>
+           <p class="text-base lg:text-lg text-gray-500">Boost your career with powerful resume insights.</p>
+       </header>
+
+       <!-- Navigation Buttons -->
+       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+           <button class="w-full sm:w-auto px-6 py-2 rounded-full text-sm font-semibold text-gray-800 bg-gray-200 hover:bg-gray-300 transition-colors">
+               No Subscriptions. No Commitments. Just Results.
+           </button>
+           <button class="w-full sm:w-auto px-6 py-2 rounded-full text-sm font-semibold text-gray-800 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+               My Products
+           </button>
+       </div>
+
+       <!-- File Upload Section -->
+       <div class="mb-8">
+           <div class="file-upload-area p-8 rounded-2xl text-center cursor-pointer" id="fileUploadArea">
+               <div class="mb-4">
+                   <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                       <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                   </svg>
+               </div>
+               <p class="text-lg font-medium text-gray-900 mb-2">Drop your resume here, or click to browse</p>
+               <p class="text-sm text-gray-500">Supports PDF, DOC, DOCX files up to 10MB</p>
+               <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx" />
+           </div>
+       </div>
+
+       <!-- Freemium Section -->
+       <div class="grid grid-cols-1 mb-8">
+            <div class="bg-gray-50 p-6 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center text-center">
+               <h2 class="text-2xl font-bold text-gray-900 mb-2">Basic Resume Check</h2>
+               <p class="text-sm text-gray-500 mb-4">Get a free, high-level analysis of your resume's formatting and readability.</p>
+               <button id="free-button" class="w-full sm:w-auto py-3 px-8 rounded-xl font-bold text-white bg-gray-900 hover:bg-gray-700 transition-colors shadow-lg">
+                   Try Now (Free)
+               </button>
+           </div>
+       </div>
+
+       <!-- Paid Pricing Grid -->
+       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+           <!-- ATS Analysis Card -->
+           <div class="bg-blue-50 bg-opacity-70 p-6 rounded-2xl border border-blue-100 flex flex-col justify-between">
+               <div>
+                   <div class="flex items-center text-blue-600 mb-2">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                           <path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm-1 15h2v-6h-2v6zm0-8h2V7h-2v2z"/>
+                       </svg>
+                       <h2 class="text-xl font-bold">ATS Analysis</h2>
+                   </div>
+                   <p class="text-sm text-gray-700 mt-2">Get a detailed analysis of your resume's compatibility with a specific job description.</p>
+               </div>
+               <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg" data-product="job_fit_analysis" data-price="1.49">
+                   Buy Now ($1.49)
+               </button>
+           </div>
+
+           <!-- Cover Letter Card -->
+           <div class="bg-green-50 bg-opacity-70 p-6 rounded-2xl border border-green-100 flex flex-col justify-between">
+               <div>
+                   <div class="flex items-center text-green-600 mb-2">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                           <path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/>
+                       </svg>
+                       <h2 class="text-xl font-bold">Cover Letter</h2>
+                   </div>
+                   <p class="text-sm text-gray-700 mt-2">Generate a personalized cover letter tailored to your resume and a target job.</p>
+               </div>
+               <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-lg" data-product="cover_letter" data-price="2.99">
+                   Buy Now ($2.99)
+               </button>
+           </div>
+
+           <!-- Job Fit Score Card -->
+           <div class="bg-amber-50 bg-opacity-70 p-6 rounded-2xl border border-amber-100 flex flex-col justify-between">
+               <div>
+                   <div class="flex items-center text-amber-600 mb-2">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                           <path d="M12 2a10 10 0 1010 10A10.011 10.011 0 0012 2zm0 18a8 8 0 118-8 8.009 8.009 0 01-8 8zm4-12.5a.5.5 0 10-1 0 .5.5 0 001 0zM11 15.5V17h2v-1.5z"/>
+                       </svg>
+                       <h2 class="text-xl font-bold">Job Fit Score</h2>
+                   </div>
+                   <p class="text-sm text-gray-700 mt-2">Get a quick score and detailed report on how well your resume fits a job.</p>
+               </div>
+               <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-lg" data-product="job_fit_analysis" data-price="1.99">
+                   Buy Now ($1.99)
+               </button>
+           </div>
+
+           <!-- Resume Rewrite Card -->
+           <div class="bg-purple-50 bg-opacity-70 p-6 rounded-2xl border border-purple-100 flex flex-col justify-between">
+               <div>
+                   <div class="flex items-center text-purple-600 mb-2">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                           <path d="M16 2H8a2 2 0 00-2 2v16a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2zM9 10h6v2H9v-2zm0-4h6v2H9V6zm0 8h6v2H9v-2z"/>
+                       </svg>
+                       <h2 class="text-xl font-bold">Resume Rewrite</h2>
+                   </div>
+                   <p class="text-sm text-gray-700 mt-2">A complete rewrite of your resume to make it more professional and compelling.</p>
+               </div>
+               <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-lg" data-product="resume_enhancer" data-price="3.99">
+                   Buy Now ($3.99)
+               </button>
+           </div>
+
+           <!-- The Power Pack Card (takes up full width on mobile, and spans two columns on larger screens) -->
+           <div class="sm:col-span-2 bg-indigo-50 bg-opacity-70 p-6 rounded-2xl border border-indigo-100 flex flex-col justify-between">
+               <div>
+                   <div class="flex items-center text-indigo-600 mb-2">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                           <path d="M12 22a10 10 0 1110-10A10.011 10.011 0 0112 22zM12 4a8 8 0 108 8 8.009 8.009 0 00-8-8zm0 13a5 5 0 115-5 5.006 5.006 0 01-5 5zm0-8a3 3 0 103 3 3.003 3.003 0 00-3-3z"/>
+                       </svg>
+                       <h2 class="text-xl font-bold">The Power Pack</h2>
+                   </div>
+                   <p class="text-sm text-gray-700 mt-2">Get the **Cover Letter Generator** and **Resume Rewrite** together for one low price. Best value!</p>
+               </div>
+               <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg" data-product="power_pack" data-price="5.49">
+                   Buy Now ($5.49)
+               </button>
+           </div>
+       </div>
+
+       <!-- Results Panel -->
+       <div id="resultsPanel" class="mt-8 hidden">
+           <div class="bg-white border border-gray-200 rounded-2xl p-6 results-panel">
+               <h3 class="text-xl font-bold text-gray-900 mb-4">Analysis Results</h3>
+               <div id="analysisResults" class="space-y-4"></div>
+           </div>
+       </div>
+
+   </div>
+
+   <!-- Loading overlay -->
+   <div class="loading-overlay" id="loadingOverlay">
+       <div class="text-center">
+           <div class="hourglass"></div>
+           <p class="text-white mt-4 text-lg">Processing your request...</p>
+       </div>
+   </div>
+
+   <!-- Message box element -->
+   <div id="message-box"></div>
+
+   <script>
+       // Global variables
+       let currentAnalysisId = null;
+       let isProcessing = false;
+       let premiumResultsDisplayed = false;
+
+       document.addEventListener('DOMContentLoaded', () => {
+           const messageBox = document.getElementById('message-box');
+           const fileUploadArea = document.getElementById('fileUploadArea');
+           const fileInput = document.getElementById('fileInput');
+           const freeButton = document.getElementById('free-button');
+           const buyButtons = document.querySelectorAll('.buy-button');
+           const resultsPanel = document.getElementById('resultsPanel');
+           const analysisResults = document.getElementById('analysisResults');
+           const loadingOverlay = document.getElementById('loadingOverlay');
+
+           // File upload handling
+           fileUploadArea.addEventListener('click', () => fileInput.click());
+           fileUploadArea.addEventListener('dragover', handleDragOver);
+           fileUploadArea.addEventListener('dragleave', handleDragLeave);
+           fileUploadArea.addEventListener('drop', handleDrop);
+           fileInput.addEventListener('change', handleFileSelect);
+
+           // Free analysis button
+           freeButton.addEventListener('click', handleFreeAnalysis);
+
+           // Buy buttons
+           buyButtons.forEach(button => {
+               button.addEventListener('click', (event) => {
+                   const productType = event.target.dataset.product;
+                   const price = event.target.dataset.price;
+                   handlePremiumPurchase(productType, price);
+               });
+           });
+
+           // Check for premium results on page load
+           checkForPremiumResults();
+
+           function showMessage(text, type = 'success') {
+               messageBox.textContent = text;
+               messageBox.style.backgroundColor = type === 'error' ? '#ef4444' : '#4CAF50';
+               messageBox.classList.add('message-box-show');
+               setTimeout(() => {
+                   messageBox.classList.remove('message-box-show');
+               }, 3000);
+           }
+
+           function showLoadingOverlay() {
+               loadingOverlay.classList.add('show');
+           }
+
+           function hideLoadingOverlay() {
+               loadingOverlay.classList.remove('show');
+           }
+
+           function handleDragOver(e) {
+               e.preventDefault();
+               fileUploadArea.classList.add('dragover');
+           }
+
+           function handleDragLeave(e) {
+               e.preventDefault();
+               fileUploadArea.classList.remove('dragover');
+           }
+
+           function handleDrop(e) {
+               e.preventDefault();
+               fileUploadArea.classList.remove('dragover');
+               const files = e.dataTransfer.files;
+               if (files.length > 0) {
+                   handleFile(files[0]);
+               }
+           }
+
+           function handleFileSelect(e) {
+               const file = e.target.files[0];
+               if (file) {
+                   handleFile(file);
+               }
+           }
+
+           function handleFile(file) {
+               if (!file) return;
+
+               // Validate file type
+               const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+               if (!allowedTypes.includes(file.type)) {
+                   showMessage('Please upload a PDF, DOC, or DOCX file.', 'error');
+                   return;
+               }
+
+               // Validate file size (10MB)
+               if (file.size > 10 * 1024 * 1024) {
+                   showMessage('File size must be less than 10MB.', 'error');
+                   return;
+               }
+
+               // Store file for analysis
+               window.currentFile = file;
+               showMessage(`File "${file.name}" ready for analysis!`);
+           }
+
+           async function handleFreeAnalysis() {
+               if (!window.currentFile) {
+                   showMessage('Please upload a resume file first.', 'error');
+                   return;
+               }
+
+               if (isProcessing) {
+                   showMessage('Analysis already in progress...');
+                   return;
+               }
+
+               isProcessing = true;
+               showLoadingOverlay();
+
+               try {
+                   const formData = new FormData();
+                   formData.append('file', window.currentFile);
+                   formData.append('analysis_type', 'free');
+
+                   const controller = new AbortController();
+                   const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+                   const response = await fetch('/api/v1/analyze', {
+                       method: 'POST',
+                       body: formData,
+                       signal: controller.signal
+                   });
+
+                   clearTimeout(timeoutId);
+
+                   if (!response.ok) {
+                       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                   }
+
+                   const result = await response.json();
+                   currentAnalysisId = result.analysis_id;
+                   
+                   displayResults(result);
+                   showMessage('Free analysis completed!');
+
+               } catch (error) {
+                   console.error('Analysis error:', error);
+                   if (error.name === 'AbortError') {
+                       showMessage('Analysis timed out. Please try again.', 'error');
+                   } else {
+                       showMessage('Analysis failed: ' + error.message, 'error');
+                   }
+               } finally {
+                   isProcessing = false;
+                   hideLoadingOverlay();
+               }
+           }
+
+           async function handlePremiumPurchase(productType, price) {
+               if (!window.currentFile) {
+                   showMessage('Please upload a resume file first.', 'error');
+                   return;
+               }
+
+               if (isProcessing) {
+                   showMessage('Operation already in progress...');
+                   return;
+               }
+
+               isProcessing = true;
+               showLoadingOverlay();
+
+               try {
+                   const formData = new FormData();
+                   formData.append('file', window.currentFile);
+                   formData.append('product_type', productType);
+                   formData.append('price', price);
+
+                   // Add job posting if required
+                   if (productType === 'job_fit_analysis' || productType === 'cover_letter') {
+                       const jobPosting = prompt('Please enter the job description or posting:');
+                       if (!jobPosting) {
+                           showMessage('Job description is required for this product.', 'error');
+                           return;
+                       }
+                       formData.append('job_posting', jobPosting);
+                   }
+
+                   const controller = new AbortController();
+                   const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+                   const response = await fetch('/api/v1/payment/create', {
+                       method: 'POST',
+                       body: formData,
+                       signal: controller.signal
+                   });
+
+                   clearTimeout(timeoutId);
+
+                   if (!response.ok) {
+                       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                   }
+
+                   const result = await response.json();
+                   
+                   if (result.payment_url) {
+                       showMessage('Redirecting to payment...');
+                       window.location.href = result.payment_url;
+                   } else {
+                       throw new Error('No payment URL received');
+                   }
+
+               } catch (error) {
+                   console.error('Payment error:', error);
+                   if (error.name === 'AbortError') {
+                       showMessage('Payment request timed out. Please try again.', 'error');
+                   } else {
+                       showMessage('Payment failed: ' + error.message, 'error');
+                   }
+               } finally {
+                   isProcessing = false;
+                   hideLoadingOverlay();
+               }
+           }
+
+           function displayResults(result) {
+               if (premiumResultsDisplayed) {
+                   console.log('Premium results already displayed, not overwriting');
+                   return;
+               }
+
+               resultsPanel.classList.remove('hidden');
+               analysisResults.innerHTML = '';
+
+               if (result.analysis_type === 'free' && result.raw_response) {
+                   try {
+                       const analysis = JSON.parse(result.raw_response);
+                       
+                       // Overall Score
+                       if (analysis.overall_score) {
+                           const scoreHtml = `
+                               <div class="bg-blue-50 p-4 rounded-lg">
+                                   <h4 class="font-bold text-blue-900 mb-2">Overall Score</h4>
+                                   <div class="text-3xl font-bold text-blue-600">${analysis.overall_score}/100</div>
+                               </div>
+                           `;
+                           analysisResults.innerHTML += scoreHtml;
+                       }
+
+                       // Strengths
+                       if (analysis.strength_highlights && analysis.strength_highlights.length > 0) {
+                           const strengthsHtml = `
+                               <div class="bg-green-50 p-4 rounded-lg">
+                                   <h4 class="font-bold text-green-900 mb-2">Strengths</h4>
+                                   <ul class="space-y-2">
+                                       ${analysis.strength_highlights.map(strength => 
+                                           `<li class="text-green-800">• ${strength}</li>`
+                                       ).join('')}
+                                   </ul>
+                               </div>
+                           `;
+                           analysisResults.innerHTML += strengthsHtml;
+                       }
+
+                       // Improvements
+                       if (analysis.improvement_opportunities && analysis.improvement_opportunities.length > 0) {
+                           const improvementsHtml = `
+                               <div class="bg-amber-50 p-4 rounded-lg">
+                                   <h4 class="font-bold text-amber-900 mb-2">Improvement Opportunities</h4>
+                                   <ul class="space-y-2">
+                                       ${analysis.improvement_opportunities.map(improvement => 
+                                           `<li class="text-amber-800">• ${improvement}</li>`
+                                       ).join('')}
+                                   </ul>
+                               </div>
+                           `;
+                           analysisResults.innerHTML += improvementsHtml;
+                       }
+
+                       // Encouragement
+                       if (analysis.encouragement_message) {
+                           const encouragementHtml = `
+                               <div class="bg-purple-50 p-4 rounded-lg">
+                                   <h4 class="font-bold text-purple-900 mb-2">Encouragement</h4>
+                                   <p class="text-purple-800">${analysis.encouragement_message}</p>
+                               </div>
+                           `;
+                           analysisResults.innerHTML += encouragementHtml;
+                       }
+
+                   } catch (error) {
+                       console.error('Error parsing analysis results:', error);
+                       analysisResults.innerHTML = `
+                           <div class="bg-red-50 p-4 rounded-lg">
+                               <h4 class="font-bold text-red-900 mb-2">Analysis Results</h4>
+                               <p class="text-red-800">Error displaying results. Please try again.</p>
+                           </div>
+                       `;
+                   }
+               } else {
+                   analysisResults.innerHTML = `
+                       <div class="bg-gray-50 p-4 rounded-lg">
+                           <h4 class="font-bold text-gray-900 mb-2">Analysis Results</h4>
+                           <p class="text-gray-800">No results available.</p>
+                       </div>
+                   `;
+               }
+           }
+
+           function checkForPremiumResults() {
+               const urlParams = new URLSearchParams(window.location.search);
+               const premium = urlParams.get('premium');
+               const product = urlParams.get('product');
+               const analysisId = urlParams.get('analysis_id');
+
+               if (premium === 'true' && product && analysisId) {
+                   displayPremiumResults(analysisId, product);
+               }
+           }
+
+           async function displayPremiumResults(analysisId, productType) {
+               if (premiumResultsDisplayed) {
+                   console.log('Premium results already displayed');
+                   return;
+               }
+
+               premiumResultsDisplayed = true;
+               showLoadingOverlay();
+
+               try {
+                   const controller = new AbortController();
+                   const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+                   const response = await fetch(`/api/v1/premium-results/${analysisId}?embedded=true&product_type=${productType}`, {
+                       signal: controller.signal
+                   });
+
+                   clearTimeout(timeoutId);
+
+                   if (!response.ok) {
+                       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                   }
+
+                   const html = await response.text();
+                   
+                   resultsPanel.classList.remove('hidden');
+                   analysisResults.innerHTML = html;
+                   
+                   showMessage('Premium results loaded successfully!');
+
+               } catch (error) {
+                   console.error('Premium results error:', error);
+                   if (error.name === 'AbortError') {
+                       showMessage('Premium results timed out. Please try again.', 'error');
+                   } else {
+                       showMessage('Failed to load premium results: ' + error.message, 'error');
+                   }
+               } finally {
+                   hideLoadingOverlay();
+               }
+           }
+
+           // Debug functions (available in console)
+           window.testFunctions = {
+               testPremiumResults: (analysisId, productType) => {
+                   displayPremiumResults(analysisId, productType);
+               },
+               checkResultsDiv: () => {
+                   console.log('Results panel:', resultsPanel);
+                   console.log('Analysis results:', analysisResults);
+               },
+               testRegion: (countryCode) => {
+                   fetch(`/api/v1/pricing?region=${countryCode}`)
+                       .then(r => r.json())
+                       .then(console.log);
+               },
+               testStats: () => {
+                   fetch('/api/v1/stats')
+                       .then(r => r.json())
+                       .then(console.log);
+               }
+           };
+       });
+   </script>
+</body>
+</html>
