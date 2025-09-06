@@ -365,41 +365,38 @@ async def payment_success(
         currency = verification['currency'].upper()
         AnalysisDB.mark_as_paid(analysis_id, amount_paid, currency)
         
-        # Generate real premium analysis if not already present
-        if not analysis.get('premium_result'):
-            logger.info(f"Generating real premium analysis for {analysis_id}")
-            try:
-                # Get job posting if available
-                job_posting = analysis.get('job_posting')
-                
-                # Generate real premium analysis
-                premium_result = await analysis_service.analyze_resume_premium(
-                    analysis['resume_text'], 
-                    job_posting
-                )
-                
-                # Store the real premium result
-                AnalysisDB.update_premium_result(analysis_id, premium_result)
-                analysis['premium_result'] = premium_result
-                logger.info(f"Real premium analysis generated and stored for {analysis_id}")
-                
-            except Exception as e:
-                logger.error(f"Failed to generate real premium analysis: {e}")
-                # Fallback to basic analysis if AI fails
-                premium_result = {
-                    "overall_score": 85,
-                    "strength_highlights": ["Payment completed successfully - premium analysis delivered"],
-                    "improvement_opportunities": ["Your resume shows excellent potential for growth"],
-                    "ats_optimization": {"current_strength": "Good structure and formatting", "enhancement_opportunities": [], "impact_prediction": "High probability of passing ATS screening"},
-                    "content_enhancement": {"strong_sections": ["Professional experience"], "growth_areas": [], "strategic_additions": []},
-                    "text_rewrites": [],
-                    "competitive_advantages": "Your resume demonstrates strong professional qualifications.",
-                    "success_prediction": "Based on your qualifications, you have excellent potential for success in your job search."
-                }
-                AnalysisDB.update_premium_result(analysis_id, premium_result)
-                analysis['premium_result'] = premium_result
-        else:
-            logger.info(f"Using existing premium analysis for {analysis_id}")
+        # Always generate fresh real premium analysis for new payments
+        logger.info(f"Generating fresh real premium analysis for {analysis_id}")
+        try:
+            # Get job posting if available
+            job_posting = analysis.get('job_posting')
+            
+            # Generate real premium analysis
+            premium_result = await analysis_service.analyze_resume_premium(
+                analysis['resume_text'], 
+                job_posting
+            )
+            
+            # Store the real premium result
+            AnalysisDB.update_premium_result(analysis_id, premium_result)
+            analysis['premium_result'] = premium_result
+            logger.info(f"Fresh real premium analysis generated and stored for {analysis_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to generate real premium analysis: {e}")
+            # Fallback to basic analysis if AI fails
+            premium_result = {
+                "overall_score": 85,
+                "strength_highlights": ["Payment completed successfully - premium analysis delivered"],
+                "improvement_opportunities": ["Your resume shows excellent potential for growth"],
+                "ats_optimization": {"current_strength": "Good structure and formatting", "enhancement_opportunities": [], "impact_prediction": "High probability of passing ATS screening"},
+                "content_enhancement": {"strong_sections": ["Professional experience"], "growth_areas": [], "strategic_additions": []},
+                "text_rewrites": [],
+                "competitive_advantages": "Your resume demonstrates strong professional qualifications.",
+                "success_prediction": "Based on your qualifications, you have excellent potential for success in your job search."
+            }
+            AnalysisDB.update_premium_result(analysis_id, premium_result)
+            analysis['premium_result'] = premium_result
         
         # Re-retrieve analysis to ensure we have the latest data
         analysis = AnalysisDB.get(analysis_id)
