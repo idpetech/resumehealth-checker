@@ -21,6 +21,15 @@
            border-color: #3b82f6;
            background-color: #eff6ff;
        }
+       
+       /* Upload state management */
+       .upload-state {
+           transition: all 0.3s ease;
+       }
+       
+       .upload-state.hidden {
+           display: none;
+       }
        /* Results modal */
        .results-modal {
            position: fixed;
@@ -125,13 +134,29 @@
        <!-- File Upload Section -->
        <div class="mb-8">
            <div class="file-upload-area p-8 rounded-2xl text-center cursor-pointer" id="fileUploadArea">
-               <div class="mb-4">
-                   <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                       <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                   </svg>
+               <!-- Default upload state -->
+               <div id="uploadDefault" class="upload-state">
+                   <div class="mb-4">
+                       <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                           <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                       </svg>
+                   </div>
+                   <p class="text-lg font-medium text-gray-900 mb-2">Drop your resume here, or click to browse</p>
+                   <p class="text-sm text-gray-500">Supports PDF, DOC, DOCX files up to 10MB</p>
                </div>
-               <p class="text-lg font-medium text-gray-900 mb-2">Drop your resume here, or click to browse</p>
-               <p class="text-sm text-gray-500">Supports PDF, DOC, DOCX files up to 10MB</p>
+               
+               <!-- File loaded state -->
+               <div id="uploadLoaded" class="upload-state hidden">
+                   <div class="mb-4">
+                       <svg class="mx-auto h-12 w-12 text-green-500" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                       </svg>
+                   </div>
+                   <p class="text-lg font-medium text-green-700 mb-2">File Loaded Successfully</p>
+                   <p id="loadedFileName" class="text-sm text-gray-600 mb-2 font-mono bg-gray-100 px-3 py-1 rounded"></p>
+                   <p class="text-xs text-gray-500">Click to change file</p>
+               </div>
+               
                <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx" />
            </div>
        </div>
@@ -276,8 +301,8 @@
         </div>
     </div>
 
-   <!-- Message box element -->
-   <div id="message-box"></div>
+   <!-- Toast Notification System -->
+   <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
     <script>
        // Global variables
@@ -287,7 +312,6 @@
 
 
        document.addEventListener('DOMContentLoaded', () => {
-           const messageBox = document.getElementById('message-box');
            const fileUploadArea = document.getElementById('fileUploadArea');
            const fileInput = document.getElementById('fileInput');
            const freeButton = document.getElementById('free-button');
@@ -308,6 +332,14 @@
            fileUploadArea.addEventListener('dragleave', handleDragLeave);
            fileUploadArea.addEventListener('drop', handleDrop);
            fileInput.addEventListener('change', handleFileSelect);
+           
+           // Reset file input when a new file is selected
+           fileInput.addEventListener('change', () => {
+               // Clear the input value to allow selecting the same file again
+               if (fileInput.value) {
+                   // File will be handled by handleFileSelect
+               }
+           });
 
            // Free analysis button
            freeButton.addEventListener('click', handleFreeAnalysis);
@@ -382,12 +414,13 @@
            });
 
            function showMessage(text, type = 'success') {
-               messageBox.textContent = text;
-               messageBox.style.backgroundColor = type === 'error' ? '#ef4444' : '#4CAF50';
-               messageBox.classList.add('message-box-show');
-               setTimeout(() => {
-                   messageBox.classList.remove('message-box-show');
-               }, 3000);
+               // Use the global showMessage function from the second script tag
+               if (typeof window.showMessage === 'function') {
+                   window.showMessage(text, type);
+               } else {
+                   // Fallback to console if toast system not available
+                   console.log(`[${type.toUpperCase()}] ${text}`);
+               }
            }
 
            function showLoadingOverlay() {
@@ -442,7 +475,37 @@
 
                // Store file for analysis
                window.currentFile = file;
+               
+               // Update UI to show file loaded state
+               updateFileUploadUI(file.name);
+               
                showMessage(`File "${file.name}" ready for analysis!`);
+           }
+
+           function updateFileUploadUI(filename) {
+               const uploadDefault = document.getElementById('uploadDefault');
+               const uploadLoaded = document.getElementById('uploadLoaded');
+               const loadedFileName = document.getElementById('loadedFileName');
+               
+               if (uploadDefault && uploadLoaded && loadedFileName) {
+                   // Hide default state, show loaded state
+                   uploadDefault.classList.add('hidden');
+                   uploadLoaded.classList.remove('hidden');
+                   
+                   // Set filename
+                   loadedFileName.textContent = filename;
+               }
+           }
+
+           function resetFileUploadUI() {
+               const uploadDefault = document.getElementById('uploadDefault');
+               const uploadLoaded = document.getElementById('uploadLoaded');
+               
+               if (uploadDefault && uploadLoaded) {
+                   // Show default state, hide loaded state
+                   uploadDefault.classList.remove('hidden');
+                   uploadLoaded.classList.add('hidden');
+               }
            }
 
            async function handleFreeAnalysis() {
@@ -693,14 +756,75 @@
    <script>
        // Global helper functions
        function showMessage(text, type = 'success') {
-           const messageBox = document.getElementById('message-box');
-           if (messageBox) {
-               messageBox.textContent = text;
-               messageBox.style.backgroundColor = type === 'error' ? '#ef4444' : '#4CAF50';
-               messageBox.classList.add('message-box-show');
+           const toastContainer = document.getElementById('toast-container');
+           if (!toastContainer) return;
+
+           // Create toast element
+           const toast = document.createElement('div');
+           const toastId = 'toast-' + Date.now();
+           toast.id = toastId;
+           
+           // Set colors based on type
+           let bgColor, textColor, icon;
+           switch (type) {
+               case 'error':
+                   bgColor = 'bg-red-500';
+                   textColor = 'text-white';
+                   icon = '❌';
+                   break;
+               case 'info':
+                   bgColor = 'bg-blue-500';
+                   textColor = 'text-white';
+                   icon = 'ℹ️';
+                   break;
+               case 'warning':
+                   bgColor = 'bg-yellow-500';
+                   textColor = 'text-white';
+                   icon = '⚠️';
+                   break;
+               default: // success
+                   bgColor = 'bg-green-500';
+                   textColor = 'text-white';
+                   icon = '✅';
+           }
+
+           // Set toast content and styling
+           toast.className = `${bgColor} ${textColor} px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 ease-in-out translate-x-full opacity-0`;
+           toast.innerHTML = `
+               <div class="flex items-center space-x-3">
+                   <span class="text-lg">${icon}</span>
+                   <span class="font-medium">${text}</span>
+                   <button onclick="removeToast('${toastId}')" class="ml-4 text-white hover:text-gray-200 transition-colors">
+                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                       </svg>
+                   </button>
+               </div>
+           `;
+
+           // Add to container
+           toastContainer.appendChild(toast);
+
+           // Animate in
+           setTimeout(() => {
+               toast.classList.remove('translate-x-full', 'opacity-0');
+           }, 100);
+
+           // Auto remove after 5 seconds
+           setTimeout(() => {
+               removeToast(toastId);
+           }, 5000);
+       }
+
+       function removeToast(toastId) {
+           const toast = document.getElementById(toastId);
+           if (toast) {
+               toast.classList.add('translate-x-full', 'opacity-0');
                setTimeout(() => {
-                   messageBox.classList.remove('message-box-show');
-               }, 5000);
+                   if (toast.parentNode) {
+                       toast.parentNode.removeChild(toast);
+                   }
+               }, 300);
            }
        }
 
@@ -724,12 +848,9 @@
            
            // Get references to elements
            const resultsModal = document.getElementById('resultsModal');
-           const messageBox = document.getElementById('message-box');
            
            // Show message
-           if (messageBox) {
-               showMessage('Starting ATS analysis purchase...', 'info');
-           }
+           showMessage('Starting ATS analysis purchase...', 'info');
            
            // Close the results modal
            if (resultsModal) {
@@ -740,14 +861,8 @@
            const productType = 'resume_analysis';
            const price = 1.49;
            
-           // Store the purchase info
-           window.pendingPurchase = { productType, price };
-           
-           // Show the job posting modal (even though ATS doesn't need it, for consistency)
-           const jobPostingModal = document.getElementById('jobPostingModal');
-           if (jobPostingModal) {
-               jobPostingModal.style.display = 'flex';
-           }
+           // Call the premium purchase function directly (ATS doesn't need job posting)
+           await handlePremiumPurchase(productType, price);
        }
 
        // Global function for premium purchase
@@ -866,36 +981,6 @@
        }
 
        // Global function for upselling button
-       async function handleUpsellPurchase() {
-           console.log('Upsell button clicked!');
-           
-           // Get references to elements
-           const resultsModal = document.getElementById('resultsModal');
-           const messageBox = document.getElementById('message-box');
-           
-           // Show message
-           if (messageBox) {
-               messageBox.textContent = 'Starting ATS analysis purchase...';
-               messageBox.style.backgroundColor = '#4CAF50';
-               messageBox.classList.add('message-box-show');
-           }
-           
-           // Close the current modal first
-           if (resultsModal) {
-               resultsModal.classList.remove('show');
-           }
-           
-           // Wait a moment for the modal to close, then trigger the premium purchase
-           setTimeout(() => {
-               console.log('Triggering premium purchase...');
-               // Call the global handlePremiumPurchase function
-               if (typeof handlePremiumPurchase === 'function') {
-                   handlePremiumPurchase('resume_analysis', 1.49);
-               } else {
-                   console.error('handlePremiumPurchase function not found');
-               }
-           }, 300);
-       }
 
        // Global event delegation for upselling button
        document.addEventListener('click', function(e) {
