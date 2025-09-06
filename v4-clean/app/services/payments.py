@@ -28,6 +28,10 @@ class PaymentService:
             
             logger.info(f"Payment service initialized for {self.environment} environment")
             
+            # Debug: Log the actual key value (first 10 chars for security)
+            logger.info(f"Stripe secret key starts with: {config.stripe_secret_key[:10]}...")
+            logger.info(f"Stripe secret key length: {len(config.stripe_secret_key)}")
+            
             # Always use mock payments for testing with placeholder keys
             if "placeholder" in config.stripe_secret_key or not config.stripe_secret_key:
                 logger.warning("⚠️ Using placeholder Stripe keys - mock payments enabled")
@@ -35,12 +39,14 @@ class PaymentService:
             else:
                 # Test real keys by making a simple API call
                 try:
+                    logger.info("Testing Stripe connection...")
                     # Test the connection by retrieving account balance
-                    stripe.Balance.retrieve()
-                    logger.info("✅ Stripe connection verified")
+                    balance = stripe.Balance.retrieve()
+                    logger.info(f"✅ Stripe connection verified - Balance: {balance}")
                     self.stripe_available = True
                 except Exception as e:
                     logger.warning(f"⚠️ Stripe connection failed - using mock payments: {e}")
+                    logger.warning(f"Stripe error type: {type(e).__name__}")
                     self.stripe_available = False
                     
         except Exception as e:
