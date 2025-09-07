@@ -111,9 +111,10 @@
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="min-h-screen bg-gray-50 flex flex-col">
 
-   <div class="max-w-4xl w-full mx-auto p-6 lg:p-12 bg-white rounded-xl shadow-lg">
+   <div class="flex-1 flex items-center justify-center p-4">
+       <div class="max-w-4xl w-full mx-auto p-6 lg:p-12 bg-white rounded-xl shadow-lg">
 
        <!-- Header Section -->
        <header class="text-center mb-10">
@@ -256,7 +257,7 @@
            </div>
                 </div>
                 
-                </div>
+        </div>
                 
         <!-- Results Modal -->
         <div id="resultsModal" class="results-modal">
@@ -301,12 +302,11 @@
         </div>
     </div>
 
-   <!-- Toast Notification System -->
-   <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+   </div>
 
    <!-- Footer -->
-   <footer class="mt-16 pt-8 border-t border-gray-200 text-center text-gray-600">
-       <div class="max-w-4xl mx-auto px-6">
+   <footer class="bg-white border-t border-gray-200 py-8 mt-auto">
+       <div class="max-w-4xl mx-auto px-6 text-center text-gray-600">
            <h3 class="text-lg font-semibold text-gray-800 mb-2">Need Help?</h3>
            <p class="text-gray-600 mb-2">Our team is here to support your career success</p>
            <p class="mb-4">Contact us: <a href="mailto:support@idpetech.com" class="text-blue-600 hover:text-blue-800 font-medium">support@idpetech.com</a></p>
@@ -315,6 +315,10 @@
            </p>
        </div>
    </footer>
+
+   <!-- Toast Notification System -->
+   <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
 
     <script>
        // Global variables
