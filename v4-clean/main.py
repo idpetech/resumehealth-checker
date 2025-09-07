@@ -95,20 +95,6 @@ async def startup_event():
 # ROUTE REGISTRATION
 # =============================================================================
 
-# =============================================================================
-# HEALTH CHECK - Must be defined BEFORE static files
-# =============================================================================
-
-@app.get("/health")
-async def health_check():
-    """Simple health check endpoint for Railway and monitoring"""
-    return {
-        "status": "healthy",
-        "version": "4.0.0",
-        "environment": config.environment,
-        "timestamp": "2025-09-02T12:00:00Z"
-    }
-
 # API routes
 app.include_router(router, prefix="/api/v1")
 
