@@ -29,22 +29,10 @@ class AnalysisService:
         """Load AI prompts from JSON file"""
         try:
             prompts_file = Path(__file__).parent.parent / "data" / "prompts.json"
-            logger.info(f"🚀 FORCE DEPLOY TEST: Loading prompts from: {prompts_file}")
-            logger.info(f"🚀 FORCE DEPLOY TEST: Prompts file exists: {prompts_file.exists()}")
-            
             with open(prompts_file, 'r', encoding='utf-8') as f:
                 prompts_data = json.load(f)
             
-            logger.info("🚀 FORCE DEPLOY TEST: AI prompts loaded successfully")
-            logger.info(f"🚀 FORCE DEPLOY TEST: Premium prompt first 200 chars: {repr(prompts_data['resume_analysis']['premium']['user_prompt'][:200])}")
-            
-            # Add debug info to verify prompts are loaded correctly
-            premium_prompt = prompts_data['resume_analysis']['premium']['user_prompt']
-            if '{{' in premium_prompt and '}}' in premium_prompt:
-                logger.info("🚀 FORCE DEPLOY TEST: Premium prompt has properly escaped braces")
-            else:
-                logger.error("🚀 FORCE DEPLOY TEST: Premium prompt does NOT have properly escaped braces!")
-                
+            logger.info("AI prompts loaded successfully")
             return prompts_data
             
         except Exception as e:
@@ -82,37 +70,14 @@ class AnalysisService:
             if job_posting:
                 # Job fit analysis
                 prompt_data = self.prompts["job_fit"][analysis_type]
-                # Escape JSON braces in the prompt to prevent format string issues
-                prompt_template = prompt_data["user_prompt"]
-                prompt_template = prompt_template.replace("{resume_text}", "___RESUME_TEXT_PLACEHOLDER___")
-                prompt_template = prompt_template.replace("{job_posting}", "___JOB_POSTING_PLACEHOLDER___")
-                prompt_template = prompt_template.replace("{", "{{").replace("}", "}}")
-                prompt_template = prompt_template.replace("___RESUME_TEXT_PLACEHOLDER___", "{resume_text}")
-                prompt_template = prompt_template.replace("___JOB_POSTING_PLACEHOLDER___", "{job_posting}")
-                user_prompt = prompt_template.format(
+                user_prompt = prompt_data["user_prompt"].format(
                     resume_text=resume_text, 
                     job_posting=job_posting
                 )
             else:
                 # Regular resume analysis
                 prompt_data = self.prompts["resume_analysis"][analysis_type]
-                # Escape JSON braces in the prompt to prevent format string issues
-                # But preserve the {resume_text} placeholder
-                prompt_template = prompt_data["user_prompt"]
-                logger.info(f"🚀 FORCE DEPLOY TEST: Original prompt template length: {len(prompt_template)}")
-                logger.info(f"🔍 DEBUG: Original prompt template first 200 chars: {repr(prompt_template[:200])}")
-                
-                # Replace JSON braces with escaped versions, but keep {resume_text}
-                prompt_template = prompt_template.replace("{resume_text}", "___RESUME_TEXT_PLACEHOLDER___")
-                prompt_template = prompt_template.replace("{", "{{").replace("}", "}}")
-                prompt_template = prompt_template.replace("___RESUME_TEXT_PLACEHOLDER___", "{resume_text}")
-                
-                logger.info(f"🔍 DEBUG: Escaped prompt template length: {len(prompt_template)}")
-                logger.info(f"🔍 DEBUG: Escaped prompt template first 200 chars: {repr(prompt_template[:200])}")
-                
-                user_prompt = prompt_template.format(resume_text=resume_text)
-                logger.info(f"🔍 DEBUG: Final user prompt length: {len(user_prompt)}")
-                logger.info(f"🔍 DEBUG: Final user prompt first 200 chars: {repr(user_prompt[:200])}")
+                user_prompt = prompt_data["user_prompt"].format(resume_text=resume_text)
             
             # Prepare messages for OpenAI
             messages = [
@@ -137,45 +102,31 @@ class AnalysisService:
             
             # Extract and parse response
             ai_response = response.choices[0].message.content
-            logger.info(f"🔍 DEBUG: AI response length: {len(ai_response) if ai_response else 0}")
-            logger.info(f"🔍 DEBUG: AI response first 500 chars: {repr(ai_response[:500]) if ai_response else 'None'}")
             
             try:
                 # Clean the response by removing markdown formatting
                 cleaned_response = self._clean_json_response(ai_response)
-                logger.info(f"🔍 DEBUG: Cleaned response length: {len(cleaned_response)}")
-                logger.info(f"🔍 DEBUG: Cleaned response first 500 chars: {repr(cleaned_response[:500])}")
                 
                 # Parse JSON response
-                logger.info(f"🚨 ABOUT TO PARSE JSON: {repr(cleaned_response[:100])}")
                 result = json.loads(cleaned_response)
                 logger.info(f"Analysis completed: {analysis_type}")
                 return result
                 
             except json.JSONDecodeError as e:
                 # If JSON parsing fails, return raw response with structure
-                logger.warning(f"AI response was not valid JSON: {e}")
-                logger.warning(f"Raw AI response: {ai_response[:500]}...")
-                logger.warning(f"Cleaned response: {cleaned_response[:500]}...")
+                logger.error(f"JSON parsing failed: {e}")
+                logger.error(f"JSON error position: {e.pos if hasattr(e, 'pos') else 'unknown'}")
+                logger.error(f"Raw AI response (first 1000 chars): {ai_response[:1000]}")
+                logger.error(f"Cleaned response (first 1000 chars): {cleaned_response[:1000]}")
+                logger.error(f"Cleaned response length: {len(cleaned_response)}")
                 
-                # Try to extract any valid JSON parts
-                try:
-                    # Look for any valid JSON object in the response
-                    import re
-                    json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
-                    if json_match:
-                        partial_json = json_match.group()
-                        result = json.loads(partial_json)
-                        logger.info("Successfully extracted partial JSON from malformed response")
-                        return result
-                except:
-                    pass
-                
+                # Try to extract any meaningful content
                 return {
                     "analysis_type": analysis_type,
-                    "raw_response": ai_response,
-                    "error": "Response was not in expected JSON format",
-                    "timestamp": "2025-09-02T13:00:00Z"
+                    "raw_response": ai_response[:500],  # Limit size
+                    "cleaned_response": cleaned_response[:500],  # Limit size
+                    "error": f"JSON parsing failed: {str(e)}",
+                    "timestamp": "2025-09-07T00:00:00Z"
                 }
             
         except openai.RateLimitError:
@@ -191,10 +142,7 @@ class AnalysisService:
             raise AIAnalysisError("AI service is temporarily unavailable. Please try again later.")
         
         except Exception as e:
-            logger.error(f"🚨 CRITICAL ERROR in analysis: {e}")
-            logger.error(f"🚨 Error type: {type(e)}")
-            import traceback
-            logger.error(f"🚨 Full traceback: {traceback.format_exc()}")
+            logger.error(f"Unexpected error in analysis: {e}")
             raise AIAnalysisError(f"Analysis failed: {str(e)}")
     
     async def generate_cover_letter(
@@ -226,14 +174,7 @@ class AnalysisService:
             
             # Get cover letter prompt
             prompt_data = self.prompts["cover_letter"][analysis_type]
-            # Escape JSON braces in the prompt to prevent format string issues
-            prompt_template = prompt_data["user_prompt"]
-            prompt_template = prompt_template.replace("{resume_text}", "___RESUME_TEXT_PLACEHOLDER___")
-            prompt_template = prompt_template.replace("{job_posting}", "___JOB_POSTING_PLACEHOLDER___")
-            prompt_template = prompt_template.replace("{", "{{").replace("}", "}}")
-            prompt_template = prompt_template.replace("___RESUME_TEXT_PLACEHOLDER___", "{resume_text}")
-            prompt_template = prompt_template.replace("___JOB_POSTING_PLACEHOLDER___", "{job_posting}")
-            user_prompt = prompt_template.format(
+            user_prompt = prompt_data["user_prompt"].format(
                 resume_text=resume_text,
                 job_posting=job_posting
             )
@@ -294,6 +235,9 @@ class AnalysisService:
         Returns:
             Cleaned JSON string
         """
+        original_response = response
+        logger.debug(f"Cleaning JSON response (length: {len(response)})")
+        
         # Remove markdown code blocks
         if response.startswith("```json"):
             # Remove ```json at the beginning and ``` at the end
@@ -309,21 +253,53 @@ class AnalysisService:
         # Remove any leading/trailing whitespace and newlines
         response = response.strip()
         
-        # Find the first { and last } to extract JSON
+        # Find the first { and matching } using proper brace counting
         first_brace = response.find('{')
-        last_brace = response.rfind('}')
+        if first_brace == -1:
+            logger.warning("No opening brace found in response")
+            return response
         
-        if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
-            response = response[first_brace:last_brace + 1]
+        # Count braces to find the matching closing brace
+        brace_count = 0
+        in_string = False
+        escape_next = False
+        last_brace = -1
+        
+        for i in range(first_brace, len(response)):
+            char = response[i]
+            
+            if escape_next:
+                escape_next = False
+                continue
+                
+            if char == '\\':
+                escape_next = True
+                continue
+                
+            if char == '"' and not escape_next:
+                in_string = not in_string
+                continue
+                
+            if not in_string:
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        last_brace = i
+                        break
+        
+        if last_brace != -1:
+            json_content = response[first_brace:last_brace + 1]
+            logger.debug(f"Extracted JSON content: {json_content[:100]}...")
+            return json_content
         else:
-            # If no proper JSON braces found, try to fix common issues
-            logger.warning(f"No proper JSON braces found in response: {response[:200]}...")
-            # Try to add missing opening brace if response starts with a field
-            if response.strip().startswith('"') and not response.strip().startswith('{'):
-                response = '{' + response.strip() + '}'
-                logger.info("Attempted to fix malformed JSON by adding braces")
-        
-        return response
+            logger.warning("No matching closing brace found")
+            # Fallback to original method
+            last_brace = response.rfind('}')
+            if last_brace > first_brace:
+                return response[first_brace:last_brace + 1]
+            return response
 
     def validate_resume_content(self, resume_text: str) -> Dict[str, Any]:
         """
