@@ -12,7 +12,7 @@ import uuid
 from ..core.database import AnalysisDB, get_database_stats
 from ..core.exceptions import FileProcessingError, AIAnalysisError, PaymentError, validate_file_upload
 from ..services.files import file_service
-from ..services.analysis import analysis_service
+from ..services.analysis_v2 import analysis_service_v2 as analysis_service
 from ..services.payments import get_payment_service
 from ..services.geo import geo_service
 
