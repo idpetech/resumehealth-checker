@@ -421,8 +421,17 @@ async def payment_success(
                     <p><em>Please screenshot this page and contact support for assistance.</em></p>
                 </div>"""
         else:
-            success_html += f"""
-                <pre>{premium_result}</pre>"""
+            # Generate beautiful HTML for the premium analysis
+            try:
+                analysis_html = generate_embedded_resume_analysis_html(premium_result, analysis_id)
+                success_html += analysis_html
+            except Exception as e:
+                logger.error(f"Failed to generate premium analysis HTML: {e}")
+                success_html += f"""
+                    <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3>Your Premium Analysis</h3>
+                        <pre style="white-space: pre-wrap; font-family: Arial, sans-serif;">{premium_result}</pre>
+                    </div>"""
         
         success_html += """
             </div>
