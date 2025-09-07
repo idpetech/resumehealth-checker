@@ -349,32 +349,56 @@ async def payment_success(
         currency = verification['currency'].upper()
         AnalysisDB.mark_as_paid(analysis_id, amount_paid, currency)
         
-        # If no premium result exists, generate it now
+        # If no premium result exists, generate it now based on product type
         if not analysis.get('premium_result'):
             try:
-                logger.info(f"Generating premium analysis for {analysis_id}")
-                premium_result = await analysis_service.analyze_resume(
-                    analysis['resume_text'], 
-                    'premium'
-                )
+                logger.info(f"Generating premium {product_type} for {analysis_id}")
+                
+                if product_type == "resume_analysis":
+                    premium_result = await analysis_service.analyze_resume(
+                        analysis['resume_text'], 
+                        'premium'
+                    )
+                elif product_type == "job_fit_analysis":
+                    # Get job posting from analysis metadata
+                    job_posting = analysis.get('job_posting') or analysis.get('metadata', {}).get('job_posting', '')
+                    if not job_posting:
+                        raise ValueError("Job posting required for job fit analysis")
+                    premium_result = await analysis_service.analyze_resume(
+                        analysis['resume_text'], 
+                        'premium',
+                        job_posting
+                    )
+                elif product_type == "cover_letter":
+                    # Get job posting from analysis metadata  
+                    job_posting = analysis.get('job_posting') or analysis.get('metadata', {}).get('job_posting', '')
+                    if not job_posting:
+                        raise ValueError("Job posting required for cover letter generation")
+                    premium_result = await analysis_service.generate_cover_letter(
+                        analysis['resume_text'], 
+                        job_posting
+                    )
+                else:
+                    raise ValueError(f"Unknown product type: {product_type}")
+                
                 if premium_result:
                     AnalysisDB.update_premium_result(analysis_id, premium_result)
                     analysis['premium_result'] = premium_result
-                    logger.info(f"Premium analysis generated successfully for {analysis_id}")
+                    logger.info(f"Premium {product_type} generated successfully for {analysis_id}")
                 else:
-                    logger.error(f"Premium analysis returned empty result for {analysis_id}")
+                    logger.error(f"Premium {product_type} returned empty result for {analysis_id}")
                     analysis['premium_result'] = {
-                        "error": "Premium analysis generation failed",
+                        "error": f"Premium {product_type} generation failed",
                         "message": "Our AI analysis service is temporarily unavailable. Please contact support.",
                         "analysis_id": analysis_id
                     }
             except Exception as e:
-                logger.error(f"Failed to generate premium analysis for {analysis_id}: {e}")
+                logger.error(f"Failed to generate premium {product_type} for {analysis_id}: {e}")
                 logger.error(f"Exception type: {type(e).__name__}")
                 import traceback
                 logger.error(f"Full traceback: {traceback.format_exc()}")
                 analysis['premium_result'] = {
-                    "error": "Premium analysis generation failed",
+                    "error": f"Premium {product_type} generation failed",
                     "message": "Our AI analysis service encountered an error. Please contact support.",
                     "technical_details": str(e),
                     "analysis_id": analysis_id
@@ -398,7 +422,7 @@ async def payment_success(
             <p>Thank you for your payment. Your premium analysis is ready!</p>
             
             <div class="analysis-box">
-                <h3>Your Premium Analysis</h3>"""
+                <h3>Your Premium {product_type.replace('_', ' ').title()}</h3>"""
         
         # Handle different types of premium results
         premium_result = analysis.get('premium_result')
@@ -414,26 +438,35 @@ async def payment_success(
                     <p><em>Please screenshot this page and contact support for assistance.</em></p>
                 </div>"""
         else:
-            # Generate detailed HTML for the premium analysis (more comprehensive for premium value)
+            # Generate detailed HTML based on product type
             try:
-                analysis_html = generate_embedded_resume_analysis_html(premium_result, analysis_id)
+                if product_type == "resume_analysis":
+                    analysis_html = generate_embedded_resume_analysis_html(premium_result, analysis_id)
+                elif product_type == "job_fit_analysis":
+                    analysis_html = generate_embedded_job_fit_html(premium_result, analysis_id)
+                elif product_type == "cover_letter":
+                    analysis_html = generate_embedded_cover_letter_html(premium_result, analysis_id)
+                else:
+                    raise ValueError(f"Unknown product type for HTML generation: {product_type}")
+                
                 success_html += analysis_html
                 
                 # Add action buttons at the end
-                success_html += """
+                print_text = "Print Analysis" if product_type == "resume_analysis" else "Print" if product_type == "job_fit_analysis" else "Print Cover Letter"
+                success_html += f"""
                     <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-                        <button onclick="window.print()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; cursor: pointer;">🖨️ Print Analysis</button>
+                        <button onclick="window.print()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; cursor: pointer;">🖨️ {print_text}</button>
                         <a href="/" style="background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; display: inline-block;">🏠 Analyze Another Resume</a>
                     </div>"""
                     
             except Exception as e:
-                logger.error(f"Failed to generate premium analysis HTML: {e}")
+                logger.error(f"Failed to generate premium {product_type} HTML: {e}")
                 success_html += f"""
                     <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                        <h3>Your Premium Analysis</h3>
+                        <h3>Your Premium {product_type.replace('_', ' ').title()}</h3>
                         <pre style="white-space: pre-wrap; font-family: Arial, sans-serif;">{premium_result}</pre>
                         <div style="text-align: center; margin-top: 30px;">
-                            <button onclick="window.print()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; cursor: pointer;">🖨️ Print Analysis</button>
+                            <button onclick="window.print()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; cursor: pointer;">🖨️ Print</button>
                             <a href="/" style="background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; display: inline-block;">🏠 Analyze Another Resume</a>
                         </div>
                     </div>"""
