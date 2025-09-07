@@ -12,4 +12,8 @@ httpx==0.28.1
 python-dotenv==1.1.1
 PyMuPDF==1.24.10
 
+# Railway deployment dependencies
+slowapi==0.1.9
+pathlib2==2.3.7
+
 
