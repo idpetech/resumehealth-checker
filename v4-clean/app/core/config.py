@@ -45,7 +45,8 @@ class Config:
             self.stripe_publishable_key = os.getenv("STRIPE_PUBLISHABLE_LIVE_KEY", "")
             self.stripe_webhook_secret = os.getenv("STRIPE_WEBHOOK_LIVE_SECRET", "")
         
-        if not self.stripe_secret_key:
+        # Make Stripe optional in staging if keys are not configured
+        if not self.stripe_secret_key and self.environment == "production":
             stripe_key_type = "test" if self.use_stripe_test_keys else "live"
             raise ValueError(f"STRIPE_SECRET_{stripe_key_type.upper()}_KEY environment variable is required")
         

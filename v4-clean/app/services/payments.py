@@ -354,10 +354,10 @@ class PaymentService:
         product_name: str
     ) -> Dict[str, Any]:
         """
-        Create a mock payment session for LOCAL DEVELOPMENT ONLY.
+        Create a mock payment session for LOCAL DEVELOPMENT and STAGING.
         
-        SECURITY NOTE: This should NEVER be used in staging or production environments.
-        Mock payments are only allowed in local development to prevent accidental
+        SECURITY NOTE: This should NEVER be used in production environments.
+        Mock payments are allowed in local development and staging to prevent accidental
         real payments during testing.
         """
         session_ref = f"mock_analysis_{analysis_id}_{uuid.uuid4().hex[:8]}"
