@@ -450,14 +450,7 @@ async def payment_success(
                     raise ValueError(f"Unknown product type for HTML generation: {product_type}")
                 
                 success_html += analysis_html
-                
-                # Add action buttons at the end
-                print_text = "Print Analysis" if product_type == "resume_analysis" else "Print" if product_type == "job_fit_analysis" else "Print Cover Letter"
-                success_html += f"""
-                    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-                        <button onclick="window.print()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; cursor: pointer;">🖨️ {print_text}</button>
-                        <a href="/" style="background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; display: inline-block;">🏠 Analyze Another Resume</a>
-                    </div>"""
+                # Note: Action buttons are already included in the embedded HTML generators
                     
             except Exception as e:
                 logger.error(f"Failed to generate premium {product_type} HTML: {e}")
@@ -467,7 +460,7 @@ async def payment_success(
                         <pre style="white-space: pre-wrap; font-family: Arial, sans-serif;">{premium_result}</pre>
                         <div style="text-align: center; margin-top: 30px;">
                             <button onclick="window.print()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; cursor: pointer;">🖨️ Print</button>
-                            <a href="/" style="background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; display: inline-block;">🏠 Analyze Another Resume</a>
+                            <a href="/" style="background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; display: inline-block;">🏠 Back to App</a>
                         </div>
                     </div>"""
         
