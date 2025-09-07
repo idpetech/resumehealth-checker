@@ -114,14 +114,19 @@ class AnalysisService:
                 
             except json.JSONDecodeError as e:
                 # If JSON parsing fails, return raw response with structure
-                logger.warning(f"AI response was not valid JSON: {e}")
-                logger.warning(f"Raw AI response: {ai_response[:500]}...")
-                logger.warning(f"Cleaned response: {cleaned_response[:500]}...")
+                logger.error(f"JSON parsing failed: {e}")
+                logger.error(f"JSON error position: {e.pos if hasattr(e, 'pos') else 'unknown'}")
+                logger.error(f"Raw AI response (first 1000 chars): {ai_response[:1000]}")
+                logger.error(f"Cleaned response (first 1000 chars): {cleaned_response[:1000]}")
+                logger.error(f"Cleaned response length: {len(cleaned_response)}")
+                
+                # Try to extract any meaningful content
                 return {
                     "analysis_type": analysis_type,
-                    "raw_response": ai_response,
-                    "error": "Response was not in expected JSON format",
-                    "timestamp": "2025-09-02T13:00:00Z"
+                    "raw_response": ai_response[:500],  # Limit size
+                    "cleaned_response": cleaned_response[:500],  # Limit size
+                    "error": f"JSON parsing failed: {str(e)}",
+                    "timestamp": "2025-09-07T00:00:00Z"
                 }
             
         except openai.RateLimitError:
@@ -230,6 +235,9 @@ class AnalysisService:
         Returns:
             Cleaned JSON string
         """
+        original_response = response
+        logger.debug(f"Cleaning JSON response (length: {len(response)})")
+        
         # Remove markdown code blocks
         if response.startswith("```json"):
             # Remove ```json at the beginning and ``` at the end
@@ -245,14 +253,53 @@ class AnalysisService:
         # Remove any leading/trailing whitespace and newlines
         response = response.strip()
         
-        # Find the first { and last } to extract JSON
+        # Find the first { and matching } using proper brace counting
         first_brace = response.find('{')
-        last_brace = response.rfind('}')
+        if first_brace == -1:
+            logger.warning("No opening brace found in response")
+            return response
         
-        if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
-            response = response[first_brace:last_brace + 1]
+        # Count braces to find the matching closing brace
+        brace_count = 0
+        in_string = False
+        escape_next = False
+        last_brace = -1
         
-        return response
+        for i in range(first_brace, len(response)):
+            char = response[i]
+            
+            if escape_next:
+                escape_next = False
+                continue
+                
+            if char == '\\':
+                escape_next = True
+                continue
+                
+            if char == '"' and not escape_next:
+                in_string = not in_string
+                continue
+                
+            if not in_string:
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        last_brace = i
+                        break
+        
+        if last_brace != -1:
+            json_content = response[first_brace:last_brace + 1]
+            logger.debug(f"Extracted JSON content: {json_content[:100]}...")
+            return json_content
+        else:
+            logger.warning("No matching closing brace found")
+            # Fallback to original method
+            last_brace = response.rfind('}')
+            if last_brace > first_brace:
+                return response[first_brace:last_brace + 1]
+            return response
 
     def validate_resume_content(self, resume_text: str) -> Dict[str, Any]:
         """
