@@ -95,19 +95,8 @@ async def startup_event():
 # ROUTE REGISTRATION
 # =============================================================================
 
-# API routes
-app.include_router(router, prefix="/api/v1")
-
-# Static files - serve frontend from /static directory
-static_dir = Path(__file__).parent / "app" / "static"
-if static_dir.exists():
-    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
-    logger.info(f"✅ Static files mounted from {static_dir}")
-else:
-    logger.warning(f"⚠️ Static directory not found: {static_dir}")
-
 # =============================================================================
-# HEALTH CHECK
+# HEALTH CHECK - Must be defined BEFORE static files
 # =============================================================================
 
 @app.get("/health")
@@ -119,6 +108,17 @@ async def health_check():
         "environment": config.environment,
         "timestamp": "2025-09-02T12:00:00Z"
     }
+
+# API routes
+app.include_router(router, prefix="/api/v1")
+
+# Static files - serve frontend from /static directory
+static_dir = Path(__file__).parent / "app" / "static"
+if static_dir.exists():
+    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
+    logger.info(f"✅ Static files mounted from {static_dir}")
+else:
+    logger.warning(f"⚠️ Static directory not found: {static_dir}")
 
 # =============================================================================
 # APPLICATION ENTRY POINT
