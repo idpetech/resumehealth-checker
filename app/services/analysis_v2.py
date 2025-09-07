@@ -274,12 +274,12 @@ class AnalysisServiceV2:
         """Validate resume content - simple validation"""
         if not resume_text or len(resume_text.strip()) < 50:
             return {
-                "valid": False,
+                "is_valid": False,
                 "error": "Resume text is too short (minimum 50 characters)"
             }
         
         return {
-            "valid": True,
+            "is_valid": True,
             "character_count": len(resume_text),
             "word_count": len(resume_text.split())
         }
