@@ -8,7 +8,8 @@ BEFORE: 3,729 lines in one file (maintenance nightmare)
 AFTER:  Clean modular structure with logical separation
 """
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import openai
@@ -117,13 +118,23 @@ STRIPE_PAYMENT_URL = "https://buy.stripe.com/test_placeholder"  # Default value
 app.include_router(api_router, prefix="/api/v1")
 
 # Add simple health checks for Railway
-@app.get("/")
-async def root():
-    return {"status": "ok", "message": "Resume Health Checker v4.0 is running"}
-
 @app.get("/health")
 async def simple_health():
     return {"status": "healthy", "service": "Resume Health Checker v4.0"}
+
+# Serve the frontend
+@app.get("/", response_class=HTMLResponse)
+async def serve_frontend():
+    """Serve the main frontend page"""
+    try:
+        with open("frontend/index.html", "r") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Frontend not found</h1><p>Please check if frontend files are deployed</p>", status_code=404)
+
+# Mount static files (CSS, JS)
+app.mount("/css", StaticFiles(directory="frontend/css"), name="css")
+app.mount("/js", StaticFiles(directory="frontend/js"), name="js")
 
 # =============================================================================
 # TEMPORARY IMPORTS FOR BACKWARD COMPATIBILITY
