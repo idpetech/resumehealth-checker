@@ -77,15 +77,17 @@ async def get_premium_service(analysis_id: str, product_type: str = "resume_anal
         
         # Generate premium service based on product type
         if product_type == "resume_analysis":
-            result = await analysis_service.analyze_resume_premium(
+            result = await analysis_service.analyze_resume(
                 analysis['resume_text'], 
+                'premium',
                 job_posting
             )
         elif product_type == "job_fit_analysis":
             if not job_posting:
                 raise HTTPException(status_code=400, detail="Job posting required for job fit analysis")
-            result = await analysis_service.analyze_job_fit(
+            result = await analysis_service.analyze_resume(
                 analysis['resume_text'], 
+                'premium',
                 job_posting
             )
         elif product_type == "cover_letter":
@@ -793,15 +795,17 @@ async def premium_results_page(
         
         # Generate premium service based on product type
         if product_type == "resume_analysis":
-            result = await analysis_service.analyze_resume_premium(
+            result = await analysis_service.analyze_resume(
                 analysis['resume_text'], 
+                'premium',
                 job_posting
             )
         elif product_type == "job_fit_analysis":
             if not job_posting:
                 return HTMLResponse(content="<h1>Job posting required for job fit analysis</h1>", status_code=400)
-            result = await analysis_service.analyze_job_fit(
+            result = await analysis_service.analyze_resume(
                 analysis['resume_text'], 
+                'premium',
                 job_posting
             )
         elif product_type == "cover_letter":
