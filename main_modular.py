@@ -128,7 +128,15 @@ async def serve_frontend():
     """Serve the main frontend page"""
     try:
         with open("frontend/index.html", "r") as f:
-            return HTMLResponse(content=f.read())
+            content = f.read()
+            return HTMLResponse(
+                content=content,
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0"
+                }
+            )
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Frontend not found</h1><p>Please check if frontend files are deployed</p>", status_code=404)
 
