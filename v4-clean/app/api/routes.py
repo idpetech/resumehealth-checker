@@ -350,14 +350,33 @@ async def payment_success(
         # If no premium result exists, generate it now
         if not analysis.get('premium_result'):
             try:
+                logger.info(f"Generating premium analysis for {analysis_id}")
                 premium_result = await analysis_service.analyze_resume(
                     analysis['resume_text'], 
                     'premium'
                 )
-                AnalysisDB.update_premium_result(analysis_id, premium_result)
-                analysis['premium_result'] = premium_result
+                if premium_result:
+                    AnalysisDB.update_premium_result(analysis_id, premium_result)
+                    analysis['premium_result'] = premium_result
+                    logger.info(f"Premium analysis generated successfully for {analysis_id}")
+                else:
+                    logger.error(f"Premium analysis returned empty result for {analysis_id}")
+                    analysis['premium_result'] = {
+                        "error": "Premium analysis generation failed",
+                        "message": "Our AI analysis service is temporarily unavailable. Please contact support.",
+                        "analysis_id": analysis_id
+                    }
             except Exception as e:
-                logger.error(f"Failed to generate premium analysis: {e}")
+                logger.error(f"Failed to generate premium analysis for {analysis_id}: {e}")
+                logger.error(f"Exception type: {type(e).__name__}")
+                import traceback
+                logger.error(f"Full traceback: {traceback.format_exc()}")
+                analysis['premium_result'] = {
+                    "error": "Premium analysis generation failed",
+                    "message": "Our AI analysis service encountered an error. Please contact support.",
+                    "technical_details": str(e),
+                    "analysis_id": analysis_id
+                }
         
         # Return success page with results
         success_html = f"""
@@ -384,8 +403,26 @@ async def payment_success(
             </div>
             
             <div class="analysis-box">
-                <h3>Your Premium Analysis</h3>
-                <pre>{analysis.get('premium_result', 'Analysis being generated...')}</pre>
+                <h3>Your Premium Analysis</h3>"""
+        
+        # Handle different types of premium results
+        premium_result = analysis.get('premium_result')
+        if premium_result is None:
+            success_html += """
+                <p style="color: #ffc107;">⏳ Your premium analysis is being generated. Please refresh this page in a moment.</p>"""
+        elif isinstance(premium_result, dict) and premium_result.get('error'):
+            success_html += f"""
+                <div style="color: #dc3545; background: #f8d7da; padding: 15px; border-radius: 5px;">
+                    <h4>⚠️ Analysis Service Issue</h4>
+                    <p>{premium_result.get('message', 'Unknown error occurred')}</p>
+                    <p><strong>Analysis ID:</strong> {analysis_id}</p>
+                    <p><em>Please screenshot this page and contact support for assistance.</em></p>
+                </div>"""
+        else:
+            success_html += f"""
+                <pre>{premium_result}</pre>"""
+        
+        success_html += """
             </div>
             
             <p><a href="/" class="btn">Analyze Another Resume</a></p>
