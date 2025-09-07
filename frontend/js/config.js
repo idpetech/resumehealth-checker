@@ -4,19 +4,19 @@ const API_CONFIG = {
     development: {
         baseUrl: 'http://localhost:8000',
         endpoints: {
-            checkResume: '/api/check-resume',
-            health: '/api/health',
-            createPaymentSession: '/api/create-payment-session'
+            checkResume: '/api/v1/analyze',
+            health: '/api/v1/health',
+            createPaymentSession: '/api/v1/payment/create'
         }
     },
     
     // Production environment
     production: {
-        baseUrl: 'https://q752325o84.execute-api.us-east-1.amazonaws.com/Prod',
+        baseUrl: '',  // Use relative URLs for Railway deployment
         endpoints: {
-            checkResume: '/api/check-resume',
-            health: '/api/health',
-            createPaymentSession: '/api/create-payment-session'
+            checkResume: '/api/v1/analyze',
+            health: '/api/v1/health',
+            createPaymentSession: '/api/v1/payment/create'
         }
     }
 };
