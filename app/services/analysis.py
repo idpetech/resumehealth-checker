@@ -26,18 +26,85 @@ class AnalysisService:
         logger.info("Analysis service initialized with OpenAI")
     
     def _load_prompts(self) -> Dict[str, Any]:
-        """Load AI prompts from JSON file"""
+        """Load AI prompts from JSON file using strict parsing"""
         try:
             prompts_file = Path(__file__).parent.parent / "data" / "prompts.json"
-            with open(prompts_file, 'r', encoding='utf-8') as f:
-                prompts_data = json.load(f)
+            logger.info(f"🔍 STRICT PROMPTS: Loading from: {prompts_file}")
+            logger.info(f"🔍 STRICT PROMPTS: File exists: {prompts_file.exists()}")
+            logger.info(f"🔍 STRICT PROMPTS: File size: {prompts_file.stat().st_size if prompts_file.exists() else 'N/A'} bytes")
             
-            logger.info("AI prompts loaded successfully")
+            if not prompts_file.exists():
+                raise AIAnalysisError(f"Prompts file not found: {prompts_file}")
+            
+            # Read the raw file content first
+            with open(prompts_file, 'r', encoding='utf-8') as f:
+                raw_content = f.read()
+            
+            logger.info(f"🔍 STRICT PROMPTS: Raw content length: {len(raw_content)}")
+            logger.info(f"🔍 STRICT PROMPTS: First 200 chars: {repr(raw_content[:200])}")
+            
+            # Use strict JSON parsing
+            try:
+                prompts_data = json.loads(raw_content)
+                logger.info("✅ STRICT PROMPTS: JSON parsing successful")
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ STRICT PROMPTS: JSON decode error: {e}")
+                logger.error(f"❌ STRICT PROMPTS: Error position: {e.pos if hasattr(e, 'pos') else 'unknown'}")
+                logger.error(f"❌ STRICT PROMPTS: Error line: {e.lineno if hasattr(e, 'lineno') else 'unknown'}")
+                logger.error(f"❌ STRICT PROMPTS: Error column: {e.colno if hasattr(e, 'colno') else 'unknown'}")
+                
+                # Show context around the error
+                if hasattr(e, 'pos') and e.pos:
+                    start = max(0, e.pos - 100)
+                    end = min(len(raw_content), e.pos + 100)
+                    error_context = raw_content[start:end]
+                    logger.error(f"❌ STRICT PROMPTS: Error context: {repr(error_context)}")
+                
+                raise AIAnalysisError(f"Invalid JSON in prompts file: {str(e)}")
+            
+            # Validate the structure
+            required_keys = ["resume_analysis", "job_fit", "cover_letter"]
+            for key in required_keys:
+                if key not in prompts_data:
+                    raise AIAnalysisError(f"Missing required section '{key}' in prompts.json")
+                
+                if "free" not in prompts_data[key]:
+                    raise AIAnalysisError(f"Missing 'free' prompts in section '{key}'")
+                
+                if "premium" not in prompts_data[key]:
+                    raise AIAnalysisError(f"Missing 'premium' prompts in section '{key}'")
+            
+            # Validate prompt structure
+            for section_name, section in prompts_data.items():
+                if isinstance(section, dict) and "free" in section:
+                    for tier in ["free", "premium"]:
+                        if tier in section:
+                            tier_data = section[tier]
+                            if "system_prompt" not in tier_data:
+                                raise AIAnalysisError(f"Missing 'system_prompt' in {section_name}.{tier}")
+                            if "user_prompt" not in tier_data:
+                                raise AIAnalysisError(f"Missing 'user_prompt' in {section_name}.{tier}")
+            
+            logger.info("✅ STRICT PROMPTS: Structure validation successful")
+            logger.info(f"✅ STRICT PROMPTS: Loaded {len(prompts_data)} sections")
+            
             return prompts_data
             
+        except AIAnalysisError:
+            # Re-raise our custom errors
+            raise
+        except FileNotFoundError as e:
+            logger.error(f"❌ STRICT PROMPTS: File not found: {e}")
+            raise AIAnalysisError(f"Prompts file not found: {prompts_file}")
+        except PermissionError as e:
+            logger.error(f"❌ STRICT PROMPTS: Permission denied: {e}")
+            raise AIAnalysisError(f"Cannot read prompts file (permission denied): {prompts_file}")
         except Exception as e:
-            logger.error(f"Failed to load prompts: {e}")
-            raise AIAnalysisError(f"Could not load AI prompts: {str(e)}")
+            logger.error(f"❌ STRICT PROMPTS: Unexpected error: {e}")
+            logger.error(f"❌ STRICT PROMPTS: Error type: {type(e).__name__}")
+            import traceback
+            logger.error(f"❌ STRICT PROMPTS: Traceback: {traceback.format_exc()}")
+            raise AIAnalysisError(f"Failed to load AI prompts: {str(e)}")
     
     async def analyze_resume(
         self, 
@@ -225,45 +292,84 @@ class AnalysisService:
             else:
                 raise AIAnalysisError(f"Cover letter generation failed: {str(e)}")
     
-    def _clean_json_response(self, response: str) -> str:
+    def _strict_json_parse(self, response: str) -> Dict[str, Any]:
         """
-        Clean AI response by removing markdown formatting and extracting JSON
+        STRICT JSON parsing with comprehensive validation and multiple extraction methods
         
         Args:
-            response: Raw AI response that may contain markdown formatting
+            response: Raw AI response that may contain JSON
             
         Returns:
-            Cleaned JSON string
+            Parsed JSON as dictionary
+            
+        Raises:
+            AIAnalysisError: If JSON cannot be extracted or parsed
         """
-        original_response = response
-        logger.debug(f"Cleaning JSON response (length: {len(response)})")
+        import re
         
-        # Remove markdown code blocks
-        if response.startswith("```json"):
-            # Remove ```json at the beginning and ``` at the end
-            response = response[7:]  # Remove ```json
-            if response.endswith("```"):
-                response = response[:-3]  # Remove ```
-        elif response.startswith("```"):
-            # Remove generic code blocks
-            response = response[3:]  # Remove ```
-            if response.endswith("```"):
-                response = response[:-3]  # Remove ```
+        logger.info(f"🔍 STRICT PARSING: Input response length: {len(response)}")
+        logger.info(f"🔍 STRICT PARSING: First 200 chars: {repr(response[:200])}")
         
-        # Remove any leading/trailing whitespace and newlines
-        response = response.strip()
+        # Method 1: Try direct JSON parsing (cleanest responses)
+        try:
+            result = json.loads(response.strip())
+            logger.info("✅ STRICT PARSING: Method 1 - Direct parsing successful")
+            return result
+        except json.JSONDecodeError:
+            logger.info("❌ STRICT PARSING: Method 1 - Direct parsing failed")
         
-        # Find the first { and matching } using proper brace counting
+        # Method 2: Remove markdown blocks and try again
+        cleaned = response
+        if "```json" in cleaned:
+            # Extract content between ```json and ```
+            pattern = r'```json\s*(.*?)\s*```'
+            match = re.search(pattern, cleaned, re.DOTALL)
+            if match:
+                cleaned = match.group(1).strip()
+                logger.info("🔍 STRICT PARSING: Extracted from ```json blocks")
+        elif "```" in cleaned:
+            # Extract content between generic ```
+            pattern = r'```\s*(.*?)\s*```'
+            match = re.search(pattern, cleaned, re.DOTALL)
+            if match:
+                cleaned = match.group(1).strip()
+                logger.info("🔍 STRICT PARSING: Extracted from generic ``` blocks")
+        
+        try:
+            result = json.loads(cleaned)
+            logger.info("✅ STRICT PARSING: Method 2 - Markdown removal successful")
+            return result
+        except json.JSONDecodeError:
+            logger.info("❌ STRICT PARSING: Method 2 - Markdown removal failed")
+        
+        # Method 3: Find JSON object using regex
+        json_patterns = [
+            r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}',  # Simple nested objects
+            r'\{.*?\}',  # Greedy match
+            r'\{[\s\S]*?\}',  # Include whitespace and newlines
+        ]
+        
+        for i, pattern in enumerate(json_patterns, 3):
+            matches = re.finditer(pattern, response, re.DOTALL)
+            for match in matches:
+                candidate = match.group(0)
+                try:
+                    result = json.loads(candidate)
+                    logger.info(f"✅ STRICT PARSING: Method {i} - Regex pattern successful")
+                    logger.info(f"🔍 STRICT PARSING: Extracted: {candidate[:100]}...")
+                    return result
+                except json.JSONDecodeError:
+                    continue
+            logger.info(f"❌ STRICT PARSING: Method {i} - Regex pattern failed")
+        
+        # Method 4: Character-by-character brace matching (most robust)
         first_brace = response.find('{')
         if first_brace == -1:
-            logger.warning("No opening brace found in response")
-            return response
+            raise AIAnalysisError("No JSON object found in response")
         
-        # Count braces to find the matching closing brace
         brace_count = 0
         in_string = False
         escape_next = False
-        last_brace = -1
         
         for i in range(first_brace, len(response)):
             char = response[i]
@@ -286,19 +392,51 @@ class AnalysisService:
                 elif char == '}':
                     brace_count -= 1
                     if brace_count == 0:
-                        last_brace = i
-                        break
+                        candidate = response[first_brace:i + 1]
+                        try:
+                            result = json.loads(candidate)
+                            logger.info("✅ STRICT PARSING: Method 4 - Brace matching successful")
+                            return result
+                        except json.JSONDecodeError:
+                            continue
         
-        if last_brace != -1:
-            json_content = response[first_brace:last_brace + 1]
-            logger.debug(f"Extracted JSON content: {json_content[:100]}...")
-            return json_content
-        else:
-            logger.warning("No matching closing brace found")
-            # Fallback to original method
-            last_brace = response.rfind('}')
-            if last_brace > first_brace:
-                return response[first_brace:last_brace + 1]
+        logger.error("❌ STRICT PARSING: All methods failed")
+        logger.error(f"🔍 STRICT PARSING: Full response: {repr(response)}")
+        
+        # Last resort: Try to fix common JSON issues
+        fixed_attempts = [
+            response.replace("'", '"'),  # Single quotes to double quotes
+            response.replace('\n', '').replace('\t', ''),  # Remove whitespace
+            re.sub(r',\s*}', '}', response),  # Remove trailing commas
+            re.sub(r',\s*]', ']', response),  # Remove trailing commas in arrays
+        ]
+        
+        for i, attempt in enumerate(fixed_attempts):
+            try:
+                # Find JSON in the fixed attempt
+                first_brace = attempt.find('{')
+                last_brace = attempt.rfind('}')
+                if first_brace != -1 and last_brace > first_brace:
+                    candidate = attempt[first_brace:last_brace + 1]
+                    result = json.loads(candidate)
+                    logger.info(f"✅ STRICT PARSING: Fix attempt {i+1} successful")
+                    return result
+            except json.JSONDecodeError:
+                continue
+        
+        # Complete failure - return structured error
+        raise AIAnalysisError(f"Failed to parse JSON from AI response after trying all methods. Response length: {len(response)}")
+    
+    def _clean_json_response(self, response: str) -> str:
+        """
+        Legacy method - now calls strict parser and returns JSON string
+        Kept for backward compatibility
+        """
+        try:
+            parsed = self._strict_json_parse(response)
+            return json.dumps(parsed)
+        except AIAnalysisError:
+            # Return original response if parsing fails
             return response
 
     def validate_resume_content(self, resume_text: str) -> Dict[str, Any]:
