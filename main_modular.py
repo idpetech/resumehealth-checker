@@ -161,9 +161,14 @@ except ImportError as e:
 
 if __name__ == "__main__":
     import uvicorn
+    import os
+    
+    # Use Railway's PORT environment variable, fallback to 8000
+    port = int(os.environ.get("PORT", 8000))
+    
     uvicorn.run(
         "main_modular:app",
         host="0.0.0.0",
-        port=8003,  # Different port to avoid conflict
-        reload=True
+        port=port,
+        reload=False  # Disable reload in production
     )
