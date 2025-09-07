@@ -45,9 +45,14 @@ class PaymentService:
                     logger.info(f"✅ Stripe connection verified - Balance: {balance}")
                     self.stripe_available = True
                 except Exception as e:
-                    logger.warning(f"⚠️ Stripe connection failed - using mock payments: {e}")
+                    logger.warning(f"⚠️ Stripe connection test failed: {e}")
                     logger.warning(f"Stripe error type: {type(e).__name__}")
-                    self.stripe_available = False
+                    # In staging, assume keys are valid even if connection test fails
+                    if self.environment == "staging":
+                        logger.info("🔄 Staging environment - assuming Stripe keys are valid despite connection test failure")
+                        self.stripe_available = True
+                    else:
+                        self.stripe_available = False
                     
         except Exception as e:
             logger.error(f"Payment service initialization failed: {e}")
@@ -354,10 +359,10 @@ class PaymentService:
         product_name: str
     ) -> Dict[str, Any]:
         """
-        Create a mock payment session for LOCAL DEVELOPMENT and STAGING.
+        Create a mock payment session for LOCAL DEVELOPMENT ONLY.
         
-        SECURITY NOTE: This should NEVER be used in production environments.
-        Mock payments are allowed in local development and staging to prevent accidental
+        SECURITY NOTE: This should NEVER be used in staging or production environments.
+        Mock payments are only allowed in local development to prevent accidental
         real payments during testing.
         """
         session_ref = f"mock_analysis_{analysis_id}_{uuid.uuid4().hex[:8]}"

@@ -45,8 +45,7 @@ class Config:
             self.stripe_publishable_key = os.getenv("STRIPE_PUBLISHABLE_LIVE_KEY", "")
             self.stripe_webhook_secret = os.getenv("STRIPE_WEBHOOK_LIVE_SECRET", "")
         
-        # Make Stripe optional in staging if keys are not configured
-        if not self.stripe_secret_key and self.environment == "production":
+        if not self.stripe_secret_key:
             stripe_key_type = "test" if self.use_stripe_test_keys else "live"
             raise ValueError(f"STRIPE_SECRET_{stripe_key_type.upper()}_KEY environment variable is required")
         
@@ -70,10 +69,10 @@ class Config:
             return f"http://localhost:{port}"
         elif self.environment == "staging":
             # Try Railway's actual environment variables, then custom ones, then fallback
-            railway_url = os.getenv("RAILWAY_STATIC_URL") or os.getenv("RAILWAY_PUBLIC_DOMAIN")
+            railway_url = os.getenv("RAILWAY_STAGING_URL") or os.getenv("RAILWAY_STATIC_URL") or os.getenv("RAILWAY_PUBLIC_DOMAIN")
             if railway_url:
                 return f"https://{railway_url}" if not railway_url.startswith("http") else railway_url
-            return os.getenv("RAILWAY_STAGING_URL", "http://localhost:8000")
+            return "http://localhost:8000"
         else:  # production
             # Try Railway's actual environment variables, then custom ones, then fallback
             railway_url = os.getenv("RAILWAY_STATIC_URL") or os.getenv("RAILWAY_PUBLIC_DOMAIN")
