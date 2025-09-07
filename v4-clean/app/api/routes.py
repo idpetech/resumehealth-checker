@@ -418,7 +418,7 @@ async def payment_success(
             </style>
         </head>
         <body>
-            <h1 class="success">✅ Payment Successful!</h1>
+            <h1 class="success">&#10003; Payment Successful!</h1>
             <p>Thank you for your payment. Your premium analysis is ready!</p>
             
             <div class="analysis-box">
@@ -432,7 +432,7 @@ async def payment_success(
         elif isinstance(premium_result, dict) and premium_result.get('error'):
             success_html += f"""
                 <div style="color: #dc3545; background: #f8d7da; padding: 15px; border-radius: 5px;">
-                    <h4>⚠️ Analysis Service Issue</h4>
+                    <h4>&#9888; Analysis Service Issue</h4>
                     <p>{premium_result.get('message', 'Unknown error occurred')}</p>
                     <p><strong>Analysis ID:</strong> {analysis_id}</p>
                     <p><em>Please screenshot this page and contact support for assistance.</em></p>
@@ -459,8 +459,8 @@ async def payment_success(
                         <h3>Your Premium {product_type.replace('_', ' ').title()}</h3>
                         <pre style="white-space: pre-wrap; font-family: Arial, sans-serif;">{premium_result}</pre>
                         <div style="text-align: center; margin-top: 30px;">
-                            <button onclick="window.print()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; cursor: pointer;">🖨️ Print</button>
-                            <a href="/" style="background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; display: inline-block;">🏠 Back to App</a>
+                            <button onclick="window.print()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; cursor: pointer;">&#128424; Print</button>
+                            <a href="/" style="background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; display: inline-block;">&#127968; Back to App</a>
                         </div>
                     </div>"""
         
@@ -760,7 +760,7 @@ async def mock_payment_page(
     </head>
     <body>
         <div class="container">
-            <div class="success-icon">✅</div>
+            <div class="success-icon">&#10003;</div>
             <h1>Mock Payment Successful!</h1>
             <p>This is a test payment page for development purposes.</p>
             
@@ -1074,7 +1074,7 @@ def generate_resume_analysis_html(result: dict, analysis_id: str) -> str:
     <body>
         <div class="container">
             <div class="header">
-                <h1>🎯 Premium Resume Analysis</h1>
+                <h1>&#127919; Premium Resume Analysis</h1>
                 <p>Your comprehensive resume optimization report</p>
             </div>
             
@@ -1085,7 +1085,7 @@ def generate_resume_analysis_html(result: dict, analysis_id: str) -> str:
                 </div>
                 
                 <div class="section">
-                    <h2>💪 Key Strengths</h2>
+                    <h2>&#128170; Key Strengths</h2>
                     <ul class="strengths-list">
     """
     
@@ -1097,7 +1097,7 @@ def generate_resume_analysis_html(result: dict, analysis_id: str) -> str:
                 </div>
                 
                 <div class="section">
-                    <h2>🚀 Improvement Opportunities</h2>
+                    <h2>&#128640; Improvement Opportunities</h2>
                     <ul class="opportunities-list">
     """
     
@@ -1109,7 +1109,7 @@ def generate_resume_analysis_html(result: dict, analysis_id: str) -> str:
                 </div>
                 
                 <div class="section">
-                    <h2>📊 ATS Optimization</h2>
+                    <h2>&#128202; ATS Optimization</h2>
                     <h3>Current Strength</h3>
                     <p>{ats_opt.get('current_strength', 'N/A')}</p>
                     
@@ -1128,7 +1128,7 @@ def generate_resume_analysis_html(result: dict, analysis_id: str) -> str:
                 </div>
                 
                 <div class="section">
-                    <h2>📝 Content Enhancement</h2>
+                    <h2>&#128221; Content Enhancement</h2>
                     <h3>Strong Sections</h3>
                     <ul>
     """
@@ -1164,7 +1164,7 @@ def generate_resume_analysis_html(result: dict, analysis_id: str) -> str:
     if text_rewrites:
         html_content += """
                 <div class="section">
-                    <h2>✏️ Text Rewrites</h2>
+                    <h2>&#9999; Text Rewrites</h2>
         """
         
         for rewrite in text_rewrites:
@@ -1191,18 +1191,18 @@ def generate_resume_analysis_html(result: dict, analysis_id: str) -> str:
     
     html_content += f"""
                 <div class="competitive-advantages">
-                    <h2>🏆 Competitive Advantages</h2>
+                    <h2>&#127942; Competitive Advantages</h2>
                     <p>{competitive_advantages}</p>
                 </div>
                 
                 <div class="success-prediction">
-                    <h2>🎯 Success Prediction</h2>
+                    <h2>&#127919; Success Prediction</h2>
                     <p>{success_prediction}</p>
                 </div>
                 
                 <div class="actions">
-                    <button class="btn print-btn" onclick="window.print()">🖨️ Print Report</button>
-                    <a href="/" class="btn">🏠 Return to App</a>
+                    <button class="btn print-btn" onclick="window.print()">&#128424; Print Report</button>
+                    <a href="/" class="btn">&#127968; Return to App</a>
                 </div>
             </div>
         </div>
@@ -1319,7 +1319,7 @@ def generate_job_fit_html(result: dict, analysis_id: str) -> str:
     <body>
         <div class="container">
             <div class="header">
-                <h1>🎯 Job Fit Analysis</h1>
+                <h1>&#127919; Job Fit Analysis</h1>
                 <p>How well your resume matches the job requirements</p>
             </div>
             
@@ -1330,7 +1330,7 @@ def generate_job_fit_html(result: dict, analysis_id: str) -> str:
                 </div>
                 
                 <div class="section">
-                    <h2>✅ Requirements Met</h2>
+                    <h2>&#10003; Requirements Met</h2>
                     <ul class="list">
     """
     
@@ -1342,7 +1342,7 @@ def generate_job_fit_html(result: dict, analysis_id: str) -> str:
                 </div>
                 
                 <div class="section">
-                    <h2>❌ Missing Qualifications</h2>
+                    <h2>&#10060; Missing Qualifications</h2>
                     <ul class="list">
     """
     
@@ -1354,7 +1354,7 @@ def generate_job_fit_html(result: dict, analysis_id: str) -> str:
                 </div>
                 
                 <div class="section">
-                    <h2>💪 Strengths</h2>
+                    <h2>&#128170; Strengths</h2>
                     <ul class="list">
     """
     
@@ -1366,7 +1366,7 @@ def generate_job_fit_html(result: dict, analysis_id: str) -> str:
                 </div>
                 
                 <div class="section">
-                    <h2>🚀 Improvements</h2>
+                    <h2>&#128640; Improvements</h2>
                     <ul class="list">
     """
     
@@ -1378,8 +1378,8 @@ def generate_job_fit_html(result: dict, analysis_id: str) -> str:
                 </div>
                 
                 <div class="actions">
-                    <button class="btn" onclick="window.print()">🖨️ Print Report</button>
-                    <a href="/" class="btn">🏠 Return to App</a>
+                    <button class="btn" onclick="window.print()">&#128424; Print Report</button>
+                    <a href="/" class="btn">&#127968; Return to App</a>
                 </div>
             </div>
         </div>
@@ -1463,7 +1463,7 @@ def generate_cover_letter_html(result: dict, analysis_id: str) -> str:
     <body>
         <div class="container">
             <div class="header">
-                <h1>📝 AI Cover Letter</h1>
+                <h1>&#128221; AI Cover Letter</h1>
                 <p>Your personalized cover letter</p>
             </div>
             
@@ -1471,8 +1471,8 @@ def generate_cover_letter_html(result: dict, analysis_id: str) -> str:
                 <div class="cover-letter">{cover_letter}</div>
                 
                 <div class="actions">
-                    <button class="btn" onclick="window.print()">🖨️ Print Letter</button>
-                    <a href="/" class="btn">🏠 Return to App</a>
+                    <button class="btn" onclick="window.print()">&#128424; Print Letter</button>
+                    <a href="/" class="btn">&#127968; Return to App</a>
                 </div>
             </div>
         </div>
@@ -1583,7 +1583,7 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
     html_content = f"""
     <div class="premium-results">
         <div class="premium-header">
-            <h2>🎯 Premium Resume Analysis</h2>
+            <h2>&#127919; Premium Resume Analysis</h2>
             <p>Your comprehensive resume optimization report</p>
         </div>
         
@@ -1593,7 +1593,7 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
         </div>
         
         <div class="section">
-            <h3>💪 Key Strengths</h3>
+            <h3>&#128170; Key Strengths</h3>
             <ul class="strengths-list">
     """
     
@@ -1605,7 +1605,7 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
         </div>
         
         <div class="section">
-            <h3>🚀 Improvement Opportunities</h3>
+            <h3>&#128640; Improvement Opportunities</h3>
             <ul class="opportunities-list">
     """
     
@@ -1617,7 +1617,7 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
         </div>
         
         <div class="section">
-            <h3>📊 ATS Optimization</h3>
+            <h3>&#128202; ATS Optimization</h3>
             <h4>Current Strength</h4>
             <p>{ats_opt.get('current_strength', 'N/A')}</p>
             
@@ -1636,7 +1636,7 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
         </div>
         
         <div class="section">
-            <h3>📝 Content Enhancement</h3>
+            <h3>&#128221; Content Enhancement</h3>
             <h4>Strong Sections</h4>
             <ul>
     """
@@ -1669,7 +1669,7 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
         </div>
         
         <div class="section">
-            <h3>✏️ Text Rewrites</h3>
+            <h3>&#9999; Text Rewrites</h3>
     """
     
     for rewrite in text_rewrites:
@@ -1694,18 +1694,18 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
         </div>
         
         <div class="competitive-advantages">
-            <h3>🏆 Competitive Advantages</h3>
+            <h3>&#127942; Competitive Advantages</h3>
             <p>{competitive_advantages}</p>
         </div>
         
         <div class="success-prediction">
-            <h3>🎯 Success Prediction</h3>
+            <h3>&#127919; Success Prediction</h3>
             <p>{success_prediction}</p>
         </div>
         
         <div class="actions">
-            <button class="btn print-btn" onclick="window.print()">🖨️ Print Report</button>
-            <a href="/" class="btn">🏠 Return to App</a>
+            <button class="btn print-btn" onclick="window.print()">&#128424; Print Report</button>
+            <a href="/" class="btn">&#127968; Return to App</a>
         </div>
     </div>
     
@@ -1882,7 +1882,7 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
     html_content = f"""
     <div class="premium-results">
         <div class="premium-header">
-            <h2>🎯 Job Fit Analysis</h2>
+            <h2>&#127919; Job Fit Analysis</h2>
             <p>Strategic positioning for your dream role</p>
         </div>
         
@@ -1892,7 +1892,7 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
         </div>
         
         <div class="section">
-            <h3>🌟 Strategic Advantages</h3>
+            <h3>&#127775; Strategic Advantages</h3>
             <ul class="strengths-list">
     """
     
@@ -1909,12 +1909,12 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
         </div>
         
         <div class="section">
-            <h3>🎯 Primary Value Proposition</h3>
+            <h3>&#127919; Primary Value Proposition</h3>
             <p class="highlight-text">{primary_value}</p>
         </div>
         
         <div class="section">
-            <h3>✅ Supporting Qualifications</h3>
+            <h3>&#10003; Supporting Qualifications</h3>
             <ul class="strengths-list">
     """
     
@@ -1926,7 +1926,7 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
         </div>
         
         <div class="section">
-            <h3>💎 Unique Differentiators</h3>
+            <h3>&#128142; Unique Differentiators</h3>
             <ul class="strengths-list">
     """
     
@@ -1938,7 +1938,7 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
         </div>
         
         <div class="section">
-            <h3>🔑 Optimization Keywords</h3>
+            <h3>&#128273; Optimization Keywords</h3>
             <div class="keywords-container">
     """
     
@@ -1950,7 +1950,7 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
         </div>
         
         <div class="section">
-            <h3>📝 Resume Enhancements</h3>
+            <h3>&#128221; Resume Enhancements</h3>
             <ul class="strengths-list">
     """
     
@@ -1964,7 +1964,7 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
         </div>
         
         <div class="section">
-            <h3>✍️ Text Rewrites</h3>
+            <h3>&#9997; Text Rewrites</h3>
         """
         
         for rewrite in text_rewrites:
@@ -1996,7 +1996,7 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
         </div>
         
         <div class="section">
-            <h3>🎯 Interview Confidence</h3>
+            <h3>&#127919; Interview Confidence</h3>
             <p class="highlight-text">{interview_confidence}</p>
         </div>
         """
@@ -2005,10 +2005,11 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
             </ul>
         </div>
         """
-        
+    
+    html_content += f"""
         <div class="actions">
-            <button class="btn print-btn" onclick="window.print()">🖨️ Print Report</button>
-            <a href="/" class="btn">🏠 Return to App</a>
+            <button class="btn print-btn" onclick="window.print()">&#128424; Print Report</button>
+            <a href="/" class="btn">&#127968; Return to App</a>
         </div>
     </div>
     
@@ -2134,7 +2135,7 @@ def generate_embedded_cover_letter_html(result: dict, analysis_id: str) -> str:
     html_content = f"""
     <div class="premium-results">
         <div class="premium-header">
-            <h2>📝 AI-Generated Cover Letter</h2>
+            <h2>&#128221; AI-Generated Cover Letter</h2>
             <p>Tailored specifically for your target position</p>
         </div>
         
@@ -2146,9 +2147,9 @@ def generate_embedded_cover_letter_html(result: dict, analysis_id: str) -> str:
         </div>
         
         <div class="actions">
-            <button class="btn print-btn" onclick="window.print()">🖨️ Print Cover Letter</button>
-            <button class="btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
-            <a href="/" class="btn">🏠 Return to App</a>
+            <button class="btn print-btn" onclick="window.print()">&#128424; Print Cover Letter</button>
+            <button class="btn" onclick="copyToClipboard()">&#128203; Copy to Clipboard</button>
+            <a href="/" class="btn">&#127968; Return to App</a>
         </div>
     </div>
     
@@ -2247,7 +2248,7 @@ def generate_embedded_interview_prep_html(result: dict, analysis_id: str) -> str
     return f"""
     <div class="premium-results">
         <div class="premium-header">
-            <h2>🎤 Interview Preparation</h2>
+            <h2>&#127908; Interview Preparation</h2>
             <p>Personalized interview questions and answers</p>
         </div>
         <div class="section">
@@ -2255,8 +2256,8 @@ def generate_embedded_interview_prep_html(result: dict, analysis_id: str) -> str
             <pre>{result}</pre>
         </div>
         <div class="actions">
-            <button class="btn print-btn" onclick="window.print()">🖨️ Print Report</button>
-            <a href="/" class="btn">🏠 Return to App</a>
+            <button class="btn print-btn" onclick="window.print()">&#128424; Print Report</button>
+            <a href="/" class="btn">&#127968; Return to App</a>
         </div>
     </div>
     """
@@ -2266,7 +2267,7 @@ def generate_embedded_salary_insights_html(result: dict, analysis_id: str) -> st
     return f"""
     <div class="premium-results">
         <div class="premium-header">
-            <h2>💰 Salary Insights</h2>
+            <h2>&#128176; Salary Insights</h2>
             <p>Market rate analysis for your role</p>
         </div>
         <div class="section">
@@ -2274,8 +2275,8 @@ def generate_embedded_salary_insights_html(result: dict, analysis_id: str) -> st
             <pre>{result}</pre>
         </div>
         <div class="actions">
-            <button class="btn print-btn" onclick="window.print()">🖨️ Print Report</button>
-            <a href="/" class="btn">🏠 Return to App</a>
+            <button class="btn print-btn" onclick="window.print()">&#128424; Print Report</button>
+            <a href="/" class="btn">&#127968; Return to App</a>
         </div>
     </div>
     """
