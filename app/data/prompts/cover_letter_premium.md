@@ -20,21 +20,21 @@ The letter should feel personally crafted for this exact opportunity.
 
 Respond in JSON format:
 ```json
-{
+{{
   "full_cover_letter": "Complete, ready-to-send cover letter text",
-  "strategic_elements": {
+  "strategic_elements": {{
     "opening_hook": "What makes the first sentence compelling",
     "value_story": "The main narrative that shows their fit",
     "company_connection": "How they've personalized it for this employer",
     "closing_confidence": "Why the ending creates action"
-  },
+  }},
   "customization_notes": [
     "Company research element 1",
     "Role-specific detail 2",
     "Industry insight 3"
   ],
   "success_prediction": "Encouraging message about the letter's potential impact"
-}
+}}
 ```
 
 ## Tone Guidelines

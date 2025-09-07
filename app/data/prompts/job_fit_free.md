@@ -16,7 +16,7 @@ Provide analysis that makes them feel optimistic:
 
 Respond in JSON format:
 ```json
-{
+{{
   "job_fit_score": "Percentage from 65-85",
   "existing_strengths": [
     "Qualification 1 they already have",
@@ -29,7 +29,7 @@ Respond in JSON format:
     "Qualification that's easy to develop"
   ],
   "fit_encouragement": "Positive message about why they're a strong candidate"
-}
+}}
 ```
 
 ## Tone Guidelines

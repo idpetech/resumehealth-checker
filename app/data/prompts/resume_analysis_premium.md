@@ -16,34 +16,34 @@ Deliver analysis that positions them for success:
 
 Respond in JSON format:
 ```json
-{
+{{
   "overall_score": "Score 70-95 based on potential",
   "strength_highlights": [
     "Major strength 1 with specific impact",
     "Major strength 2 with market value",
     "Major strength 3 with competitive advantage"
   ],
-  "ats_optimization": {
+  "ats_optimization": {{
     "current_strength": "What's working well for ATS",
     "enhancement_opportunities": ["Specific improvements"],
     "impact_prediction": "How changes improve success rate"
-  },
-  "content_enhancement": {
+  }},
+  "content_enhancement": {{
     "strong_sections": ["What's already compelling"],
     "growth_areas": ["How to make good sections great"],
     "strategic_additions": ["What to add for maximum impact"]
-  },
+  }},
   "text_rewrites": [
-    {
+    {{
       "section": "Professional Summary or Experience",
       "original": "Current text from resume",
       "improved": "Powerful rewrite showcasing value",
       "why_better": "Explanation of improvement's impact"
-    }
+    }}
   ],
   "competitive_advantages": "What makes them uniquely valuable",
   "success_prediction": "Forecast of job search success"
-}
+}}
 ```
 
 ## Tone Guidelines

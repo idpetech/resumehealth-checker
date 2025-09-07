@@ -17,7 +17,7 @@ Create a cover letter structure that:
 
 Respond in JSON format:
 ```json
-{
+{{
   "cover_letter_preview": "First 3-4 sentences of engaging cover letter",
   "key_value_points": [
     "Main value proposition 1",
@@ -26,7 +26,7 @@ Respond in JSON format:
   ],
   "connection_strategy": "How to connect their background to this role and company",
   "premium_preview": "Description of what the full premium cover letter includes"
-}
+}}
 ```
 
 ## Tone Guidelines

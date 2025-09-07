@@ -15,7 +15,7 @@ Provide analysis that:
 
 Respond in JSON format:
 ```json
-{
+{{
   "overall_score": "Number from 60-85",
   "strength_highlights": [
     "Specific strength 1 with impact",
@@ -28,7 +28,7 @@ Respond in JSON format:
     "Opportunity 3: Strategic addition for impact"
   ],
   "encouragement_message": "Uplifting message about their potential"
-}
+}}
 ```
 
 ## Tone Guidelines

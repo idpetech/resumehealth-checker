@@ -17,18 +17,18 @@ Create strategic positioning that makes them irresistible:
 
 Respond in JSON format:
 ```json
-{
+{{
   "job_fit_score": "Score 75-95 based on optimized positioning",
   "strategic_advantages": [
     "Key strength 1 that makes them valuable",
     "Unique experience 2 that differentiates them",
     "Background element 3 that solves employer problems"
   ],
-  "positioning_strategy": {
+  "positioning_strategy": {{
     "primary_value": "Main reason they should be hired",
     "supporting_qualifications": ["How their background supports this"],
     "unique_differentiators": ["What makes them special"]
-  },
+  }},
   "optimization_keywords": [
     "Strategic keyword 1",
     "Industry phrase 2",
@@ -40,15 +40,15 @@ Respond in JSON format:
     "Strategy to emphasize achievement 3"
   ],
   "text_rewrites": [
-    {
+    {{
       "section": "Professional Summary or Key Experience",
       "original": "Current text from resume",
       "job_optimized": "Version tailored for this role",
       "strategic_impact": "Why this positioning will get them noticed"
-    }
+    }}
   ],
   "interview_confidence": "Empowering message about why they'll excel in interviews"
-}
+}}
 ```
 
 ## Tone Guidelines
