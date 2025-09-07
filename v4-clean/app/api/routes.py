@@ -1870,59 +1870,141 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
 
 def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
     """Generate embedded HTML for job fit analysis results"""
-    # Simplified version for embedded display
-    match_percentage = result.get('match_percentage', 'N/A')
-    requirements_met = result.get('requirements_met', [])
-    missing_qualifications = result.get('missing_qualifications', [])
-    recommendations = result.get('recommendations', [])
+    # Map prompts.json fields to display fields
+    job_fit_score = result.get('job_fit_score', 'N/A')
+    strategic_advantages = result.get('strategic_advantages', [])
+    positioning_strategy = result.get('positioning_strategy', {})
+    optimization_keywords = result.get('optimization_keywords', [])
+    resume_enhancements = result.get('resume_enhancements', [])
+    text_rewrites = result.get('text_rewrites', [])
+    interview_confidence = result.get('interview_confidence', '')
     
     html_content = f"""
     <div class="premium-results">
         <div class="premium-header">
             <h2>🎯 Job Fit Analysis</h2>
-            <p>How well your resume matches the job requirements</p>
+            <p>Strategic positioning for your dream role</p>
         </div>
         
         <div class="score-section">
-            <div class="score">{match_percentage}%</div>
-            <div class="score-label">Job Match Score</div>
+            <div class="score">{job_fit_score}</div>
+            <div class="score-label">Job Fit Score</div>
         </div>
         
         <div class="section">
-            <h3>✅ Requirements Met</h3>
+            <h3>🌟 Strategic Advantages</h3>
             <ul class="strengths-list">
     """
     
-    for req in requirements_met:
-        html_content += f'<li>{req}</li>'
+    for advantage in strategic_advantages:
+        html_content += f'<li>{advantage}</li>'
+    
+    # Add positioning strategy section
+    primary_value = positioning_strategy.get('primary_value', '')
+    supporting_qualifications = positioning_strategy.get('supporting_qualifications', [])
+    unique_differentiators = positioning_strategy.get('unique_differentiators', [])
     
     html_content += f"""
             </ul>
         </div>
         
         <div class="section">
-            <h3>❌ Missing Qualifications</h3>
-            <ul class="opportunities-list">
-    """
-    
-    for missing in missing_qualifications:
-        html_content += f'<li>{missing}</li>'
-    
-    html_content += f"""
-            </ul>
+            <h3>🎯 Primary Value Proposition</h3>
+            <p class="highlight-text">{primary_value}</p>
         </div>
         
         <div class="section">
-            <h3>💡 Recommendations</h3>
+            <h3>✅ Supporting Qualifications</h3>
             <ul class="strengths-list">
     """
     
-    for rec in recommendations:
-        html_content += f'<li>{rec}</li>'
+    for qual in supporting_qualifications:
+        html_content += f'<li>{qual}</li>'
     
     html_content += f"""
             </ul>
         </div>
+        
+        <div class="section">
+            <h3>💎 Unique Differentiators</h3>
+            <ul class="strengths-list">
+    """
+    
+    for diff in unique_differentiators:
+        html_content += f'<li>{diff}</li>'
+    
+    html_content += f"""
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h3>🔑 Optimization Keywords</h3>
+            <div class="keywords-container">
+    """
+    
+    for keyword in optimization_keywords:
+        html_content += f'<span class="keyword-tag">{keyword}</span>'
+    
+    html_content += f"""
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📝 Resume Enhancements</h3>
+            <ul class="strengths-list">
+    """
+    
+    for enhancement in resume_enhancements:
+        html_content += f'<li>{enhancement}</li>'
+    
+    # Add text rewrites section if available
+    if text_rewrites:
+        html_content += f"""
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h3>✍️ Text Rewrites</h3>
+        """
+        
+        for rewrite in text_rewrites:
+            section = rewrite.get('section', 'Section')
+            original = rewrite.get('original', '')
+            job_optimized = rewrite.get('job_optimized', '')
+            strategic_impact = rewrite.get('strategic_impact', '')
+            
+            html_content += f"""
+            <div class="rewrite-section">
+                <h4>{section}</h4>
+                <div class="before-after">
+                    <div class="before">
+                        <strong>Before:</strong> {original}
+                    </div>
+                    <div class="after">
+                        <strong>Job-Optimized:</strong> {job_optimized}
+                    </div>
+                    <div class="impact">
+                        <strong>Why Better:</strong> {strategic_impact}
+                    </div>
+                </div>
+            </div>
+            """
+    
+    # Add interview confidence section
+    if interview_confidence:
+        html_content += f"""
+        </div>
+        
+        <div class="section">
+            <h3>🎯 Interview Confidence</h3>
+            <p class="highlight-text">{interview_confidence}</p>
+        </div>
+        """
+    else:
+        html_content += """
+            </ul>
+        </div>
+        """
         
         <div class="actions">
             <button class="btn print-btn" onclick="window.print()">🖨️ Print Report</button>
