@@ -11,18 +11,18 @@
       "products": {
         "resume_analysis": {
           "name": "Resume Health Check",
-          "price": 10,
-          "display": "$10"
+          "price": 1.49,
+          "display": "$1.49"
         },
         "job_fit_analysis": {
           "name": "Job Fit Analysis", 
-          "price": 12,
-          "display": "$12"
+          "price": 2.99,
+          "display": "$2.99"
         },
         "cover_letter": {
           "name": "Cover Letter Generator",
-          "price": 8,
-          "display": "$8"
+          "price": 1.99,
+          "display": "$1.99"
         }
       },
       "bundles": {
