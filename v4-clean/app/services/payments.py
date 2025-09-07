@@ -13,24 +13,45 @@ from datetime import datetime, timedelta
 stripe_lib = None
 
 def get_stripe_lib():
-    """Get Stripe library with runtime validation"""
+    """Get Stripe library with runtime validation and detailed debugging"""
     global stripe_lib
-    if stripe_lib is None:
-        try:
-            import stripe
-            # Verify Stripe is properly imported
-            if not hasattr(stripe, 'checkout'):
-                raise ImportError("Stripe checkout module not available")
-            if not hasattr(stripe.checkout, 'Session'):
-                raise ImportError("Stripe Session class not available")
-            if not hasattr(stripe, 'Balance'):
-                raise ImportError("Stripe Balance class not available")
-            stripe_lib = stripe
-            logging.info("✅ Stripe library loaded successfully")
-        except ImportError as e:
-            logging.error(f"Stripe import error: {e}")
-            stripe_lib = None
-    return stripe_lib
+    
+    # Always try fresh import to debug Railway issue
+    try:
+        import stripe
+        
+        # Detailed debugging
+        logging.info(f"🔍 DEBUG: stripe module type: {type(stripe)}")
+        logging.info(f"🔍 DEBUG: stripe module id: {id(stripe)}")
+        logging.info(f"🔍 DEBUG: stripe has checkout: {hasattr(stripe, 'checkout')}")
+        
+        if hasattr(stripe, 'checkout'):
+            logging.info(f"🔍 DEBUG: stripe.checkout type: {type(stripe.checkout)}")
+            logging.info(f"🔍 DEBUG: stripe.checkout has Session: {hasattr(stripe.checkout, 'Session')}")
+            
+            if hasattr(stripe.checkout, 'Session'):
+                logging.info(f"🔍 DEBUG: stripe.checkout.Session type: {type(stripe.checkout.Session)}")
+        
+        if hasattr(stripe, 'Balance'):
+            logging.info(f"🔍 DEBUG: stripe.Balance type: {type(stripe.Balance)}")
+        
+        # Verify Stripe is properly imported
+        if not hasattr(stripe, 'checkout'):
+            raise ImportError("Stripe checkout module not available")
+        if not hasattr(stripe.checkout, 'Session'):
+            raise ImportError("Stripe Session class not available") 
+        if not hasattr(stripe, 'Balance'):
+            raise ImportError("Stripe Balance class not available")
+            
+        logging.info("✅ Stripe library loaded and validated successfully")
+        return stripe
+        
+    except ImportError as e:
+        logging.error(f"Stripe import error: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"Unexpected error getting Stripe library: {e}")
+        return None
 
 from ..core.config import config
 from ..core.exceptions import PaymentError, StripeError
@@ -128,10 +149,25 @@ class PaymentService:
                 raise PaymentError(f"Payment processing is not available in {self.environment} environment. Please contact support.")
         
         try:
-            # Get Stripe library dynamically
+            # Get Stripe library dynamically with debugging
+            logger.info("🔍 About to call get_stripe_lib() for session creation")
             stripe = get_stripe_lib()
-            if stripe is None or not hasattr(stripe, 'checkout') or not hasattr(stripe.checkout, 'Session'):
-                raise PaymentError("Stripe library not properly initialized")
+            logger.info(f"🔍 get_stripe_lib() returned: {stripe}")
+            logger.info(f"🔍 stripe type: {type(stripe)}")
+            
+            if stripe is None:
+                logger.error("❌ stripe is None - cannot create session")
+                raise PaymentError("Stripe library not available")
+                
+            if not hasattr(stripe, 'checkout'):
+                logger.error("❌ stripe has no checkout attribute")
+                raise PaymentError("Stripe checkout not available")
+                
+            if not hasattr(stripe.checkout, 'Session'):
+                logger.error("❌ stripe.checkout has no Session attribute")
+                raise PaymentError("Stripe Session not available")
+            
+            logger.info("✅ All Stripe attributes verified - proceeding with session creation")
             
             # Generate unique session reference
             session_ref = f"analysis_{analysis_id}_{uuid.uuid4().hex[:8]}"
@@ -140,6 +176,7 @@ class PaymentService:
             expires_at = int((datetime.utcnow() + timedelta(minutes=30)).timestamp())
             
             # Create Stripe session with bulletproof URLs
+            logger.info("🔍 About to call stripe.checkout.Session.create")
             session = stripe.checkout.Session.create(
                 mode='payment',
                 payment_method_types=['card'],
