@@ -116,6 +116,15 @@ STRIPE_PAYMENT_URL = "https://buy.stripe.com/test_placeholder"  # Default value
 # Register route modules
 app.include_router(api_router, prefix="/api/v1")
 
+# Add simple health checks for Railway
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Resume Health Checker v4.0 is running"}
+
+@app.get("/health")
+async def simple_health():
+    return {"status": "healthy", "service": "Resume Health Checker v4.0"}
+
 # =============================================================================
 # TEMPORARY IMPORTS FOR BACKWARD COMPATIBILITY
 # =============================================================================
@@ -165,6 +174,10 @@ if __name__ == "__main__":
     
     # Use Railway's PORT environment variable, fallback to 8000
     port = int(os.environ.get("PORT", 8000))
+    
+    print(f"🚀 Starting Resume Health Checker v4.0 on port {port}")
+    print(f"🌍 Environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'local')}")
+    print(f"📡 Health check available at: http://0.0.0.0:{port}/health")
     
     uvicorn.run(
         "main_modular:app",
