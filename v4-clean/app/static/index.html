@@ -718,7 +718,7 @@
                    analysisResults.innerHTML = html;
                    resultsModal.classList.add('show');
                    
-                   showMessage('Premium results loaded successfully!');
+                   // Premium results loaded - no toast needed, results speak for themselves
 
             } catch (error) {
                    console.error('Premium results error:', error);
@@ -963,7 +963,7 @@
                const paymentUrl = result.payment_url || result.payment_session?.payment_url;
                
                if (paymentUrl) {
-                   showMessage('Redirecting to payment...');
+                   // Redirect immediately - no toast needed
                    window.location.href = paymentUrl;
                } else {
                    console.log('Payment response:', result);
