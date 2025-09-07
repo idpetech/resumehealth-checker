@@ -10,18 +10,27 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 
 # Import Stripe with explicit error handling
-try:
-    import stripe as stripe_lib
-    # Verify Stripe is properly imported
-    if not hasattr(stripe_lib, 'checkout'):
-        raise ImportError("Stripe checkout module not available")
-    if not hasattr(stripe_lib.checkout, 'Session'):
-        raise ImportError("Stripe Session class not available")
-    if not hasattr(stripe_lib, 'Balance'):
-        raise ImportError("Stripe Balance class not available")
-except ImportError as e:
-    logging.error(f"Stripe import error: {e}")
-    stripe_lib = None
+stripe_lib = None
+
+def get_stripe_lib():
+    """Get Stripe library with runtime validation"""
+    global stripe_lib
+    if stripe_lib is None:
+        try:
+            import stripe
+            # Verify Stripe is properly imported
+            if not hasattr(stripe, 'checkout'):
+                raise ImportError("Stripe checkout module not available")
+            if not hasattr(stripe.checkout, 'Session'):
+                raise ImportError("Stripe Session class not available")
+            if not hasattr(stripe, 'Balance'):
+                raise ImportError("Stripe Balance class not available")
+            stripe_lib = stripe
+            logging.info("✅ Stripe library loaded successfully")
+        except ImportError as e:
+            logging.error(f"Stripe import error: {e}")
+            stripe_lib = None
+    return stripe_lib
 
 from ..core.config import config
 from ..core.exceptions import PaymentError, StripeError
@@ -35,11 +44,13 @@ class PaymentService:
     def __init__(self):
         """Initialize Stripe with environment-appropriate keys"""
         try:
-            # Check if Stripe library is available
-            if stripe_lib is None:
+            self.environment = config.environment
+            self.stripe_available = False
+            
+            # Get Stripe library dynamically
+            stripe = get_stripe_lib()
+            if stripe is None:
                 logger.error("Stripe library is not available - payment processing disabled")
-                self.stripe_available = False
-                self.environment = config.environment
                 return
             
             # Initialize Stripe with proper error handling
@@ -47,9 +58,7 @@ class PaymentService:
                 raise ValueError("Stripe secret key is not configured")
             
             # Set the API key
-            stripe_lib.api_key = config.stripe_secret_key
-            self.environment = config.environment
-            self.stripe_available = False
+            stripe.api_key = config.stripe_secret_key
             
             logger.info(f"Payment service initialized for {self.environment} environment")
             
@@ -66,7 +75,7 @@ class PaymentService:
                 try:
                     logger.info("Testing Stripe connection...")
                     # Test the connection by retrieving account balance
-                    balance = stripe_lib.Balance.retrieve()
+                    balance = stripe.Balance.retrieve()
                     logger.info(f"✅ Stripe connection verified - Balance retrieved successfully")
                     self.stripe_available = True
                 except Exception as e:
@@ -119,8 +128,9 @@ class PaymentService:
                 raise PaymentError(f"Payment processing is not available in {self.environment} environment. Please contact support.")
         
         try:
-            # Verify Stripe is properly initialized
-            if stripe_lib is None or not hasattr(stripe_lib, 'checkout') or not hasattr(stripe_lib.checkout, 'Session'):
+            # Get Stripe library dynamically
+            stripe = get_stripe_lib()
+            if stripe is None or not hasattr(stripe, 'checkout') or not hasattr(stripe.checkout, 'Session'):
                 raise PaymentError("Stripe library not properly initialized")
             
             # Generate unique session reference
@@ -130,7 +140,7 @@ class PaymentService:
             expires_at = int((datetime.utcnow() + timedelta(minutes=30)).timestamp())
             
             # Create Stripe session with bulletproof URLs
-            session = stripe_lib.checkout.Session.create(
+            session = stripe.checkout.Session.create(
                 mode='payment',
                 payment_method_types=['card'],
                 
@@ -220,12 +230,13 @@ class PaymentService:
         logger.info(f"Verifying payment session: {session_id}")
         
         try:
-            # Check if Stripe is available
-            if stripe_lib is None:
+            # Get Stripe library dynamically
+            stripe = get_stripe_lib()
+            if stripe is None:
                 raise PaymentError("Stripe library not available")
             
             # Retrieve session from Stripe with expanded data
-            session = stripe_lib.checkout.Session.retrieve(
+            session = stripe.checkout.Session.retrieve(
                 session_id,
                 expand=['line_items', 'payment_intent', 'customer']
             )
@@ -271,8 +282,13 @@ class PaymentService:
         logger.info("Processing Stripe webhook")
         
         try:
+            # Get Stripe library dynamically
+            stripe = get_stripe_lib()
+            if stripe is None:
+                raise PaymentError("Stripe library not available")
+            
             # Verify webhook signature
-            event = stripe_lib.Webhook.construct_event(
+            event = stripe.Webhook.construct_event(
                 payload, signature, config.stripe_webhook_secret
             )
             
