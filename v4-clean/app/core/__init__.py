@@ -7,4 +7,3 @@ This module contains:
 - Exception handling
 - Application settings
 """
-

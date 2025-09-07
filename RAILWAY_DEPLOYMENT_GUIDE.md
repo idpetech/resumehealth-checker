@@ -100,3 +100,5 @@ Once staging works perfectly:
 ## 🎉 Success!
 
 Your Stripe payment flow should now work correctly in staging, redirecting users back to your Railway domain with their analysis results intact.
+
+

@@ -22,3 +22,6 @@ echo "   - New Backend: http://localhost:8000"
 echo "   - Legacy Frontend: http://localhost:3000"
 echo ""
 echo "📝 Note: Rate limiting is disabled for development. Remember to enable it in production!"
+
+
+
