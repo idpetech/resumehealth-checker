@@ -14,6 +14,17 @@ from ..core.config import config
 from ..core.exceptions import PaymentError, StripeError
 from ..core.database import PaymentDB
 
+# Ensure Stripe is properly imported and available
+try:
+    # Test that Stripe modules are available
+    if not hasattr(stripe, 'checkout'):
+        raise ImportError("Stripe checkout module not available")
+    if not hasattr(stripe.checkout, 'Session'):
+        raise ImportError("Stripe Session class not available")
+except ImportError as e:
+    logging.error(f"Stripe import error: {e}")
+    raise
+
 logger = logging.getLogger(__name__)
 
 class PaymentService:
@@ -22,6 +33,11 @@ class PaymentService:
     def __init__(self):
         """Initialize Stripe with environment-appropriate keys"""
         try:
+            # Initialize Stripe with proper error handling
+            if not config.stripe_secret_key:
+                raise ValueError("Stripe secret key is not configured")
+            
+            # Set the API key
             stripe.api_key = config.stripe_secret_key
             self.environment = config.environment
             self.stripe_available = False
@@ -42,7 +58,7 @@ class PaymentService:
                     logger.info("Testing Stripe connection...")
                     # Test the connection by retrieving account balance
                     balance = stripe.Balance.retrieve()
-                    logger.info(f"✅ Stripe connection verified - Balance: {balance}")
+                    logger.info(f"✅ Stripe connection verified - Balance retrieved successfully")
                     self.stripe_available = True
                 except Exception as e:
                     logger.warning(f"⚠️ Stripe connection test failed: {e}")
@@ -94,6 +110,10 @@ class PaymentService:
                 raise PaymentError(f"Payment processing is not available in {self.environment} environment. Please contact support.")
         
         try:
+            # Verify Stripe is properly initialized
+            if not hasattr(stripe, 'checkout') or not hasattr(stripe.checkout, 'Session'):
+                raise PaymentError("Stripe library not properly initialized")
+            
             # Generate unique session reference
             session_ref = f"analysis_{analysis_id}_{uuid.uuid4().hex[:8]}"
             
