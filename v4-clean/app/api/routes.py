@@ -398,13 +398,6 @@ async def payment_success(
             <p>Thank you for your payment. Your premium analysis is ready!</p>
             
             <div class="analysis-box">
-                <h3>Payment Details</h3>
-                <p><strong>Amount:</strong> {amount_paid/100:.2f} {currency}</p>
-                <p><strong>Product:</strong> {product_type.replace('_', ' ').title()}</p>
-                <p><strong>Session ID:</strong> {session_id}</p>
-            </div>
-            
-            <div class="analysis-box">
                 <h3>Your Premium Analysis</h3>"""
         
         # Handle different types of premium results
