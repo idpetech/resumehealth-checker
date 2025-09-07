@@ -414,61 +414,29 @@ async def payment_success(
                     <p><em>Please screenshot this page and contact support for assistance.</em></p>
                 </div>"""
         else:
-            # Simple premium analysis display similar to free version
-            success_html += f"""
-                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e0e0e0;">
-                    <h3 style="color: #667eea; margin-top: 0;">🎯 Premium Analysis Results</h3>
-                    
-                    <div style="margin: 15px 0;">
-                        <h4 style="color: #333; margin-bottom: 10px;">Overall Score: {premium_result.get('overall_score', 'N/A')}</h4>
-                    </div>
-                    
-                    <div style="margin: 15px 0;">
-                        <h4 style="color: #28a745;">💪 Key Strengths</h4>
-                        <ul style="margin: 10px 0; padding-left: 20px;">"""
-            
-            # Add strengths
-            for strength in premium_result.get('strength_highlights', []):
-                success_html += f'<li style="margin: 8px 0; line-height: 1.4;">{strength}</li>'
-            
-            success_html += """</ul>
-                    </div>
-                    
-                    <div style="margin: 15px 0;">
-                        <h4 style="color: #ffc107;">🚀 Improvement Opportunities</h4>
-                        <ul style="margin: 10px 0; padding-left: 20px;">"""
-            
-            # Add improvements
-            for improvement in premium_result.get('improvement_opportunities', []):
-                success_html += f'<li style="margin: 8px 0; line-height: 1.4;">{improvement}</li>'
-            
-            success_html += """</ul>
-                    </div>"""
-            
-            # Add competitive advantages if available
-            competitive_advantages = premium_result.get('competitive_advantages')
-            if competitive_advantages:
-                success_html += f"""
-                    <div style="margin: 15px 0; padding: 15px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745;">
-                        <h4 style="color: #28a745; margin-top: 0;">🏆 Your Competitive Advantages</h4>
-                        <p style="margin: 0; line-height: 1.5;">{competitive_advantages}</p>
-                    </div>"""
-            
-            # Add success prediction if available
-            success_prediction = premium_result.get('success_prediction')
-            if success_prediction:
-                success_html += f"""
-                    <div style="margin: 15px 0; padding: 15px; background: #e8f4fd; border-radius: 8px; border-left: 4px solid #667eea;">
-                        <h4 style="color: #667eea; margin-top: 0;">🎯 Success Prediction</h4>
-                        <p style="margin: 0; line-height: 1.5;">{success_prediction}</p>
-                    </div>"""
-            
-            success_html += """
+            # Generate detailed HTML for the premium analysis (more comprehensive for premium value)
+            try:
+                analysis_html = generate_embedded_resume_analysis_html(premium_result, analysis_id)
+                success_html += analysis_html
+                
+                # Add action buttons at the end
+                success_html += """
                     <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
                         <button onclick="window.print()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; cursor: pointer;">🖨️ Print Analysis</button>
                         <a href="/" style="background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; display: inline-block;">🏠 Analyze Another Resume</a>
-                    </div>
-                </div>"""
+                    </div>"""
+                    
+            except Exception as e:
+                logger.error(f"Failed to generate premium analysis HTML: {e}")
+                success_html += f"""
+                    <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3>Your Premium Analysis</h3>
+                        <pre style="white-space: pre-wrap; font-family: Arial, sans-serif;">{premium_result}</pre>
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button onclick="window.print()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; cursor: pointer;">🖨️ Print Analysis</button>
+                            <a href="/" style="background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; display: inline-block;">🏠 Analyze Another Resume</a>
+                        </div>
+                    </div>"""
         
         success_html += """
             </div>
