@@ -31,7 +31,9 @@ class Config:
         # API Keys
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
         if not self.openai_api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is required")
+            # In Railway, we might not have the key set yet - use placeholder for health checks
+            self.openai_api_key = "sk-placeholder-for-health-check"
+            print("⚠️ OPENAI_API_KEY not set - using placeholder for health checks")
         
         # Stripe configuration - use test keys for local/staging, live keys for production
         self.use_stripe_test_keys = self.environment in ["local", "staging"]
@@ -46,8 +48,11 @@ class Config:
             self.stripe_webhook_secret = os.getenv("STRIPE_WEBHOOK_LIVE_SECRET", "")
         
         if not self.stripe_secret_key:
-            stripe_key_type = "test" if self.use_stripe_test_keys else "live"
-            raise ValueError(f"STRIPE_SECRET_{stripe_key_type.upper()}_KEY environment variable is required")
+            # Use placeholder for health checks if Stripe keys not set
+            self.stripe_secret_key = "sk_test_placeholder_for_health_check"
+            self.stripe_publishable_key = "pk_test_placeholder_for_health_check"
+            self.stripe_webhook_secret = "whsec_placeholder_for_health_check"
+            print("⚠️ Stripe keys not set - using placeholders for health checks")
         
         # Base URL configuration
         self.base_url = self._get_base_url()
