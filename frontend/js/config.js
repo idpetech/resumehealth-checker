@@ -4,17 +4,19 @@ const API_CONFIG = {
     development: {
         baseUrl: 'http://localhost:8000',
         endpoints: {
-            checkResume: '/api/check-resume',
-            health: '/api/health'
+            checkResume: '/api/v1/analyze',
+            health: '/api/v1/health',
+            createPaymentSession: '/api/v1/payment/create'
         }
     },
     
     // Production environment
     production: {
-        baseUrl: 'https://q752325o84.execute-api.us-east-1.amazonaws.com/Prod',
+        baseUrl: '',  // Use relative URLs for Railway deployment
         endpoints: {
-            checkResume: '/api/check-resume',
-            health: '/api/health'
+            checkResume: '/api/v1/analyze',
+            health: '/api/v1/health',
+            createPaymentSession: '/api/v1/payment/create'
         }
     }
 };
@@ -29,7 +31,7 @@ const API = API_CONFIG[ENVIRONMENT];
 
 // Stripe Configuration
 const STRIPE_CONFIG = {
-    paymentUrl: 'https://buy.stripe.com/eVqaEWfOk37Mf9ncPWfMA00',
+    paymentUrl: 'https://buy.stripe.com/test_dRm8wPaXq2028FEgNQ0000F',
     successToken: 'payment_success_123'
 };
 

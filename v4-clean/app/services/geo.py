@@ -232,9 +232,9 @@ class GeoService:
         # Most currencies use 2 decimal places (multiply by 100)
         # Some currencies like Japanese Yen don't use decimals
         if currency.upper() in ["JPY", "KRW"]:  # Zero-decimal currencies
-            return base_amount
+            return int(base_amount)
         else:  # Standard currencies
-            return base_amount * 100
+            return int(base_amount * 100)
 
 # Create geo data file if it doesn't exist
 def create_geo_data_file():

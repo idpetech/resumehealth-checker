@@ -4,11 +4,54 @@ Payment Processing Service
 Handles Stripe integration with bulletproof session management and multi-environment support.
 This is the critical component that fixes all the payment flow issues from previous versions.
 """
-import stripe
 import uuid
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
+
+# Import Stripe with explicit error handling
+stripe_lib = None
+
+def get_stripe_lib():
+    """Get Stripe library with runtime validation and detailed debugging"""
+    global stripe_lib
+    
+    # Always try fresh import to debug Railway issue
+    try:
+        import stripe
+        
+        # Detailed debugging
+        logging.info(f"🔍 DEBUG: stripe module type: {type(stripe)}")
+        logging.info(f"🔍 DEBUG: stripe module id: {id(stripe)}")
+        logging.info(f"🔍 DEBUG: stripe has checkout: {hasattr(stripe, 'checkout')}")
+        
+        if hasattr(stripe, 'checkout'):
+            logging.info(f"🔍 DEBUG: stripe.checkout type: {type(stripe.checkout)}")
+            logging.info(f"🔍 DEBUG: stripe.checkout has Session: {hasattr(stripe.checkout, 'Session')}")
+            
+            if hasattr(stripe.checkout, 'Session'):
+                logging.info(f"🔍 DEBUG: stripe.checkout.Session type: {type(stripe.checkout.Session)}")
+        
+        if hasattr(stripe, 'Balance'):
+            logging.info(f"🔍 DEBUG: stripe.Balance type: {type(stripe.Balance)}")
+        
+        # Verify Stripe is properly imported
+        if not hasattr(stripe, 'checkout'):
+            raise ImportError("Stripe checkout module not available")
+        if not hasattr(stripe.checkout, 'Session'):
+            raise ImportError("Stripe Session class not available") 
+        if not hasattr(stripe, 'Balance'):
+            raise ImportError("Stripe Balance class not available")
+            
+        logging.info("✅ Stripe library loaded and validated successfully")
+        return stripe
+        
+    except ImportError as e:
+        logging.error(f"Stripe import error: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"Unexpected error getting Stripe library: {e}")
+        return None
 
 from ..core.config import config
 from ..core.exceptions import PaymentError, StripeError
@@ -22,29 +65,49 @@ class PaymentService:
     def __init__(self):
         """Initialize Stripe with environment-appropriate keys"""
         try:
-            stripe.api_key = config.stripe_secret_key
             self.environment = config.environment
             self.stripe_available = False
             
+            # Get Stripe library dynamically
+            stripe = get_stripe_lib()
+            if stripe is None:
+                logger.error("Stripe library is not available - payment processing disabled")
+                return
+            
+            # Initialize Stripe with proper error handling
+            if not config.stripe_secret_key:
+                raise ValueError("Stripe secret key is not configured")
+            
+            # Set the API key
+            stripe.api_key = config.stripe_secret_key
+            
             logger.info(f"Payment service initialized for {self.environment} environment")
+            
+            # Debug: Log the actual key value (first 10 chars for security)
+            logger.info(f"Stripe secret key starts with: {config.stripe_secret_key[:10]}...")
+            logger.info(f"Stripe secret key length: {len(config.stripe_secret_key)}")
             
             # Always use mock payments for testing with placeholder keys
             if "placeholder" in config.stripe_secret_key or not config.stripe_secret_key:
                 logger.warning("⚠️ Using placeholder Stripe keys - mock payments enabled")
                 self.stripe_available = False
             else:
-                # Only test real keys
+                # Test real keys by making a simple API call
                 try:
-                    if stripe.checkout is not None:
-                        stripe.Balance.retrieve()
-                        logger.info("✅ Stripe connection verified")
+                    logger.info("Testing Stripe connection...")
+                    # Test the connection by retrieving account balance
+                    balance = stripe.Balance.retrieve()
+                    logger.info(f"✅ Stripe connection verified - Balance retrieved successfully")
+                    self.stripe_available = True
+                except Exception as e:
+                    logger.warning(f"⚠️ Stripe connection test failed: {e}")
+                    logger.warning(f"Stripe error type: {type(e).__name__}")
+                    # In staging, assume keys are valid even if connection test fails
+                    if self.environment == "staging":
+                        logger.info("🔄 Staging environment - assuming Stripe keys are valid despite connection test failure")
                         self.stripe_available = True
                     else:
-                        logger.warning("⚠️ Stripe checkout not available - using mock payments")
                         self.stripe_available = False
-                except Exception as e:
-                    logger.warning(f"⚠️ Stripe connection failed - using mock payments: {e}")
-                    self.stripe_available = False
                     
         except Exception as e:
             logger.error(f"Payment service initialization failed: {e}")
@@ -78,10 +141,34 @@ class PaymentService:
         
         # Check if Stripe is available
         if not self.stripe_available:
-            logger.warning("Stripe not available - returning mock payment session for testing")
-            return self._create_mock_payment_session(analysis_id, product_type, amount, currency, product_name)
+            if self.environment == "local":
+                logger.warning("Stripe not available - returning mock payment session for local development")
+                return self._create_mock_payment_session(analysis_id, product_type, amount, currency, product_name)
+            else:
+                logger.error(f"CRITICAL: Stripe not available in {self.environment} environment - payment processing disabled")
+                raise PaymentError(f"Payment processing is not available in {self.environment} environment. Please contact support.")
         
         try:
+            # Get Stripe library dynamically with debugging
+            logger.info("🔍 About to call get_stripe_lib() for session creation")
+            stripe = get_stripe_lib()
+            logger.info(f"🔍 get_stripe_lib() returned: {stripe}")
+            logger.info(f"🔍 stripe type: {type(stripe)}")
+            
+            if stripe is None:
+                logger.error("❌ stripe is None - cannot create session")
+                raise PaymentError("Stripe library not available")
+                
+            if not hasattr(stripe, 'checkout'):
+                logger.error("❌ stripe has no checkout attribute")
+                raise PaymentError("Stripe checkout not available")
+                
+            if not hasattr(stripe.checkout, 'Session'):
+                logger.error("❌ stripe.checkout has no Session attribute")
+                raise PaymentError("Stripe Session not available")
+            
+            logger.info("✅ All Stripe attributes verified - proceeding with session creation")
+            
             # Generate unique session reference
             session_ref = f"analysis_{analysis_id}_{uuid.uuid4().hex[:8]}"
             
@@ -89,6 +176,7 @@ class PaymentService:
             expires_at = int((datetime.utcnow() + timedelta(minutes=30)).timestamp())
             
             # Create Stripe session with bulletproof URLs
+            logger.info("🔍 About to call stripe.checkout.Session.create")
             session = stripe.checkout.Session.create(
                 mode='payment',
                 payment_method_types=['card'],
@@ -159,22 +247,6 @@ class PaymentService:
                 'environment': self.environment
             }
             
-        except stripe.error.InvalidRequestError as e:
-            logger.error(f"Invalid Stripe request: {e}")
-            raise PaymentError(f"Payment setup failed: {str(e)}")
-        
-        except stripe.error.AuthenticationError as e:
-            logger.error(f"Stripe authentication error: {e}")
-            raise PaymentError("Payment service authentication failed")
-        
-        except stripe.error.RateLimitError as e:
-            logger.error(f"Stripe rate limit exceeded: {e}")
-            raise PaymentError("Payment service is temporarily overloaded. Please try again.")
-        
-        except stripe.error.StripeError as e:
-            logger.error(f"Stripe error: {e}")
-            raise PaymentError(f"Payment processing error: {str(e)}")
-        
         except Exception as e:
             logger.error(f"Unexpected error creating payment session: {e}")
             raise PaymentError(f"Payment session creation failed: {str(e)}")
@@ -195,6 +267,11 @@ class PaymentService:
         logger.info(f"Verifying payment session: {session_id}")
         
         try:
+            # Get Stripe library dynamically
+            stripe = get_stripe_lib()
+            if stripe is None:
+                raise PaymentError("Stripe library not available")
+            
             # Retrieve session from Stripe with expanded data
             session = stripe.checkout.Session.retrieve(
                 session_id,
@@ -224,16 +301,8 @@ class PaymentService:
             logger.info(f"✅ Payment session verified: {session.payment_status}")
             return verification_result
             
-        except stripe.error.InvalidRequestError:
-            logger.error(f"Invalid session ID: {session_id}")
-            raise PaymentError("Invalid payment session")
-        
-        except stripe.error.StripeError as e:
-            logger.error(f"Stripe error verifying session: {e}")
-            raise PaymentError(f"Payment verification failed: {str(e)}")
-        
         except Exception as e:
-            logger.error(f"Unexpected error verifying session: {e}")
+            logger.error(f"Payment verification failed: {e}")
             raise PaymentError(f"Payment verification error: {str(e)}")
     
     async def handle_webhook_event(self, payload: bytes, signature: str) -> Dict[str, Any]:
@@ -250,6 +319,11 @@ class PaymentService:
         logger.info("Processing Stripe webhook")
         
         try:
+            # Get Stripe library dynamically
+            stripe = get_stripe_lib()
+            if stripe is None:
+                raise PaymentError("Stripe library not available")
+            
             # Verify webhook signature
             event = stripe.Webhook.construct_event(
                 payload, signature, config.stripe_webhook_secret
@@ -274,13 +348,9 @@ class PaymentService:
                 'processed_at': datetime.utcnow().isoformat()
             }
             
-        except stripe.error.SignatureVerificationError:
-            logger.error("Invalid webhook signature")
-            raise PaymentError("Invalid webhook signature")
-        
         except Exception as e:
-            logger.error(f"Webhook processing error: {e}")
-            raise PaymentError(f"Webhook processing failed: {str(e)}")
+            logger.error(f"Webhook verification failed: {e}")
+            raise PaymentError(f"Invalid webhook signature: {str(e)}")
     
     async def _store_payment_session(
         self, 
@@ -346,7 +416,13 @@ class PaymentService:
         currency: str,
         product_name: str
     ) -> Dict[str, Any]:
-        """Create a mock payment session for testing when Stripe is not available"""
+        """
+        Create a mock payment session for LOCAL DEVELOPMENT ONLY.
+        
+        SECURITY NOTE: This should NEVER be used in staging or production environments.
+        Mock payments are only allowed in local development to prevent accidental
+        real payments during testing.
+        """
         session_ref = f"mock_analysis_{analysis_id}_{uuid.uuid4().hex[:8]}"
         expires_at = int((datetime.utcnow() + timedelta(minutes=30)).timestamp())
         
@@ -366,7 +442,7 @@ class PaymentService:
             'product_type': product_type,
             'environment': self.environment,
             'mock': True,
-            'message': 'This is a mock payment session for testing. Stripe keys are not configured.'
+            'message': 'This is a mock payment session for LOCAL DEVELOPMENT ONLY. Stripe keys are not configured.'
         }
 
 # Singleton instance - lazy initialization

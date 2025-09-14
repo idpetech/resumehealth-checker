@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Health Checker v4.0 - Clean Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .version-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .upload-card, .results-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .upload-section {
+            border: 2px dashed #e1e5e9;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            background: #fafbfc;
+        }
+        
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateY(-2px);
+        }
+        
+        .upload-section.dragover {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+        
+        .file-input {
+            margin: 20px 0;
+        }
+        
+        .file-input input[type="file"] {
+            display: none;
+        }
+        
+        .file-input label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .file-input label:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+        
+        .analysis-type {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .analysis-type label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .analysis-type label:hover {
+            background: #e9ecef;
+        }
+        
+        .analysis-type input[type="radio"]:checked + label {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .results {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #6c757d;
+            padding: 40px;
+        }
+        
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin: 20px 0;
+        }
+        
+        .success {
+            color: #155724;
+            background: #d4edda;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            margin: 20px 0;
+        }
+        
+        .analysis-result {
+            background: white;
+            padding: 0;
+            border-radius: 12px;
+            margin: 20px 0;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .analysis-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .analysis-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .analysis-content {
+            padding: 30px;
+        }
+        
+        .score-section {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .score-section h4 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .strengths-section, .improvements-section, .encouragement-section {
+            margin: 25px 0;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .strengths-section {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-left: 5px solid #28a745;
+        }
+        
+        .improvements-section {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border-left: 5px solid #ffc107;
+        }
+        
+        .encouragement-section {
+            background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+            border-left: 5px solid #17a2b8;
+        }
+        
+        .strengths-section h4, .improvements-section h4, .encouragement-section h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .strengths-section ul, .improvements-section ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .strengths-section li, .improvements-section li {
+            margin: 12px 0;
+            line-height: 1.6;
+        }
+        
+        .encouragement-section p {
+            margin: 0;
+            line-height: 1.7;
+            font-style: italic;
+            font-size: 1.1rem;
+        }
+        
+        .upgrade-section {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+            border: 1px solid #ffeaa7;
+            text-align: center;
+        }
+        
+        .upgrade-section h4 {
+            color: #856404;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .upgrade-section ul {
+            text-align: left;
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        
+        .upgrade-section li {
+            margin: 8px 0;
+            color: #856404;
+        }
+        
+        .region-info {
+            font-size: 14px;
+            color: #6c757d;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: white;
+            opacity: 0.8;
+        }
+        
+        .footer p {
+            margin: 5px 0;
+        }
+        
+        /* Responsive Premium Layout Styles */
+        .premium-layout {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .desktop-layout {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        .results-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .products-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+        }
+        
+        .initial-findings-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .initial-findings-card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .initial-findings {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .initial-findings li {
+            padding: 8px 0;
+            color: #666;
+            font-size: 0.95rem;
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .initial-findings li:before {
+            content: "•";
+            color: #667eea;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        
+        .unlock-title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .unlock-title h2 {
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .premium-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .products-panel .premium-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .premium-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .premium-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .premium-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+            transform: translateY(-2px);
+        }
+        
+        .premium-card.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .premium-card.locked:hover {
+            transform: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-color: transparent;
+        }
+        
+        /* Bundle Card Styles */
+        .bundle-card {
+            background: white;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .bundle-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+        }
+        
+        .bundle-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+        }
+        
+        .bundle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .bundle-header h5 {
+            margin: 0;
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .bundle-price {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .bundle-price .currency {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .savings {
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .bundle-card p {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 10px 0;
+        }
+        
+        .bundle-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        
+        .feature-tag {
+            background: #f0f4ff;
+            color: #667eea;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .bundle-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .bundle-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Hourglass Loading Animation */
+        .hourglass {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #667eea;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+        
+        .loading-content {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .loading-text {
+            margin-top: 15px;
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        
+        .lock-icon {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 1.2rem;
+            color: #999;
+        }
+        
+        .premium-card h4 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0 0 12px 0;
+            color: #333;
+        }
+        
+        .premium-card p {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.4;
+            margin: 0 0 15px 0;
+            flex-grow: 1;
+        }
+        
+        .premium-card .price {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        
+        .premium-card .price .currency {
+            font-size: 1rem;
+            color: #999;
+        }
+        
+        .premium-card .select-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+        
+        .premium-card .select-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+        
+        .premium-card.selected .select-btn {
+            background: #28a745;
+        }
+        
+        .premium-card.locked .select-btn {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .unlock-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .unlock-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .disclaimer {
+            text-align: center;
+        }
+        
+        .disclaimer p {
+            color: white;
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .analysis-type {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .premium-layout {
+                max-width: 100%;
+                padding: 15px;
+            }
+            
+            .premium-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+            }
+            
+            .premium-card {
+                padding: 15px 12px;
+                min-height: 180px;
+            }
+            
+            .premium-card h4 {
+                font-size: 1rem;
+            }
+            
+            .premium-card p {
+                font-size: 0.85rem;
+            }
+            
+            .premium-card .price {
+                font-size: 1.2rem;
+            }
+            
+            .unlock-btn {
+                padding: 16px 40px;
+                font-size: 1.1rem;
+            }
+        }
+        
+        /* Additional responsive breakpoints */
+        @media (min-width: 1024px) {
+            .premium-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 25px;
+            }
+            
+            .premium-card {
+                min-height: 180px;
+            }
+            
+            .desktop-layout {
+                display: grid;
+            }
+        }
+        
+        @media (max-width: 1023px) {
+            .desktop-layout {
+                display: block;
+            }
+            
+            .results-panel,
+            .products-panel {
+                position: static;
+                max-height: none;
+                overflow: visible;
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            .premium-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 30px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .premium-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .premium-card {
+                min-height: 120px;
+                padding: 15px 12px;
+            }
+            
+            .premium-card h4 {
+                font-size: 0.95rem;
+            }
+            
+            .premium-card p {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Resume Health Checker <span class="version-badge">v4.0</span></h1>
+            <p>AI-powered resume analysis with clean, modern architecture</p>
+        </div>
+        
+        <div class="main-content desktop-layout">
+            <div class="upload-card">
+                <h3 style="text-align: center; margin-bottom: 20px; color: #333;">📄 Upload Your Resume</h3>
+                <p style="text-align: center; color: #666; margin-bottom: 30px;">Support for PDF, DOCX, and TXT files (max 10MB)</p>
+            
+            <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="upload-section">
+                <div class="file-input">
+                    <input type="file" id="fileInput" name="file" accept=".pdf,.docx,.txt" required>
+                            <label for="fileInput">📁 Choose File</label>
+                        </div>
+                        <p style="margin-top: 15px; color: #666; font-size: 14px;">or drag and drop your file here</p>
+                </div>
+                
+                    <div class="analysis-type">
+                        <input type="radio" id="free" name="analysis_type" value="free" checked>
+                        <label for="free">🆓 Free Analysis</label>
+                        
+                        <input type="radio" id="premium" name="analysis_type" value="premium">
+                        <label for="premium">⭐ Premium Analysis</label>
+                </div>
+                
+                <button type="submit" class="btn" id="analyzeBtn">
+                    🔍 Analyze Resume
+                </button>
+            </form>
+            
+            <div id="products-section" style="display: none;">
+                <!-- Products will be dynamically inserted here -->
+            </div>
+        </div>
+        
+        <div class="results-panel">
+            <div id="loading" class="loading" style="display: none;">
+                <p>🤖 Analyzing your resume with AI... This may take up to 30 seconds.</p>
+            </div>
+            
+            <div id="error" class="error" style="display: none;"></div>
+            <div id="success" class="success" style="display: none;"></div>
+            
+            <div id="analysisResults" style="display: none;"></div>
+            <div id="regionInfo" class="region-info" style="display: none;"></div>
+        </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Clean Architecture v4.0</strong> - Built with FastAPI, OpenAI GPT-4o-mini, and Stripe</p>
+            <p>💻 <strong>Testing Mode:</strong> Upload any resume file to test the complete flow</p>
+        </div>
+    </div>
+
+    <script>
+        let currentAnalysisId = null;
+        let premiumResultsDisplayed = false;
+        let isProcessing = false;
+        
+        // Drag and drop functionality
+        const uploadSection = document.querySelector('.upload-section');
+        const fileInput = document.getElementById('fileInput');
+        
+        uploadSection.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+        
+        uploadSection.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+        });
+        
+        uploadSection.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateFileDisplay(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                updateFileDisplay(e.target.files[0]);
+            }
+        });
+        
+        function updateFileDisplay(file) {
+            const fileLabel = document.querySelector('.file-input label');
+            fileLabel.textContent = `📄 ${file.name}`;
+            fileLabel.style.background = '#28a745';
+        }
+        
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (isProcessing) {
+                console.log('Analysis already in progress, ignoring request');
+                return;
+            }
+            
+            const fileInput = document.getElementById('fileInput');
+            const analysisType = document.querySelector('input[name="analysis_type"]:checked').value;
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            if (!fileInput.files[0]) {
+                showError('Please select a file to upload');
+                return;
+            }
+            
+            isProcessing = true;
+            
+            // Show loading state
+            showLoading(true);
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Analyzing...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('analysis_type', analysisType);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+                
+                const response = await fetch('/api/v1/analyze', {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentAnalysisId = data.analysis_id;
+                    showSuccess('Analysis completed successfully!');
+                    displayResults(data);
+                } else {
+                    showError(data.message || 'Analysis failed');
+                }
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                if (error.name === 'AbortError') {
+                    showError('Request timed out. Please try again.');
+                } else {
+                    showError('Network error: ' + error.message);
+                }
+            } finally {
+                showLoading(false);
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🔍 Analyze Resume';
+                isProcessing = false;
+            }
+        });
+        
+        function showLoading(show) {
+            if (show) {
+                showLoadingOverlay('Analyzing your resume...');
+            } else {
+                hideLoading();
+            }
+        }
+        
+        function showLoadingOverlay(message = 'Processing...') {
+            const overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.id = 'loading-overlay';
+            overlay.innerHTML = `
+                <div class="loading-content">
+                    <div class="hourglass"></div>
+                    <div class="loading-text">${message}</div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+        
+        function showError(message) {
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').textContent = message;
+            document.getElementById('success').style.display = 'none';
+            document.getElementById('analysisResults').style.display = 'none';
+        }
+        
+        function showSuccess(message) {
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('success').style.display = 'block';
+            document.getElementById('success').textContent = message;
+            document.getElementById('error').style.display = 'none';
+        }
+        
+        function displayResults(data) {
+            try {
+                const resultsDiv = document.getElementById('analysisResults');
+                const regionDiv = document.getElementById('regionInfo');
+                
+                if (!resultsDiv || !regionDiv) {
+                    console.warn('Required elements not found for displayResults');
+                    return;
+                }
+                
+                // Check if premium results are already displayed
+                if (premiumResultsDisplayed || (resultsDiv && resultsDiv.innerHTML.includes('premium-results'))) {
+                    console.log('Premium results already displayed, skipping displayResults');
+                    return;
+                }
+            
+            // Show region info
+            if (data.region_info) {
+                regionDiv.innerHTML = `
+                    <p><strong>Detected Region:</strong> ${data.region_info.country_code} 
+                    (${data.region_info.currency} ${data.region_info.currency_symbol})</p>
+                `;
+                regionDiv.style.display = 'block';
+            }
+            
+            // Show analysis results in the right panel only
+            let htmlContent = `
+                <div class="initial-findings-card">
+                    <h3>Here's what we found in your resume...</h3>
+            `;
+            
+            if (data.result) {
+                const result = data.result;
+                
+                // Show actual AI analysis findings
+                htmlContent += '<ul class="initial-findings">';
+                
+                // Show overall score if available
+                if (result.overall_score) {
+                    htmlContent += `<li><strong>Overall Score:</strong> ${result.overall_score}/100</li>`;
+                }
+                
+                // Show first 2 improvement opportunities as initial findings
+                if (result.improvement_opportunities && result.improvement_opportunities.length > 0) {
+                    result.improvement_opportunities.slice(0, 2).forEach(opportunity => {
+                        // Clean up the opportunity text for better display
+                        let cleanOpportunity = opportunity;
+                        if (cleanOpportunity.startsWith('Opportunity ')) {
+                            cleanOpportunity = cleanOpportunity.replace(/^Opportunity \d+:\s*/, '');
+                        }
+                        htmlContent += `<li>${cleanOpportunity}</li>`;
+                    });
+                }
+                
+                // Also show one key strength to balance the feedback
+                if (result.strength_highlights && result.strength_highlights.length > 0) {
+                    const firstStrength = result.strength_highlights[0];
+                    // Truncate long strengths for better display
+                    const shortStrength = firstStrength.length > 100 ? 
+                        firstStrength.substring(0, 100) + '...' : firstStrength;
+                    htmlContent += `<li><strong>Key Strength:</strong> ${shortStrength}</li>`;
+                }
+                
+                htmlContent += '</ul>';
+            } else {
+                // Fallback if no result data
+                htmlContent += '<ul class="initial-findings">';
+                htmlContent += '<li>Analysis completed successfully</li>';
+                htmlContent += '<li>Ready for detailed premium insights</li>';
+                htmlContent += '</ul>';
+            }
+            
+            htmlContent += '</div>';
+            
+            resultsDiv.innerHTML = htmlContent;
+            resultsDiv.style.display = 'block';
+            
+            // Show products in the left panel
+            displayProducts();
+            } catch (error) {
+                console.error('Error in displayResults:', error);
+            }
+        }
+        
+        function displayProducts() {
+            const productsSection = document.getElementById('products-section');
+            if (!productsSection) return;
+            
+            // Add products section below the upload area
+            let productsHtml = `
+                <div class="products-section" style="margin-top: 30px;">
+                    <h3 style="color: #333; margin-bottom: 20px; font-size: 1.3rem;">Unlock Your Complete Job Application Toolkit</h3>
+                    
+                    <!-- Individual Premium Options - 2x2 Grid -->
+                    <div class="premium-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px;">
+                        <div class="premium-card" onclick="selectProduct('resume_analysis', 10, this)">
+                            <div class="lock-icon">🔒</div>
+                            <h4>ATS Health Report</h4>
+                            <p>Full best practices + ATS compatibility score</p>
+                            <div class="price">$<span class="currency">10</span></div>
+                            <button class="select-btn">Select</button>
+                        </div>
+                        <div class="premium-card" onclick="selectProduct('job_fit_analysis', 12, this)">
+                            <div class="lock-icon">🔒</div>
+                            <h4>Job Match Analysis</h4>
+                            <p>Compare resume vs specific job posting</p>
+                            <div class="price">$<span class="currency">12</span></div>
+                            <button class="select-btn">Select</button>
+                        </div>
+                        <div class="premium-card" onclick="selectProduct('cover_letter', 8, this)">
+                            <div class="lock-icon">🔒</div>
+                            <h4>AI Cover Letter</h4>
+                            <p>Auto-generated tailored cover letter</p>
+                            <div class="price">$<span class="currency">8</span></div>
+                            <button class="select-btn">Select</button>
+                        </div>
+                        <div class="premium-card" onclick="selectProduct('resume_enhancer', 15, this)">
+                            <div class="lock-icon">🔒</div>
+                            <h4>Resume Enhancer</h4>
+                            <p>Rewrite suggestions based on job posting</p>
+                            <div class="price">$<span class="currency">15</span></div>
+                            <button class="select-btn">Select</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Bundle Options -->
+                    <div class="bundle-section" style="border-top: 2px solid #e1e5e9; padding-top: 20px;">
+                        <h4 style="color: #333; margin-bottom: 15px; font-size: 1.2rem; text-align: center;">💎 Bundle Deals - Save More!</h4>
+                        
+                        <div class="bundle-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                            <div class="bundle-card" onclick="selectBundle('career_boost', 18, ['resume_analysis', 'job_fit_analysis'], this)">
+                                <div class="bundle-header">
+                                    <h5>Career Boost Bundle</h5>
+                                    <div class="bundle-price">$<span class="currency">18</span> <span class="savings">Save $4</span></div>
+                                </div>
+                                <p>ATS Health Report + Job Match Analysis</p>
+                                <div class="bundle-features">
+                                    <span class="feature-tag">Resume Analysis</span>
+                                    <span class="feature-tag">Job Fit Analysis</span>
+                                </div>
+                                <button class="bundle-btn">Select Bundle</button>
+                            </div>
+                            
+                            <div class="bundle-card" onclick="selectBundle('job_hunter', 15, ['resume_analysis', 'cover_letter'], this)">
+                                <div class="bundle-header">
+                                    <h5>Job Hunter Bundle</h5>
+                                    <div class="bundle-price">$<span class="currency">15</span> <span class="savings">Save $3</span></div>
+                                </div>
+                                <p>ATS Health Report + AI Cover Letter</p>
+                                <div class="bundle-features">
+                                    <span class="feature-tag">Resume Analysis</span>
+                                    <span class="feature-tag">Cover Letter</span>
+                                </div>
+                                <button class="bundle-btn">Select Bundle</button>
+                            </div>
+                            
+                            <div class="bundle-card" onclick="selectBundle('complete_package', 22, ['resume_analysis', 'job_fit_analysis', 'cover_letter'], this)">
+                                <div class="bundle-header">
+                                    <h5>Complete Package</h5>
+                                    <div class="bundle-price">$<span class="currency">22</span> <span class="savings">Save $8</span></div>
+                                </div>
+                                <p>Everything you need for job applications</p>
+                                <div class="bundle-features">
+                                    <span class="feature-tag">Resume Analysis</span>
+                                    <span class="feature-tag">Job Fit Analysis</span>
+                                    <span class="feature-tag">Cover Letter</span>
+                                </div>
+                                <button class="bundle-btn">Select Bundle</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="job-posting-section" style="margin-top: 20px; display: none;">
+                        <h4 style="color: #333; margin-bottom: 10px; font-size: 1.1rem;">Job Posting Required</h4>
+                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 15px;">
+                            Please paste the job posting text below for personalized analysis:
+                        </p>
+                        <textarea 
+                            id="job-posting-text" 
+                            placeholder="Paste the complete job posting here..."
+                            style="width: 100%; height: 120px; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-family: inherit; font-size: 0.9rem; resize: vertical;"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="cta-section" style="margin-top: 20px;">
+                        <div id="selected-items" style="margin-bottom: 15px; color: #333; font-size: 0.9rem;">
+                            Select individual features or choose a bundle below
+                        </div>
+                        <button onclick="upgradeToPayment()" class="unlock-btn" id="upgrade-btn" style="width: 100%;">
+                            Select Features
+                        </button>
+                    </div>
+                    
+                    <div class="disclaimer" style="margin-top: 15px; text-align: center;">
+                        <p style="color: #666; font-size: 0.85rem;">Instant access. One-time payment. No subscription.</p>
+                    </div>
+                    </div>
+                `;
+            
+            // Remove existing products section if it exists
+            const existingProducts = uploadCard.querySelector('.products-section');
+            if (existingProducts) {
+                existingProducts.remove();
+            }
+            
+            // Add products section
+            productsSection.innerHTML = productsHtml;
+            productsSection.style.display = 'block';
+        }
+        
+        // Global variables for product selection
+        let selectedProducts = [];
+        let totalPrice = 0;
+        
+        function selectProduct(productType, price, element) {
+            const card = element || document.querySelector(`[onclick*="${productType}"]`);
+            if (!card) return;
+            
+            const isSelected = card.classList.contains('selected');
+            
+            // Clear all other selections first (single select)
+            clearAllSelections();
+            
+            if (isSelected) {
+                // Deselect
+                card.classList.remove('selected');
+                selectedProducts = [];
+                const btn = card.querySelector('.select-btn');
+                if (btn) btn.textContent = 'Select';
+            } else {
+                // Select
+                card.classList.add('selected');
+                selectedProducts = [{ type: productType, price: price }];
+                const btn = card.querySelector('.select-btn');
+                if (btn) btn.textContent = 'Selected';
+            }
+            
+            updateSelectedItems();
+            updateJobPostingField();
+        }
+        
+        function selectBundle(bundleType, price, products, element) {
+            const card = element || document.querySelector(`[onclick*="${bundleType}"]`);
+            if (!card) return;
+            
+            const isSelected = card.classList.contains('selected');
+            
+            // Clear all other selections first (single select)
+            clearAllSelections();
+            
+            if (isSelected) {
+                // Deselect bundle
+                card.classList.remove('selected');
+                selectedProducts = [];
+                const btn = card.querySelector('.bundle-btn');
+                if (btn) btn.textContent = 'Select Bundle';
+            } else {
+                // Select bundle
+                card.classList.add('selected');
+                selectedProducts = products.map(productType => ({
+                    type: productType,
+                    price: getProductPrice(productType)
+                }));
+                const btn = card.querySelector('.bundle-btn');
+                if (btn) btn.textContent = 'Selected';
+            }
+            
+            updateSelectedItems();
+            updateJobPostingField();
+        }
+        
+        function clearAllSelections() {
+            // Clear individual product selections
+            document.querySelectorAll('.premium-card').forEach(card => {
+                card.classList.remove('selected');
+                const btn = card.querySelector('.select-btn');
+                if (btn) btn.textContent = 'Select';
+            });
+            
+            // Clear bundle selections
+            document.querySelectorAll('.bundle-card').forEach(card => {
+                card.classList.remove('selected');
+                const btn = card.querySelector('.bundle-btn');
+                if (btn) btn.textContent = 'Select Bundle';
+            });
+        }
+        
+        function getProductPrice(productType) {
+            const prices = {
+                'resume_analysis': 10,
+                'job_fit_analysis': 12,
+                'cover_letter': 8,
+                'resume_enhancer': 15
+            };
+            return prices[productType] || 0;
+        }
+        
+        function updateJobPostingField() {
+            const jobPostingSection = document.getElementById('job-posting-section');
+            const jobPostingText = document.getElementById('job-posting-text');
+            
+            // Products that require job posting
+            const jobPostingRequired = ['job_fit_analysis', 'resume_enhancer', 'cover_letter'];
+            
+            // Check if any selected product requires job posting
+            const needsJobPosting = selectedProducts.some(product => 
+                jobPostingRequired.includes(product.type)
+            );
+            
+            if (needsJobPosting) {
+                jobPostingSection.style.display = 'block';
+                jobPostingText.required = true;
+            } else {
+                jobPostingSection.style.display = 'none';
+                jobPostingText.required = false;
+                jobPostingText.value = ''; // Clear the field when not needed
+            }
+        }
+        
+        function updateSelectedItems() {
+            try {
+                const selectedItemsDiv = document.getElementById('selected-items');
+                const upgradeBtn = document.getElementById('upgrade-btn');
+                
+                if (!selectedItemsDiv || !upgradeBtn) {
+                    console.warn('Required elements not found for updateSelectedItems');
+                    return;
+                }
+                
+                if (selectedProducts.length === 0) {
+                    selectedItemsDiv.innerHTML = 'Select a feature or bundle below';
+                    upgradeBtn.textContent = 'Select Feature';
+                    upgradeBtn.disabled = true;
+                    upgradeBtn.style.opacity = '0.6';
+                } else {
+                // Check if this is a bundle selection
+                const isBundle = document.querySelector('.bundle-card.selected');
+                
+                if (isBundle) {
+                    // Find which bundle is selected
+                    const selectedBundle = document.querySelector('.bundle-card.selected');
+                    const bundleName = selectedBundle.querySelector('h5').textContent;
+                    
+                    let bundlePrice = 22; // default
+                    if (bundleName.includes('Career Boost')) bundlePrice = 18;
+                    else if (bundleName.includes('Job Hunter')) bundlePrice = 15;
+                    
+                    totalPrice = bundlePrice;
+                    
+                    const productNames = selectedProducts.map(p => {
+                        const names = {
+                            'resume_analysis': 'ATS Health Report',
+                            'job_fit_analysis': 'Job Match Analysis',
+                            'cover_letter': 'AI Cover Letter',
+                            'resume_enhancer': 'Resume Enhancer'
+                        };
+                        return names[p.type] || p.type;
+                    });
+                    
+                    selectedItemsDiv.innerHTML = `
+                        <strong>Bundle Selected:</strong> ${bundleName}<br>
+                        <strong>Includes:</strong> ${productNames.join(', ')}<br>
+                        <strong>Total:</strong> $${totalPrice}
+                    `;
+                } else {
+                    // Individual product selection (single select)
+                    const product = selectedProducts[0];
+                    totalPrice = product.price;
+                    
+                    const productNames = {
+                        'resume_analysis': 'ATS Health Report',
+                        'job_fit_analysis': 'Job Match Analysis',
+                        'cover_letter': 'AI Cover Letter',
+                        'resume_enhancer': 'Resume Enhancer',
+                        'interview_prep': 'Interview Prep',
+                        'salary_insights': 'Salary Insights'
+                    };
+                    
+                    selectedItemsDiv.innerHTML = `
+                        <strong>Selected:</strong> ${productNames[product.type] || product.type}<br>
+                        <strong>Total:</strong> $${totalPrice}
+                    `;
+                }
+                
+                upgradeBtn.textContent = `Purchase Selected ($${totalPrice})`;
+                upgradeBtn.disabled = false;
+                upgradeBtn.style.opacity = '1';
+            }
+            } catch (error) {
+                console.error('Error in updateSelectedItems:', error);
+            }
+        }
+        
+        function showPaymentLoading(message = 'Processing...') {
+            const overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.id = 'loading-overlay';
+            overlay.innerHTML = `
+                <div class="loading-content">
+                    <div class="hourglass"></div>
+                    <div class="loading-text">${message}</div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+        
+        function hideLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+        
+        async function displayPremiumResults(analysisId, productType) {
+            try {
+                console.log('displayPremiumResults called with:', analysisId, productType);
+                showPaymentLoading('Generating premium results...');
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+                
+                const response = await fetch(`/api/v1/premium-results/${analysisId}?product_type=${productType}&embedded=true`, {
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                console.log('Premium results response:', response.status, response.ok);
+                
+                if (response.ok) {
+                    const htmlContent = await response.text();
+                    console.log('Premium results HTML length:', htmlContent.length);
+                    
+                    // Display in the right panel
+                    const resultsDiv = document.getElementById('analysisResults');
+                    console.log('Results div found:', !!resultsDiv);
+                    
+                    if (resultsDiv) {
+            resultsDiv.innerHTML = htmlContent;
+            resultsDiv.style.display = 'block';
+                        premiumResultsDisplayed = true;
+                        console.log('Premium results displayed in div');
+                        console.log('Results div content length:', resultsDiv.innerHTML.length);
+                        
+                        // Scroll to results
+                        resultsDiv.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                        console.error('analysisResults div not found');
+                    }
+                } else {
+                    console.error('Failed to load premium results:', response.status);
+                    showError('Failed to load premium results');
+                }
+            } catch (error) {
+                console.error('Error in displayPremiumResults:', error);
+                if (error.name === 'AbortError') {
+                    showError('Premium results request timed out. Please try again.');
+                } else {
+                    showError('Error loading premium results: ' + error.message);
+                }
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function upgradeToPayment() {
+            try {
+                if (isProcessing) {
+                    console.log('Payment already in progress, ignoring request');
+                    return;
+                }
+                
+                if (!currentAnalysisId) {
+                    showError('No analysis found to upgrade');
+                    return;
+                }
+                
+                if (selectedProducts.length === 0) {
+                    showError('Please select a feature or bundle');
+                    return;
+                }
+                
+                isProcessing = true;
+            
+            // Check if job posting is required and provided
+            const jobPostingRequired = ['job_fit_analysis', 'resume_enhancer', 'cover_letter'];
+            const needsJobPosting = selectedProducts.some(product => 
+                jobPostingRequired.includes(product.type)
+            );
+            
+            if (needsJobPosting) {
+                const jobPostingText = document.getElementById('job-posting-text').value.trim();
+                if (!jobPostingText) {
+                    showError('Please paste the job posting text for the selected features');
+                    return;
+                }
+            }
+            
+            // Show loading indicator
+            showPaymentLoading('Creating payment session...');
+            
+            try {
+                // Determine if this is a bundle or individual selection
+                const isBundle = document.querySelector('.bundle-card.selected');
+                let productType;
+                
+                if (isBundle) {
+                    // For bundles, use the first product type for the payment session
+                    // The backend will handle delivering all products in the bundle
+                    productType = selectedProducts[0].type;
+                } else {
+                    // For individual selections, use the first selected product
+                    productType = selectedProducts[0].type;
+                }
+                
+                const formData = new FormData();
+                formData.append('analysis_id', currentAnalysisId);
+                formData.append('product_type', productType);
+                
+                // Add job posting if required
+                if (needsJobPosting) {
+                    const jobPostingText = document.getElementById('job-posting-text').value.trim();
+                    formData.append('job_posting', jobPostingText);
+                }
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                
+                const response = await fetch('/api/v1/payment/create', {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                const data = await response.json();
+                
+                if (response.ok && data.payment_session) {
+                    // Redirect to Stripe
+                    window.location.href = data.payment_session.session_url;
+                } else {
+                    hideLoading();
+                    showError(data.message || 'Payment setup failed');
+                }
+                
+            } catch (error) {
+                hideLoading();
+                if (error.name === 'AbortError') {
+                    showError('Payment request timed out. Please try again.');
+                } else {
+                    showError('Payment setup error: ' + error.message);
+                }
+            }
+            } catch (error) {
+                console.error('Error in upgradeToPayment:', error);
+                hideLoading();
+                showError('Unexpected error: ' + error.message);
+            } finally {
+                isProcessing = false;
+            }
+        }
+        
+        // Check for premium results in URL parameters on page load
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const premiumAnalysisId = urlParams.get('premium');
+            const productType = urlParams.get('product');
+            
+            console.log('Page load - URL params:', { premium: premiumAnalysisId, product: productType });
+            
+            if (premiumAnalysisId && productType) {
+                console.log('Premium parameters detected, calling displayPremiumResults');
+                // Display premium results
+                displayPremiumResults(premiumAnalysisId, productType);
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                console.log('No premium parameters found');
+            }
+        });
+        
+        // Test functions for development
+        window.testFunctions = {
+            testRegion: async function(countryCode) {
+                const response = await fetch(`/api/v1/pricing/${countryCode}`);
+                const data = await response.json();
+                console.log('Region test:', data);
+            },
+            
+            testStats: async function() {
+                const response = await fetch('/api/v1/admin/stats');
+                const data = await response.json();
+                console.log('Stats:', data);
+            },
+            
+            testPremiumResults: async function(analysisId, productType) {
+                console.log('Testing premium results for:', analysisId, productType);
+                await displayPremiumResults(analysisId, productType);
+            },
+            
+            checkResultsDiv: function() {
+                const resultsDiv = document.getElementById('analysisResults');
+                console.log('Results div:', resultsDiv);
+                console.log('Results div content:', resultsDiv ? resultsDiv.innerHTML.substring(0, 200) : 'Not found');
+                console.log('Results div style:', resultsDiv ? resultsDiv.style.cssText : 'Not found');
+                console.log('Results div display:', resultsDiv ? window.getComputedStyle(resultsDiv).display : 'Not found');
+                console.log('Results div visibility:', resultsDiv ? window.getComputedStyle(resultsDiv).visibility : 'Not found');
+            }
+        };
+        
+        // Display test instructions
+        console.log('🧪 Test Functions Available:');
+        console.log('testFunctions.testRegion("PK") - Test Pakistan pricing');
+        console.log('testFunctions.testStats() - View database stats');
+        console.log('testFunctions.testPremiumResults("analysis_id", "product_type") - Test premium results');
+        console.log('testFunctions.checkResultsDiv() - Check results div state');
+    </script>
+</body>
+</html>

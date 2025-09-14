@@ -1,0 +1,320 @@
+{
+  "metadata": {
+    "version": "4.0.0",
+    "last_updated": "2025-09-02",
+    "description": "Regional pricing for Resume Health Checker products"
+  },
+  "regions": {
+    "US": {
+      "currency": "USD",
+      "symbol": "$",
+      "products": {
+        "resume_analysis": {
+          "name": "Resume Health Check",
+          "price": 10,
+          "display": "$10"
+        },
+        "job_fit_analysis": {
+          "name": "Job Fit Analysis", 
+          "price": 12,
+          "display": "$12"
+        },
+        "cover_letter": {
+          "name": "Cover Letter Generator",
+          "price": 8,
+          "display": "$8"
+        }
+      },
+      "bundles": {
+        "career_boost": {
+          "name": "Career Boost Bundle",
+          "includes": ["resume_analysis", "job_fit_analysis"],
+          "individual_total": 22,
+          "price": 18,
+          "display": "$18",
+          "savings": 4,
+          "savings_percent": 18
+        },
+        "job_hunter": {
+          "name": "Job Hunter Bundle",
+          "includes": ["resume_analysis", "cover_letter"],
+          "individual_total": 18,
+          "price": 15,
+          "display": "$15", 
+          "savings": 3,
+          "savings_percent": 17
+        },
+        "complete_package": {
+          "name": "Complete Package",
+          "includes": ["resume_analysis", "job_fit_analysis", "cover_letter"],
+          "individual_total": 30,
+          "price": 22,
+          "display": "$22",
+          "savings": 8,
+          "savings_percent": 27
+        }
+      }
+    },
+    "PK": {
+      "currency": "PKR",
+      "symbol": "₨",
+      "products": {
+        "resume_analysis": {
+          "name": "Resume Health Check",
+          "price": 1200,
+          "display": "₨1,200"
+        },
+        "job_fit_analysis": {
+          "name": "Job Fit Analysis",
+          "price": 1440,
+          "display": "₨1,440"
+        },
+        "cover_letter": {
+          "name": "Cover Letter Generator", 
+          "price": 960,
+          "display": "₨960"
+        }
+      },
+      "bundles": {
+        "career_boost": {
+          "name": "Career Boost Bundle",
+          "includes": ["resume_analysis", "job_fit_analysis"],
+          "individual_total": 2640,
+          "price": 2160,
+          "display": "₨2,160",
+          "savings": 480,
+          "savings_percent": 18
+        },
+        "job_hunter": {
+          "name": "Job Hunter Bundle", 
+          "includes": ["resume_analysis", "cover_letter"],
+          "individual_total": 2160,
+          "price": 1800,
+          "display": "₨1,800",
+          "savings": 360,
+          "savings_percent": 17
+        },
+        "complete_package": {
+          "name": "Complete Package",
+          "includes": ["resume_analysis", "job_fit_analysis", "cover_letter"],
+          "individual_total": 3600,
+          "price": 2640,
+          "display": "₨2,640",
+          "savings": 960,
+          "savings_percent": 27
+        }
+      }
+    },
+    "IN": {
+      "currency": "INR",
+      "symbol": "₹",
+      "products": {
+        "resume_analysis": {
+          "name": "Resume Health Check",
+          "price": 750,
+          "display": "₹750"
+        },
+        "job_fit_analysis": {
+          "name": "Job Fit Analysis",
+          "price": 900,
+          "display": "₹900"
+        },
+        "cover_letter": {
+          "name": "Cover Letter Generator",
+          "price": 600,
+          "display": "₹600"
+        }
+      },
+      "bundles": {
+        "career_boost": {
+          "name": "Career Boost Bundle",
+          "includes": ["resume_analysis", "job_fit_analysis"],
+          "individual_total": 1650,
+          "price": 1350,
+          "display": "₹1,350",
+          "savings": 300,
+          "savings_percent": 18
+        },
+        "job_hunter": {
+          "name": "Job Hunter Bundle",
+          "includes": ["resume_analysis", "cover_letter"],
+          "individual_total": 1350,
+          "price": 1125,
+          "display": "₹1,125",
+          "savings": 225,
+          "savings_percent": 17
+        },
+        "complete_package": {
+          "name": "Complete Package",
+          "includes": ["resume_analysis", "job_fit_analysis", "cover_letter"],
+          "individual_total": 2250,
+          "price": 1650,
+          "display": "₹1,650",
+          "savings": 600,
+          "savings_percent": 27
+        }
+      }
+    },
+    "HK": {
+      "currency": "HKD",
+      "symbol": "HKD",
+      "products": {
+        "resume_analysis": {
+          "name": "Resume Health Check",
+          "price": 70,
+          "display": "HKD 70"
+        },
+        "job_fit_analysis": {
+          "name": "Job Fit Analysis",
+          "price": 84,
+          "display": "HKD 84"
+        },
+        "cover_letter": {
+          "name": "Cover Letter Generator",
+          "price": 56,
+          "display": "HKD 56"
+        }
+      },
+      "bundles": {
+        "career_boost": {
+          "name": "Career Boost Bundle",
+          "includes": ["resume_analysis", "job_fit_analysis"],
+          "individual_total": 154,
+          "price": 126,
+          "display": "HKD 126",
+          "savings": 28,
+          "savings_percent": 18
+        },
+        "job_hunter": {
+          "name": "Job Hunter Bundle",
+          "includes": ["resume_analysis", "cover_letter"],
+          "individual_total": 126,
+          "price": 105,
+          "display": "HKD 105",
+          "savings": 21,
+          "savings_percent": 17
+        },
+        "complete_package": {
+          "name": "Complete Package",
+          "includes": ["resume_analysis", "job_fit_analysis", "cover_letter"],
+          "individual_total": 210,
+          "price": 154,
+          "display": "HKD 154",
+          "savings": 56,
+          "savings_percent": 27
+        }
+      }
+    },
+    "AE": {
+      "currency": "AED",
+      "symbol": "AED",
+      "products": {
+        "resume_analysis": {
+          "name": "Resume Health Check",
+          "price": 40,
+          "display": "AED 40"
+        },
+        "job_fit_analysis": {
+          "name": "Job Fit Analysis",
+          "price": 48,
+          "display": "AED 48"
+        },
+        "cover_letter": {
+          "name": "Cover Letter Generator",
+          "price": 32,
+          "display": "AED 32"
+        }
+      },
+      "bundles": {
+        "career_boost": {
+          "name": "Career Boost Bundle",
+          "includes": ["resume_analysis", "job_fit_analysis"],
+          "individual_total": 88,
+          "price": 72,
+          "display": "AED 72",
+          "savings": 16,
+          "savings_percent": 18
+        },
+        "job_hunter": {
+          "name": "Job Hunter Bundle",
+          "includes": ["resume_analysis", "cover_letter"],
+          "individual_total": 72,
+          "price": 60,
+          "display": "AED 60",
+          "savings": 12,
+          "savings_percent": 17
+        },
+        "complete_package": {
+          "name": "Complete Package",
+          "includes": ["resume_analysis", "job_fit_analysis", "cover_letter"],
+          "individual_total": 120,
+          "price": 88,
+          "display": "AED 88",
+          "savings": 32,
+          "savings_percent": 27
+        }
+      }
+    },
+    "BD": {
+      "currency": "BDT",
+      "symbol": "৳",
+      "products": {
+        "resume_analysis": {
+          "name": "Resume Health Check",
+          "price": 800,
+          "display": "৳800"
+        },
+        "job_fit_analysis": {
+          "name": "Job Fit Analysis",
+          "price": 960,
+          "display": "৳960"
+        },
+        "cover_letter": {
+          "name": "Cover Letter Generator",
+          "price": 640,
+          "display": "৳640"
+        }
+      },
+      "bundles": {
+        "career_boost": {
+          "name": "Career Boost Bundle",
+          "includes": ["resume_analysis", "job_fit_analysis"],
+          "individual_total": 1760,
+          "price": 1440,
+          "display": "৳1,440",
+          "savings": 320,
+          "savings_percent": 18
+        },
+        "job_hunter": {
+          "name": "Job Hunter Bundle",
+          "includes": ["resume_analysis", "cover_letter"],
+          "individual_total": 1440,
+          "price": 1200,
+          "display": "৳1,200",
+          "savings": 240,
+          "savings_percent": 17
+        },
+        "complete_package": {
+          "name": "Complete Package",
+          "includes": ["resume_analysis", "job_fit_analysis", "cover_letter"],
+          "individual_total": 2400,
+          "price": 1760,
+          "display": "৳1,760",
+          "savings": 640,
+          "savings_percent": 27
+        }
+      }
+    }
+  },
+  "default_region": "US",
+  "region_mapping": {
+    "united_states": "US",
+    "usa": "US", 
+    "pakistan": "PK",
+    "india": "IN",
+    "hong_kong": "HK",
+    "uae": "AE",
+    "united_arab_emirates": "AE",
+    "bangladesh": "BD"
+  }
+}

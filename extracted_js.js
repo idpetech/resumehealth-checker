@@ -840,4 +840,3 @@
             if (currentPaymentToken && selectedFile) {
                 analyzeResume();
             }
-        }

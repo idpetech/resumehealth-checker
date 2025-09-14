@@ -111,25 +111,23 @@
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="min-h-screen bg-gray-50 flex flex-col">
 
-   <div class="max-w-4xl w-full mx-auto p-6 lg:p-12 bg-white rounded-xl shadow-lg">
+   <div class="flex-1 flex items-center justify-center p-4">
+       <div class="max-w-4xl w-full mx-auto p-6 lg:p-12 bg-white rounded-xl shadow-lg">
 
-       <!-- Header Section -->
-       <header class="text-center mb-10">
-           <h1 class="text-3xl lg:text-4xl font-extrabold text-gray-900 mb-2">Resume Analyzer</h1>
-           <p class="text-base lg:text-lg text-gray-500">Boost your career with powerful resume insights.</p>
-       </header>
+       <!-- Hero Section -->
+       <section class="text-center mb-12">
+           <h1 class="text-4xl lg:text-6xl font-extrabold text-gray-900 mb-4">
+               No Subscriptions. No Commitments. <span class="text-blue-600">Just Results.</span>
+           </h1>
+           <div class="max-w-4xl mx-auto">
+               <p class="text-lg lg:text-xl text-gray-700 leading-relaxed mb-8">
+                   Skip Subscription traps. Our specialized AI gets your resume past filters and into interviews. Pay only for what you need, when you need it. Clear, affordable, and proven.
+               </p>
+           </div>
+       </section>
 
-       <!-- Navigation Buttons -->
-       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-           <button class="w-full sm:w-auto px-6 py-2 rounded-full text-sm font-semibold text-gray-800 bg-gray-200 hover:bg-gray-300 transition-colors">
-               No Subscriptions. No Commitments. Just Results.
-           </button>
-           <button class="w-full sm:w-auto px-6 py-2 rounded-full text-sm font-semibold text-gray-800 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
-               My Products
-           </button>
-       </div>
 
        <!-- File Upload Section -->
        <div class="mb-8">
@@ -223,19 +221,35 @@
                </button>
         </div>
         
-           <!-- Resume Rewrite Card - Coming Soon -->
-           <div class="bg-gray-50 bg-opacity-70 p-6 rounded-2xl border border-gray-200 flex flex-col justify-between opacity-60">
+           <!-- Resume Rewrite Card - EPIC 1 COMPLETE -->
+           <div class="bg-purple-50 bg-opacity-70 p-6 rounded-2xl border border-purple-100 flex flex-col justify-between">
                <div>
-                   <div class="flex items-center text-gray-500 mb-2">
+                   <div class="flex items-center text-purple-600 mb-2">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
                            <path d="M16 2H8a2 2 0 00-2 2v16a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2zM9 10h6v2H9v-2zm0-4h6v2H9V6zm0 8h6v2H9v-2z"/>
                        </svg>
                        <h2 class="text-xl font-bold">Resume Rewrite</h2>
                    </div>
-                   <p class="text-sm text-gray-500 mt-2">A complete rewrite of your resume to make it more professional and compelling.</p>
+                   <p class="text-sm text-gray-700 mt-2">Complete job-targeted resume transformation. Upload your resume + job posting for a professional rewrite.</p>
                </div>
-               <button class="mt-6 w-full py-3 px-4 rounded-xl font-bold text-gray-400 bg-gray-300 cursor-not-allowed" disabled>
-                   Coming Soon
+               <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-lg" data-product="resume_rewrite" data-price="4.99">
+                   Buy Now ($4.99)
+               </button>
+           </div>
+
+           <!-- Mock Interview Card -->
+           <div class="bg-red-50 bg-opacity-70 p-6 rounded-2xl border border-red-100 flex flex-col justify-between">
+               <div>
+                   <div class="flex items-center text-red-600 mb-2">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                           <path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm-1.5 15l-5-5 1.414-1.414L10.5 14.172l7.086-7.086L19 8.5l-8.5 8.5z"/>
+                       </svg>
+                       <h2 class="text-xl font-bold">Mock Interview</h2>
+                   </div>
+                   <p class="text-sm text-gray-700 mt-2">Complete interview simulation with strategic answers and company-specific preparation.</p>
+               </div>
+               <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-lg" data-product="mock_interview" data-price="3.99">
+                   Buy Now ($3.99)
                </button>
            </div>
 
@@ -256,7 +270,7 @@
            </div>
                 </div>
                 
-                </div>
+        </div>
                 
         <!-- Results Modal -->
         <div id="resultsModal" class="results-modal">
@@ -301,8 +315,23 @@
         </div>
     </div>
 
+   </div>
+
+   <!-- Footer -->
+   <footer class="bg-white border-t border-gray-200 py-8 mt-auto">
+       <div class="max-w-4xl mx-auto px-6 text-center text-gray-600">
+           <h3 class="text-lg font-semibold text-gray-800 mb-2">Need Help?</h3>
+           <p class="text-gray-600 mb-2">Our team is here to support your career success</p>
+           <p class="mb-4">Contact us: <a href="mailto:support@idpetech.com" class="text-blue-600 hover:text-blue-800 font-medium">support@idpetech.com</a></p>
+           <p class="text-sm text-gray-500">
+               Trusted by professionals worldwide • Secure payment processing • 24/7 support
+           </p>
+       </div>
+   </footer>
+
    <!-- Toast Notification System -->
    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
 
     <script>
        // Global variables
@@ -715,7 +744,7 @@
                    analysisResults.innerHTML = html;
                    resultsModal.classList.add('show');
                    
-                   showMessage('Premium results loaded successfully!');
+                   // Premium results loaded - no toast needed, results speak for themselves
 
             } catch (error) {
                    console.error('Premium results error:', error);
@@ -878,7 +907,7 @@
            }
 
            // Check if job posting is required
-           if (productType === 'job_fit_analysis' || productType === 'cover_letter') {
+           if (productType === 'job_fit_analysis' || productType === 'cover_letter' || productType === 'resume_rewrite' || productType === 'mock_interview') {
                // Show job posting modal
                const jobPostingTextarea = document.getElementById('jobPostingTextarea');
                const jobPostingModal = document.getElementById('jobPostingModal');
@@ -935,6 +964,7 @@
                const paymentFormData = new FormData();
                paymentFormData.append('analysis_id', analysisId);
                paymentFormData.append('product_type', productType);
+               paymentFormData.append('price', price);
 
                // Add job posting if provided
                if (jobPosting) {
@@ -960,7 +990,7 @@
                const paymentUrl = result.payment_url || result.payment_session?.payment_url;
                
                if (paymentUrl) {
-                   showMessage('Redirecting to payment...');
+                   // Redirect immediately - no toast needed
                    window.location.href = paymentUrl;
                } else {
                    console.log('Payment response:', result);
@@ -1012,6 +1042,93 @@
                });
            }
        });
+
+       // Export functions for PDF and DOCX downloads
+       async function exportToPDF(analysisId) {
+           try {
+               showMessage('Generating PDF export...', 'info');
+               
+               const response = await fetch(`/api/v1/export/${analysisId}/pdf`);
+               
+               if (!response.ok) {
+                   if (response.status === 402) {
+                       showMessage('Payment required to export', 'error');
+                       return;
+                   } else if (response.status === 404) {
+                       showMessage('Analysis not found', 'error');
+                       return;
+                   } else {
+                       throw new Error(`HTTP ${response.status}`);
+                   }
+               }
+               
+               // Get the blob data
+               const blob = await response.blob();
+               
+               // Create download link
+               const url = window.URL.createObjectURL(blob);
+               const a = document.createElement('a');
+               a.href = url;
+               a.download = getExportFilename(analysisId, 'pdf');
+               document.body.appendChild(a);
+               a.click();
+               document.body.removeChild(a);
+               window.URL.revokeObjectURL(url);
+               
+               showMessage('PDF export completed!', 'success');
+               
+           } catch (error) {
+               console.error('PDF export error:', error);
+               showMessage('Failed to export PDF: ' + error.message, 'error');
+           }
+       }
+
+       async function exportToDOCX(analysisId) {
+           try {
+               showMessage('Generating DOCX export...', 'info');
+               
+               const response = await fetch(`/api/v1/export/${analysisId}/docx`);
+               
+               if (!response.ok) {
+                   if (response.status === 400) {
+                       showMessage('DOCX export not available for this analysis type', 'error');
+                       return;
+                   } else if (response.status === 402) {
+                       showMessage('Payment required to export', 'error');
+                       return;
+                   } else if (response.status === 404) {
+                       showMessage('Analysis not found', 'error');
+                       return;
+                   } else {
+                       throw new Error(`HTTP ${response.status}`);
+                   }
+               }
+               
+               // Get the blob data
+               const blob = await response.blob();
+               
+               // Create download link
+               const url = window.URL.createObjectURL(blob);
+               const a = document.createElement('a');
+               a.href = url;
+               a.download = getExportFilename(analysisId, 'docx');
+               document.body.appendChild(a);
+               a.click();
+               document.body.removeChild(a);
+               window.URL.revokeObjectURL(url);
+               
+               showMessage('DOCX export completed!', 'success');
+               
+           } catch (error) {
+               console.error('DOCX export error:', error);
+               showMessage('Failed to export DOCX: ' + error.message, 'error');
+           }
+       }
+
+       function getExportFilename(analysisId, extension) {
+           const timestamp = new Date().toISOString().split('T')[0];
+           return `resume-analysis-${timestamp}.${extension}`;
+       }
     </script>
 </body>
 </html>

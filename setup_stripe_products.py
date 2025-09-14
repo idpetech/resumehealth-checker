@@ -82,14 +82,14 @@ def setup_stripe_products(test_mode=True):
         "default": {"currency": "usd", "multiplier": 1.0, "symbol": "$"}
     }
 
-    # Base prices in USD cents (from our multi-product config)
+    # Base prices in USD cents (matching actual HTML/UI prices)
     base_prices = {
-        "resume_analysis": 500,    # $10.00
-        "job_fit_analysis": 600,   # $12.00  
-        "cover_letter": 400,        # $8.00
-        "career_boost": 900,       # $18.00 (18% discount)
-        "job_hunter": 750,         # $15.00 (17% discount)
-        "complete_package": 1100    # $22.00 (27% discount)
+        "resume_analysis": 149,     # $1.49
+        "job_fit_analysis": 299,    # $2.99  
+        "cover_letter": 199,        # $1.99
+        "career_boost": 399,        # $3.99 (bundle discount)
+        "job_hunter": 349,          # $3.49 (bundle discount)
+        "complete_package": 449     # $4.49 (bundle discount)
     }
 
     print(f"\n🚀 Setting up {len(products)} products across {len(regional_config)} regions...")

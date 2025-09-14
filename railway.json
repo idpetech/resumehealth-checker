@@ -4,8 +4,10 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "uvicorn main_modular:app --host 0.0.0.0 --port $PORT",
+    "startCommand": "cd v4-clean && python main.py",
+    "healthcheckPath": "/api/v1/health",
+    "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "restartPolicyMaxRetries": 3
   }
 }

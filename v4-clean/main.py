@@ -107,20 +107,6 @@ else:
     logger.warning(f"⚠️ Static directory not found: {static_dir}")
 
 # =============================================================================
-# HEALTH CHECK
-# =============================================================================
-
-@app.get("/health")
-async def health_check():
-    """Simple health check endpoint for Railway and monitoring"""
-    return {
-        "status": "healthy",
-        "version": "4.0.0",
-        "environment": config.environment,
-        "timestamp": "2025-09-02T12:00:00Z"
-    }
-
-# =============================================================================
 # APPLICATION ENTRY POINT
 # =============================================================================
 

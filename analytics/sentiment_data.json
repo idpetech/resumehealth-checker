@@ -141,6 +141,167 @@
       "analysis_type": "cover_letter_free",
       "analysis_completion_time": "2025-08-31T00:54:12.205775+00:00",
       "processing_time_seconds": 11.678860902786255
+    },
+    "035c56a4-d744-44a5-a87a-2c8f4ea54848": {
+      "session_id": "035c56a4-d744-44a5-a87a-2c8f4ea54848",
+      "product": "resume_analysis",
+      "start_time": "2025-09-01T13:27:46.805643+00:00",
+      "user_agent": null,
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-09-01T13:27:51.523464+00:00",
+          "data": {
+            "analysis_type": "free",
+            "processing_time": 4.71701717376709
+          }
+        }
+      ],
+      "analysis_type": "free",
+      "analysis_completion_time": "2025-09-01T13:27:51.523438+00:00",
+      "processing_time_seconds": 4.71701717376709
+    },
+    "90f8bdff-d1d8-4d14-971b-c81594aa3b6b": {
+      "session_id": "90f8bdff-d1d8-4d14-971b-c81594aa3b6b",
+      "product": "resume_analysis",
+      "start_time": "2025-09-01T17:58:25.086297+00:00",
+      "user_agent": null,
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-09-01T17:58:29.008853+00:00",
+          "data": {
+            "analysis_type": "free",
+            "processing_time": 3.922067880630493
+          }
+        }
+      ],
+      "analysis_type": "free",
+      "analysis_completion_time": "2025-09-01T17:58:29.008843+00:00",
+      "processing_time_seconds": 3.922067880630493
+    },
+    "7f736de9-ae5c-4378-9086-bdbc2156b87a": {
+      "session_id": "7f736de9-ae5c-4378-9086-bdbc2156b87a",
+      "product": "resume_analysis",
+      "start_time": "2025-09-01T21:16:35.489773+00:00",
+      "user_agent": null,
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-09-01T21:16:40.397036+00:00",
+          "data": {
+            "analysis_type": "free",
+            "processing_time": 4.906537771224976
+          }
+        }
+      ],
+      "analysis_type": "free",
+      "analysis_completion_time": "2025-09-01T21:16:40.397017+00:00",
+      "processing_time_seconds": 4.906537771224976
+    },
+    "02ce706c-a1a8-4307-b752-a6e432eecaa4": {
+      "session_id": "02ce706c-a1a8-4307-b752-a6e432eecaa4",
+      "product": "resume_analysis",
+      "start_time": "2025-09-01T22:47:05.942805+00:00",
+      "user_agent": null,
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-09-01T22:47:11.188931+00:00",
+          "data": {
+            "analysis_type": "free",
+            "processing_time": 5.243667364120483
+          }
+        }
+      ],
+      "analysis_type": "free",
+      "analysis_completion_time": "2025-09-01T22:47:11.188895+00:00",
+      "processing_time_seconds": 5.243667364120483
+    },
+    "5529f42d-6818-43f0-bd97-636a812e7cba": {
+      "session_id": "5529f42d-6818-43f0-bd97-636a812e7cba",
+      "product": "resume_analysis",
+      "start_time": "2025-09-01T22:48:41.611013+00:00",
+      "user_agent": null,
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-09-01T22:48:46.093329+00:00",
+          "data": {
+            "analysis_type": "free",
+            "processing_time": 4.481638193130493
+          }
+        }
+      ],
+      "analysis_type": "free",
+      "analysis_completion_time": "2025-09-01T22:48:46.093312+00:00",
+      "processing_time_seconds": 4.481638193130493
+    },
+    "81bbcb4d-9dfe-410e-a128-dd558d1f9aea": {
+      "session_id": "81bbcb4d-9dfe-410e-a128-dd558d1f9aea",
+      "product": "resume_analysis",
+      "start_time": "2025-09-01T22:53:01.092311+00:00",
+      "user_agent": null,
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-09-01T22:53:05.493948+00:00",
+          "data": {
+            "analysis_type": "free",
+            "processing_time": 4.400973796844482
+          }
+        }
+      ],
+      "analysis_type": "free",
+      "analysis_completion_time": "2025-09-01T22:53:05.493933+00:00",
+      "processing_time_seconds": 4.400973796844482
+    },
+    "88c8e64a-cc5a-4cb0-b618-7ea145fc4638": {
+      "session_id": "88c8e64a-cc5a-4cb0-b618-7ea145fc4638",
+      "product": "resume_analysis",
+      "start_time": "2025-09-01T22:55:22.615888+00:00",
+      "user_agent": null,
+      "prompt_version": "v1.0-hope",
+      "analysis_completed": true,
+      "sentiment_collected": false,
+      "conversion_completed": false,
+      "journey": [
+        {
+          "event": "analysis_completed",
+          "timestamp": "2025-09-01T22:55:27.967729+00:00",
+          "data": {
+            "analysis_type": "free",
+            "processing_time": 5.35123610496521
+          }
+        }
+      ],
+      "analysis_type": "free",
+      "analysis_completion_time": "2025-09-01T22:55:27.967719+00:00",
+      "processing_time_seconds": 5.35123610496521
     }
   },
   "feedback": [

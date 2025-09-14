@@ -1,0 +1,307 @@
+{% include 'base_embedded.html' %}
+
+<div class="premium-results">
+    <div class="premium-header">
+        <h2>🎯 Job Fit Analysis</h2>
+        <p>Strategic alignment assessment with actionable recommendations</p>
+    </div>
+    
+    <!-- Overall Match Score -->
+    <div class="section">
+        <h3>📊 Overall Job Match</h3>
+        <div class="grid-2">
+            <div class="content-block">
+                <div style="text-align: center;">
+                    {% if overall_match_score is number %}
+                        <div class="score-badge score-{{ 'excellent' if overall_match_score >= 85 else 'good' if overall_match_score >= 70 else 'fair' if overall_match_score >= 50 else 'poor' }}">
+                            {{ overall_match_score }}%
+                        </div>
+                        <div class="progress-container" style="margin-top: 15px;">
+                            <div class="progress-bar progress-{{ 'excellent' if overall_match_score >= 85 else 'good' if overall_match_score >= 70 else 'fair' if overall_match_score >= 50 else 'poor' }}" 
+                                 style="width: {{ overall_match_score }}%;">
+                                {{ overall_match_score }}% Match
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="score-badge score-good">
+                            {{ overall_match_score }}
+                        </div>
+                        <div class="progress-container" style="margin-top: 15px;">
+                            <div class="progress-bar progress-good" style="width: 75%;">
+                                75% Match
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="content-block">
+                <h4>🎯 Match Quality</h4>
+                {% if overall_match_score is number %}
+                    {% if overall_match_score >= 85 %}
+                    <p class="score-excellent" style="padding: 10px; border-radius: 6px; margin: 0;">
+                        <strong>Excellent Match!</strong> You're highly qualified for this position.
+                    </p>
+                    {% elif overall_match_score >= 70 %}
+                    <p class="score-good" style="padding: 10px; border-radius: 6px; margin: 0;">
+                        <strong>Good Match!</strong> You meet most requirements with some growth areas.
+                    </p>
+                    {% elif overall_match_score >= 50 %}
+                    <p class="score-fair" style="padding: 10px; border-radius: 6px; margin: 0;">
+                        <strong>Fair Match.</strong> Some alignment but requires strategic improvements.
+                    </p>
+                    {% else %}
+                    <p class="score-poor" style="padding: 10px; border-radius: 6px; margin: 0;">
+                        <strong>Low Match.</strong> Consider developing missing skills before applying.
+                    </p>
+                    {% endif %}
+                {% else %}
+                    <p class="score-good" style="padding: 10px; border-radius: 6px; margin: 0;">
+                        <strong>Match Analysis:</strong> {{ overall_match_score }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Match Breakdown -->
+    {% if match_breakdown %}
+    <div class="section">
+        <h3>📈 Detailed Match Breakdown</h3>
+        <div class="grid-2">
+            {% for category, details in match_breakdown.items() %}
+            <div class="content-block">
+                <h4>{{ category.replace('_', ' ').title() }}</h4>
+                {% if details.score is number %}
+                <div class="score-badge score-{{ 'excellent' if details.score >= 85 else 'good' if details.score >= 70 else 'fair' if details.score >= 50 else 'poor' }}" style="margin-bottom: 10px;">
+                    {{ details.score }}%
+                </div>
+                {% else %}
+                <div class="score-badge score-good" style="margin-bottom: 10px;">
+                    {{ details.score }}
+                </div>
+                {% endif %}
+                {% if details.details %}
+                <p>{{ details.details }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Key Strengths -->
+    {% if key_strengths %}
+    <div class="section">
+        <h3>💪 Your Key Strengths for This Role</h3>
+        <div class="grid-2">
+            {% for strength in key_strengths %}
+            <div class="highlight-box">
+                <h4>{{ strength.category }}</h4>
+                <p><strong>{{ strength.strength }}:</strong> {{ strength.description }}</p>
+                {% if strength.evidence %}
+                <p><em>Evidence:</em> {{ strength.evidence }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Skill Gaps -->
+    {% if skill_gaps %}
+    <div class="section">
+        <h3>📚 Skills & Knowledge Gaps</h3>
+        <div class="grid-3">
+            {% for gap in skill_gaps %}
+            <div class="warning-box">
+                <h4>{{ gap.category }}</h4>
+                <p><strong>{{ gap.missing_skill }}:</strong> {{ gap.description }}</p>
+                {% if gap.priority %}
+                <div class="score-badge score-{{ 'poor' if gap.priority == 'High' else 'fair' if gap.priority == 'Medium' else 'good' }}" style="margin-top: 10px;">
+                    {{ gap.priority }} Priority
+                </div>
+                {% endif %}
+                {% if gap.learning_resources %}
+                <p><em>Learn via:</em> {{ gap.learning_resources }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Experience Alignment -->
+    {% if experience_alignment %}
+    <div class="section">
+        <h3>🏢 Experience Alignment</h3>
+        <div class="content-block">
+            {% if experience_alignment.alignment_score is number %}
+            <div class="score-badge score-{{ 'excellent' if experience_alignment.alignment_score >= 85 else 'good' if experience_alignment.alignment_score >= 70 else 'fair' if experience_alignment.alignment_score >= 50 else 'poor' }}">
+                {{ experience_alignment.alignment_score }}% Aligned
+            </div>
+            {% else %}
+            <div class="score-badge score-good">
+                {{ experience_alignment.alignment_score }}
+            </div>
+            {% endif %}
+            
+            {% if experience_alignment.relevant_experiences %}
+            <div class="highlight-box" style="margin-top: 20px;">
+                <h4>✅ Relevant Experience</h4>
+                <ul class="bullet-list">
+                    {% for exp in experience_alignment.relevant_experiences %}
+                    <li><strong>{{ exp.role }}:</strong> {{ exp.relevance }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            {% if experience_alignment.experience_gaps %}
+            <div class="warning-box" style="margin-top: 20px;">
+                <h4>⚠️ Experience Gaps</h4>
+                <ul class="bullet-list">
+                    {% for gap in experience_alignment.experience_gaps %}
+                    <li>{{ gap }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Keyword Match -->
+    {% if keyword_match %}
+    <div class="section">
+        <h3>🔑 Keyword Match Analysis</h3>
+        <div class="grid-3">
+            {% if keyword_match.matched_keywords %}
+            <div class="highlight-box">
+                <h4>✅ Matched Keywords ({{ keyword_match.matched_keywords|length }})</h4>
+                <ul class="bullet-list">
+                    {% for keyword in keyword_match.matched_keywords[:6] %}
+                    <li>{{ keyword }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            {% if keyword_match.missing_keywords %}
+            <div class="error-box">
+                <h4>❌ Missing Keywords ({{ keyword_match.missing_keywords|length }})</h4>
+                <ul class="bullet-list">
+                    {% for keyword in keyword_match.missing_keywords[:6] %}
+                    <li>{{ keyword }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            {% if keyword_match.keyword_density %}
+            <div class="info-box">
+                <h4>📊 Keyword Density</h4>
+                {% if keyword_match.keyword_density is number %}
+                <div class="score-badge score-{{ 'excellent' if keyword_match.keyword_density >= 15 else 'good' if keyword_match.keyword_density >= 10 else 'fair' if keyword_match.keyword_density >= 5 else 'poor' }}">
+                    {{ keyword_match.keyword_density }}%
+                </div>
+                {% else %}
+                <div class="score-badge score-good">
+                    {{ keyword_match.keyword_density }}
+                </div>
+                {% endif %}
+                <p style="margin-top: 10px;">Keywords per 100 words in your resume</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Strategic Recommendations -->
+    {% if strategic_recommendations %}
+    <div class="section">
+        <h3>🎯 Strategic Recommendations</h3>
+        <ol class="numbered-list">
+            {% for rec in strategic_recommendations %}
+            <li>
+                <div class="info-box">
+                    <h4>{{ rec.category }}</h4>
+                    <p><strong>{{ rec.recommendation }}</strong></p>
+                    {% if rec.specific_actions %}
+                    <p><strong>Specific Actions:</strong></p>
+                    <ul class="bullet-list">
+                        {% for action in rec.specific_actions %}
+                        <li>{{ action }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    {% if rec.timeline %}
+                    <p><em>Timeline:</em> {{ rec.timeline }}</p>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ol>
+    </div>
+    {% endif %}
+    
+    <!-- Interview Preparation -->
+    {% if interview_prep %}
+    <div class="section">
+        <h3>🎭 Interview Preparation Insights</h3>
+        <div class="grid-2">
+            {% if interview_prep.likely_questions %}
+            <div class="info-box">
+                <h4>🤔 Likely Questions</h4>
+                <ul class="bullet-list">
+                    {% for question in interview_prep.likely_questions %}
+                    <li>{{ question }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            {% if interview_prep.talking_points %}
+            <div class="highlight-box">
+                <h4>💬 Key Talking Points</h4>
+                <ul class="bullet-list">
+                    {% for point in interview_prep.talking_points %}
+                    <li>{{ point }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Success Probability -->
+    {% if success_probability %}
+    <div class="highlight-box" style="margin: 25px 0;">
+        <h3>🏆 Application Success Probability</h3>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            {% if success_probability.probability is number %}
+            <div class="score-badge score-{{ 'excellent' if success_probability.probability >= 85 else 'good' if success_probability.probability >= 70 else 'fair' if success_probability.probability >= 50 else 'poor' }}">
+                {{ success_probability.probability }}%
+            </div>
+            {% else %}
+            <div class="score-badge score-good">
+                {{ success_probability.probability }}
+            </div>
+            {% endif %}
+            <div style="flex: 1;">
+                <p style="margin: 0; font-size: 1.1rem;">{{ success_probability.assessment }}</p>
+                {% if success_probability.key_factors %}
+                <p style="margin: 10px 0 0 0;"><strong>Key Factors:</strong> {{ success_probability.key_factors|join(', ') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="actions">
+        <button class="btn btn-success" onclick="window.print()">🖨️ Print Analysis</button>
+        <button class="btn btn-danger" onclick="exportToPDF('.premium-results')">📄 Export PDF</button>
+        <button class="btn" onclick="copyToClipboard('.premium-results')">📋 Copy Analysis</button>
+        <a href="/" class="btn">🏠 Return to App</a>
+    </div>
+</div>

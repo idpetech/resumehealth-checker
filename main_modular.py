@@ -8,7 +8,8 @@ BEFORE: 3,729 lines in one file (maintenance nightmare)
 AFTER:  Clean modular structure with logical separation
 """
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import openai
@@ -18,10 +19,8 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 # Import our modular components
-from app.config.settings import settings, constants
-from app.routes.main import router as main_router
-from app.routes.analysis import router as analysis_router
-from app.routes.legacy_proxy import router as proxy_router
+from app.core.config import config
+from app.api.routes import router as api_router
 
 # =============================================================================
 # LOGGING CONFIGURATION
@@ -58,7 +57,7 @@ allowed_origins = [
     "http://localhost:8001",
     "http://localhost:3000",  # For development frontends
     "https://resumehealthchecker.com",  # Add your actual domain
-] if settings.environment == "production" else [
+] if config.environment == "production" else [
     "http://localhost:8002",
     "http://localhost:8001", 
     "http://localhost:3000",
@@ -80,7 +79,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Global exception on {request.url}: {exc}")
     
     # Hide sensitive error details in production
-    if settings.environment == "production":
+    if config.environment == "production":
         return JSONResponse(
             status_code=500,
             content={
@@ -100,25 +99,50 @@ async def global_exception_handler(request: Request, exc: Exception):
 # =============================================================================
 
 # Initialize OpenAI client
-openai.api_key = settings.openai_api_key
+openai.api_key = config.openai_api_key
 logger.info("OpenAI client initialized")
 
 # Stripe configuration
-stripe.api_key = settings.stripe_test_key or settings.stripe_live_key
-logger.info(f"Stripe client initialized for {settings.environment} environment")
+stripe.api_key = config.stripe_secret_key
+logger.info(f"Stripe client initialized for {config.environment} environment")
 
-# Legacy constants for backward compatibility
-STRIPE_SUCCESS_TOKEN = settings.stripe_success_token
-STRIPE_PAYMENT_URL = settings.stripe_payment_url
+# Legacy constants for backward compatibility (if needed)
+STRIPE_SUCCESS_TOKEN = "payment_success_123"  # Default value
+STRIPE_PAYMENT_URL = "https://buy.stripe.com/test_placeholder"  # Default value
 
 # =============================================================================
 # ROUTE REGISTRATION
 # =============================================================================
 
 # Register route modules
-app.include_router(main_router)
-app.include_router(analysis_router)
-app.include_router(proxy_router)
+app.include_router(api_router, prefix="/api/v1")
+
+# Add simple health checks for Railway
+@app.get("/health")
+async def simple_health():
+    return {"status": "healthy", "service": "Resume Health Checker v4.0"}
+
+# Serve the frontend
+@app.get("/", response_class=HTMLResponse)
+async def serve_frontend():
+    """Serve the main frontend page"""
+    try:
+        with open("frontend/index.html", "r") as f:
+            content = f.read()
+            return HTMLResponse(
+                content=content,
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0"
+                }
+            )
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Frontend not found</h1><p>Please check if frontend files are deployed</p>", status_code=404)
+
+# Mount static files (CSS, JS)
+app.mount("/css", StaticFiles(directory="frontend/css"), name="css")
+app.mount("/js", StaticFiles(directory="frontend/js"), name="js")
 
 # =============================================================================
 # TEMPORARY IMPORTS FOR BACKWARD COMPATIBILITY
@@ -165,9 +189,18 @@ except ImportError as e:
 
 if __name__ == "__main__":
     import uvicorn
+    import os
+    
+    # Use Railway's PORT environment variable, fallback to 8000
+    port = int(os.environ.get("PORT", 8000))
+    
+    print(f"🚀 Starting Resume Health Checker v4.0 on port {port}")
+    print(f"🌍 Environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'local')}")
+    print(f"📡 Health check available at: http://0.0.0.0:{port}/health")
+    
     uvicorn.run(
         "main_modular:app",
         host="0.0.0.0",
-        port=8003,  # Different port to avoid conflict
-        reload=True
+        port=port,
+        reload=False  # Disable reload in production
     )
