@@ -274,6 +274,7 @@ async def create_payment_session(
     request: Request,
     analysis_id: str = Form(...),
     product_type: str = Form(...),
+    price: Optional[str] = Form(None),
     region_override: Optional[str] = Form(None),
     job_posting: Optional[str] = Form(None)
 ):
@@ -285,7 +286,8 @@ async def create_payment_session(
     - region_override: Optional region code for testing
     - job_posting: Optional job posting text for job-specific products
     """
-    logger.info(f"Payment session creation: {analysis_id}, {product_type}")
+    logger.info(f"Payment session creation: {analysis_id}, {product_type}, price={price}")
+    print(f"DEBUG: Received price parameter: '{price}' (type: {type(price)})")
     
     try:
         # Verify analysis exists
@@ -315,7 +317,21 @@ async def create_payment_session(
         
         # Get Stripe-compatible amount and currency
         currency = geo_service.get_currency_for_stripe(country)
-        amount = geo_service.convert_amount_for_stripe(country, product_type)
+        
+        # Use frontend price if provided, otherwise fall back to geo service pricing
+        if price is not None and price.strip():
+            try:
+                price_float = float(price)
+                amount = int(price_float * 100)  # Convert dollars to cents
+                logger.info(f"Using frontend price: ${price_float} = {amount} cents")
+            except ValueError:
+                logger.warning(f"Invalid price format: {price}, falling back to geo service")
+                amount = geo_service.convert_amount_for_stripe(country, product_type)
+                logger.info(f"Using geo service price: {amount} cents")
+        else:
+            amount = geo_service.convert_amount_for_stripe(country, product_type)
+            logger.info(f"Using geo service price: {amount} cents")
+        
         product_name = product_info.get("name", product_type.replace('_', ' ').title())
         
         # Create payment session
