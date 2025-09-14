@@ -321,12 +321,24 @@ class AnalysisService:
         # Method 2: Remove markdown blocks and try again
         cleaned = response
         if "```json" in cleaned:
-            # Extract content between ```json and ```
-            pattern = r'```json\s*(.*?)\s*```'
-            match = re.search(pattern, cleaned, re.DOTALL)
-            if match:
-                cleaned = match.group(1).strip()
-                logger.info("🔍 STRICT PARSING: Extracted from ```json blocks")
+            # Simple approach: Find ```json and extract everything after it until ``` or end of string
+            json_start = cleaned.find("```json")
+            if json_start != -1:
+                # Find the start of actual JSON (after ```json and any whitespace)
+                json_content_start = json_start + 7  # len("```json")
+                while json_content_start < len(cleaned) and cleaned[json_content_start] in ' \n\t':
+                    json_content_start += 1
+                
+                # Find the end (look for closing ``` or use end of string)
+                json_content_end = len(cleaned)
+                closing_backticks = cleaned.find("```", json_content_start)
+                if closing_backticks != -1:
+                    json_content_end = closing_backticks
+                
+                cleaned = cleaned[json_content_start:json_content_end].strip()
+                logger.info("🔍 STRICT PARSING: Extracted from ```json blocks (simple method)")
+                logger.info(f"🔍 STRICT PARSING: Extracted length: {len(cleaned)}")
+                logger.info(f"🔍 STRICT PARSING: Extracted first 200 chars: {repr(cleaned[:200])}")
         elif "```" in cleaned:
             # Extract content between generic ```
             pattern = r'```\s*(.*?)\s*```'
@@ -339,17 +351,86 @@ class AnalysisService:
             result = json.loads(cleaned)
             logger.info("✅ STRICT PARSING: Method 2 - Markdown removal successful")
             return result
-        except json.JSONDecodeError:
-            logger.info("❌ STRICT PARSING: Method 2 - Markdown removal failed")
+        except json.JSONDecodeError as e:
+            logger.info(f"❌ STRICT PARSING: Method 2 - Markdown removal failed: {str(e)}")
+            logger.info(f"🔍 STRICT PARSING: Error at position: {e.pos if hasattr(e, 'pos') else 'unknown'}")
+            logger.info(f"🔍 STRICT PARSING: JSON length: {len(cleaned)}")
+            logger.info(f"🔍 STRICT PARSING: Failed to parse: {repr(cleaned[:200])}")
+            
+            # Show what's near the error position
+            if hasattr(e, 'pos') and e.pos:
+                error_pos = e.pos
+                start = max(0, error_pos - 50)
+                end = min(len(cleaned), error_pos + 50)
+                logger.info(f"🔍 STRICT PARSING: Context around error: {repr(cleaned[start:end])}")
+                logger.info(f"🔍 STRICT PARSING: Last 100 chars: {repr(cleaned[-100:])}")
+            
+            # Try to fix common JSON issues
+            if "Unterminated string" in str(e):
+                logger.info("🔍 STRICT PARSING: Attempting to fix unterminated strings")
+                # Try to fix by adding closing quote and bracket/brace
+                fixed_attempts = [
+                    cleaned + '"}]}}',  # Most common case - unterminated string in nested structure
+                    cleaned + '"}}',    # Simple unterminated string at end
+                    cleaned + '}',      # Missing closing brace
+                ]
+                
+                for i, attempt in enumerate(fixed_attempts):
+                    try:
+                        result = json.loads(attempt)
+                        logger.info(f"✅ STRICT PARSING: Method 2 - JSON repair successful (fix {i+1})")
+                        return result
+                    except json.JSONDecodeError:
+                        continue
+                
+                logger.info("❌ STRICT PARSING: All JSON repair attempts failed")
         
-        # Method 3: Find JSON object using regex
+        # Method 3: Character-by-character brace matching (most robust for nested JSON)
+        first_brace = response.find('{')
+        if first_brace != -1:
+            brace_count = 0
+            in_string = False
+            escape_next = False
+            
+            for i in range(first_brace, len(response)):
+                char = response[i]
+                
+                if escape_next:
+                    escape_next = False
+                    continue
+                    
+                if char == '\\':
+                    escape_next = True
+                    continue
+                    
+                if char == '"' and not escape_next:
+                    in_string = not in_string
+                    continue
+                    
+                if not in_string:
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            candidate = response[first_brace:i + 1]
+                            try:
+                                result = json.loads(candidate)
+                                logger.info("✅ STRICT PARSING: Method 3 - Brace matching successful")
+                                logger.info(f"🔍 STRICT PARSING: Extracted: {candidate[:100]}...")
+                                return result
+                            except json.JSONDecodeError:
+                                logger.info("❌ STRICT PARSING: Method 3 - Brace matching found invalid JSON")
+                                break
+        
+        logger.info("❌ STRICT PARSING: Method 3 - Brace matching failed")
+        
+        # Method 4: Find JSON object using regex (fallback)
         json_patterns = [
-            r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}',  # Simple nested objects
-            r'\{.*?\}',  # Greedy match
-            r'\{[\s\S]*?\}',  # Include whitespace and newlines
+            r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}',  # Simple nested objects (as fallback)
         ]
         
-        for i, pattern in enumerate(json_patterns, 3):
+        for i, pattern in enumerate(json_patterns, 4):
             matches = re.finditer(pattern, response, re.DOTALL)
             for match in matches:
                 candidate = match.group(0)
@@ -362,43 +443,7 @@ class AnalysisService:
                     continue
             logger.info(f"❌ STRICT PARSING: Method {i} - Regex pattern failed")
         
-        # Method 4: Character-by-character brace matching (most robust)
-        first_brace = response.find('{')
-        if first_brace == -1:
-            raise AIAnalysisError("No JSON object found in response")
-        
-        brace_count = 0
-        in_string = False
-        escape_next = False
-        
-        for i in range(first_brace, len(response)):
-            char = response[i]
-            
-            if escape_next:
-                escape_next = False
-                continue
-                
-            if char == '\\':
-                escape_next = True
-                continue
-                
-            if char == '"' and not escape_next:
-                in_string = not in_string
-                continue
-                
-            if not in_string:
-                if char == '{':
-                    brace_count += 1
-                elif char == '}':
-                    brace_count -= 1
-                    if brace_count == 0:
-                        candidate = response[first_brace:i + 1]
-                        try:
-                            result = json.loads(candidate)
-                            logger.info("✅ STRICT PARSING: Method 4 - Brace matching successful")
-                            return result
-                        except json.JSONDecodeError:
-                            continue
+        # All parsing methods failed
         
         logger.error("❌ STRICT PARSING: All methods failed")
         logger.error(f"🔍 STRICT PARSING: Full response: {repr(response)}")
@@ -511,6 +556,193 @@ class AnalysisService:
                 "error": "Response was not in expected JSON format",
                 "fallback_analysis": "AI analysis completed but response format needs adjustment"
             }
+    
+    def _parse_mock_interview_json(self, response: str, analysis_type: str) -> Dict[str, Any]:
+        """
+        Specialized JSON parser for mock interview responses
+        Handles large responses with multiple questions and robust error recovery
+        """
+        import re
+        
+        logger.info(f"🎭 MOCK INTERVIEW PARSING: Starting specialized parser for {analysis_type}")
+        logger.info(f"🎭 MOCK INTERVIEW PARSING: Response length: {len(response)}")
+        
+        # First, try the standard parsing
+        try:
+            result = self._strict_json_parse(response)
+            logger.info("🎭 MOCK INTERVIEW PARSING: Standard parsing successful")
+            return result
+        except AIAnalysisError as e:
+            logger.warning(f"🎭 MOCK INTERVIEW PARSING: Standard parsing failed: {e}")
+        
+        # If standard parsing fails, use mock interview-specific recovery
+        logger.info("🎭 MOCK INTERVIEW PARSING: Attempting specialized recovery")
+        
+        # Remove markdown formatting
+        cleaned = response
+        if "```json" in cleaned:
+            json_start = cleaned.find("```json")
+            if json_start != -1:
+                json_content_start = json_start + 7
+                while json_content_start < len(cleaned) and cleaned[json_content_start] in ' \n\t':
+                    json_content_start += 1
+                
+                json_content_end = len(cleaned)
+                closing_backticks = cleaned.find("```", json_content_start)
+                if closing_backticks != -1:
+                    json_content_end = closing_backticks
+                
+                cleaned = cleaned[json_content_start:json_content_end].strip()
+        
+        # Fix common JSON issues in mock interviews
+        fixes = [
+            # Remove trailing commas
+            lambda x: re.sub(r',\s*([}\]])', r'\1', x),
+            # Fix unescaped quotes in strings
+            lambda x: re.sub(r'"([^"]*?)"([^":,}\]\n]*?)"([^":,}\]\n]*?)"', r'"\1\\"\2\\"\3"', x),
+            # Add missing closing braces/brackets based on opening ones
+            lambda x: self._fix_incomplete_json(x),
+        ]
+        
+        for i, fix_func in enumerate(fixes):
+            try:
+                fixed = fix_func(cleaned)
+                result = json.loads(fixed)
+                logger.info(f"🎭 MOCK INTERVIEW PARSING: Fix {i+1} successful")
+                return result
+            except (json.JSONDecodeError, Exception) as e:
+                logger.info(f"🎭 MOCK INTERVIEW PARSING: Fix {i+1} failed: {e}")
+                continue
+        
+        # If all parsing attempts fail, try to extract a partial structure
+        logger.warning("🎭 MOCK INTERVIEW PARSING: All parsing failed, attempting partial extraction")
+        
+        # For premium mock interviews, try to extract interview_simulation array
+        if analysis_type == "premium":
+            simulation_match = re.search(r'"interview_simulation"\s*:\s*\[(.+?)\](?=\s*,\s*"[^"]+"\s*:|\s*\})', cleaned, re.DOTALL)
+            if simulation_match:
+                try:
+                    # Try to parse just the interview_simulation array
+                    simulation_content = simulation_match.group(1)
+                    questions = self._extract_questions_from_array(simulation_content)
+                    if questions:
+                        logger.info(f"🎭 MOCK INTERVIEW PARSING: Extracted {len(questions)} questions from partial JSON")
+                        return {
+                            "interview_simulation": questions,
+                            "interview_strategy": {},
+                            "company_specific_prep": {},
+                            "challenging_scenarios": [],
+                            "confidence_boosters": {},
+                            "final_preparation_checklist": [],
+                            "interview_success_prediction": "Your preparation will significantly improve your interview performance.",
+                            "parsing_note": "Partial extraction from incomplete JSON"
+                        }
+                except Exception as e:
+                    logger.warning(f"🎭 MOCK INTERVIEW PARSING: Partial extraction failed: {e}")
+        
+        # For free mock interviews, try to extract sample_questions
+        elif analysis_type == "free":
+            questions_match = re.search(r'"sample_questions"\s*:\s*\[(.+?)\]', cleaned, re.DOTALL)
+            if questions_match:
+                try:
+                    questions_content = questions_match.group(1)
+                    questions = self._extract_questions_from_array(questions_content)
+                    if questions:
+                        logger.info(f"🎭 MOCK INTERVIEW PARSING: Extracted {len(questions)} free questions")
+                        return {
+                            "interview_readiness_score": "75",
+                            "sample_questions": questions,
+                            "preparation_gaps": ["Continue building interview preparation skills"],
+                            "confidence_builder": "You have strong potential for interview success",
+                            "full_prep_benefits": "Premium preparation provides comprehensive interview readiness",
+                            "parsing_note": "Partial extraction from incomplete JSON"
+                        }
+                except Exception as e:
+                    logger.warning(f"🎭 MOCK INTERVIEW PARSING: Free questions extraction failed: {e}")
+        
+        # Complete fallback - return minimal structure
+        logger.error("🎭 MOCK INTERVIEW PARSING: All methods failed, returning fallback")
+        if analysis_type == "premium":
+            return {
+                "interview_simulation": [{
+                    "question": "Tell me about yourself and why you're interested in this position.",
+                    "question_category": "General",
+                    "strategic_approach": "Use a structured approach highlighting your relevant experience.",
+                    "sample_answer_framework": "Brief professional summary + relevant experience + interest in role",
+                    "key_points_to_include": ["Your core strengths", "Relevant achievements", "Career motivation"],
+                    "follow_up_questions": ["What specifically interests you about our company?"],
+                    "success_tips": "Keep your answer concise and focused on value you bring."
+                }],
+                "interview_strategy": {},
+                "company_specific_prep": {},
+                "challenging_scenarios": [],
+                "confidence_boosters": {},
+                "final_preparation_checklist": [],
+                "interview_success_prediction": "With preparation, you can perform well in interviews.",
+                "parsing_error": "Failed to parse full AI response, using fallback content",
+                "raw_response_length": len(response)
+            }
+        else:
+            return {
+                "interview_readiness_score": "70",
+                "sample_questions": [{
+                    "question": "Tell me about your experience and why you're interested in this role.",
+                    "question_type": "General",
+                    "why_they_ask": "To understand your background and motivation",
+                    "preparation_hint": "Prepare a concise summary of your relevant experience"
+                }],
+                "preparation_gaps": ["Continue developing interview skills"],
+                "confidence_builder": "Your background shows strong potential",
+                "full_prep_benefits": "Complete preparation significantly improves success rates",
+                "parsing_error": "Failed to parse full AI response, using fallback content"
+            }
+    
+    def _fix_incomplete_json(self, json_str: str) -> str:
+        """
+        Attempt to fix incomplete JSON by adding missing closing braces/brackets
+        """
+        # Count opening and closing braces/brackets
+        open_braces = json_str.count('{')
+        close_braces = json_str.count('}')
+        open_brackets = json_str.count('[')
+        close_brackets = json_str.count(']')
+        
+        # Add missing closing characters
+        result = json_str
+        
+        # Add missing closing brackets
+        missing_brackets = open_brackets - close_brackets
+        if missing_brackets > 0:
+            result += ']' * missing_brackets
+        
+        # Add missing closing braces
+        missing_braces = open_braces - close_braces
+        if missing_braces > 0:
+            result += '}' * missing_braces
+        
+        return result
+    
+    def _extract_questions_from_array(self, array_content: str) -> list:
+        """
+        Extract question objects from JSON array content
+        """
+        questions = []
+        
+        # Use regex to find question objects
+        question_pattern = r'\{[^{}]*?"question"[^{}]*?\}'
+        question_matches = re.finditer(question_pattern, array_content, re.DOTALL)
+        
+        for match in question_matches:
+            try:
+                question_json = match.group(0)
+                # Try to parse each question object
+                question_obj = json.loads(question_json)
+                questions.append(question_obj)
+            except json.JSONDecodeError:
+                # Skip malformed questions
+                continue
+        
+        return questions
     
     async def analyze_job_fit(self, resume_text: str, job_posting: str) -> Dict[str, Any]:
         """Generate job fit analysis comparing resume to job posting"""
@@ -632,6 +864,129 @@ class AnalysisService:
         response = await self._call_openai(prompt)
         return self._parse_json_response(response)
     
+    async def rewrite_resume(
+        self, 
+        resume_text: str, 
+        job_posting: str,
+        analysis_type: str = "free"
+    ) -> Dict[str, Any]:
+        """
+        Rewrite resume with job-targeted optimization
+        
+        Args:
+            resume_text: Original resume text
+            job_posting: Target job posting text
+            analysis_type: "free" or "premium"
+            
+        Returns:
+            Resume rewrite results as dictionary
+            
+        Raises:
+            AIAnalysisError: If rewrite fails
+        """
+        logger.info(f"Starting {analysis_type} resume rewrite")
+        
+        try:
+            # Validate inputs
+            if not resume_text or len(resume_text.strip()) < 50:
+                raise AIAnalysisError("Resume text is too short for meaningful rewrite")
+            
+            if not job_posting or len(job_posting.strip()) < 20:
+                raise AIAnalysisError("Job posting is too short for effective resume targeting")
+            
+            # Get resume rewrite prompt
+            prompt_data = self.prompts["resume_rewrite"][analysis_type]
+            user_prompt = prompt_data["user_prompt"].format(
+                resume_text=resume_text,
+                job_posting=job_posting
+            )
+            
+            # Prepare messages
+            messages = [
+                {
+                    "role": "system",
+                    "content": prompt_data["system_prompt"]
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt
+                }
+            ]
+            
+            # Call OpenAI API with higher token limit for complete rewrites
+            response = await self.client.chat.completions.create(
+                model=config.openai_model,
+                messages=messages,
+                temperature=config.openai_temperature,
+                max_tokens=config.openai_max_tokens * 2,  # Double tokens for complete rewrites
+                timeout=90  # Longer timeout for complex rewrites
+            )
+            
+            # Parse response
+            ai_response = response.choices[0].message.content
+            
+            try:
+                # Clean and parse JSON response
+                cleaned_response = self._clean_json_response(ai_response)
+                result = json.loads(cleaned_response)
+                logger.info(f"Resume rewrite completed: {analysis_type}")
+                return result
+                
+            except json.JSONDecodeError as e:
+                logger.error(f"Resume rewrite JSON parsing failed: {e}")
+                logger.error(f"Raw AI response (first 1000 chars): {ai_response[:1000]}")
+                
+                # Return structured error response for resume rewrite
+                return {
+                    "analysis_type": analysis_type,
+                    "service": "resume_rewrite",
+                    "raw_response": ai_response[:1000],
+                    "error": f"JSON parsing failed: {str(e)}",
+                    "fallback_message": "Resume rewrite completed but response format needs adjustment",
+                    "timestamp": "2025-09-10T00:00:00Z"
+                }
+                
+        except Exception as e:
+            logger.error(f"Resume rewrite failed: {e}")
+            if isinstance(e, AIAnalysisError):
+                raise
+            else:
+                raise AIAnalysisError(f"Resume rewrite failed: {str(e)}")
+    
+    async def preview_resume_rewrite(
+        self, 
+        resume_text: str, 
+        job_posting: str
+    ) -> Dict[str, Any]:
+        """
+        Generate a free preview of resume rewrite potential
+        
+        Args:
+            resume_text: Original resume text
+            job_posting: Target job posting text
+            
+        Returns:
+            Resume rewrite preview results
+        """
+        return await self.rewrite_resume(resume_text, job_posting, "free")
+    
+    async def complete_resume_rewrite(
+        self, 
+        resume_text: str, 
+        job_posting: str
+    ) -> Dict[str, Any]:
+        """
+        Generate complete premium resume rewrite
+        
+        Args:
+            resume_text: Original resume text
+            job_posting: Target job posting text
+            
+        Returns:
+            Complete resume rewrite results
+        """
+        return await self.rewrite_resume(resume_text, job_posting, "premium")
+    
     async def analyze_resume_premium(self, resume_text: str, job_posting: str = None) -> Dict[str, Any]:
         """Generate premium resume analysis with enhanced insights"""
         job_context = f"\n\nJOB POSTING (for context):\n{job_posting}" if job_posting else ""
@@ -694,6 +1049,111 @@ class AnalysisService:
         
         response = await self._call_openai(prompt)
         return self._parse_json_response(response)
+    
+    async def generate_mock_interview(
+        self,
+        resume_text: str,
+        job_posting: str,
+        analysis_type: str = "free"
+    ) -> Dict[str, Any]:
+        """
+        Generate mock interview questions and preparation guidance
+        
+        Args:
+            resume_text: Extracted resume text
+            job_posting: Target job posting text 
+            analysis_type: "free" or "premium"
+            
+        Returns:
+            Mock interview results as dictionary
+            
+        Raises:
+            AIAnalysisError: If generation fails
+        """
+        logger.info(f"Generating {analysis_type} mock interview for job posting ({len(job_posting)} chars)")
+        
+        try:
+            # Validate input
+            if not resume_text or len(resume_text.strip()) < 50:
+                raise AIAnalysisError("Resume text is too short for meaningful interview preparation")
+            
+            if not job_posting or len(job_posting.strip()) < 50:
+                raise AIAnalysisError("Job posting is required for interview preparation")
+            
+            # Get appropriate prompt
+            prompt_data = self.prompts["mock_interview"][analysis_type]
+            user_prompt = prompt_data["user_prompt"].format(
+                resume_text=resume_text,
+                job_posting=job_posting
+            )
+            
+            # Prepare messages for OpenAI
+            messages = [
+                {"role": "system", "content": prompt_data["system_prompt"]},
+                {"role": "user", "content": user_prompt}
+            ]
+            
+            # Get appropriate token limit for mock interview
+            token_limit = config.get_token_limit("mock_interview", "mock_interview")
+            logger.info(f"🎯 Using {token_limit} tokens for {analysis_type} mock interview")
+            
+            # Call OpenAI API
+            response = await self.client.chat.completions.create(
+                model=config.openai_model,
+                messages=messages,
+                temperature=config.openai_temperature,
+                max_tokens=token_limit,
+                timeout=60.0
+            )
+            
+            # Extract and parse response
+            ai_response = response.choices[0].message.content
+            logger.info(f"AI mock interview response received ({len(ai_response)} chars)")
+            
+            # Parse JSON response with special handling for mock interview
+            result = self._parse_mock_interview_json(ai_response, analysis_type)
+            
+            # DEBUG: Log the structure of the mock interview result
+            logger.info(f"🔍 MOCK INTERVIEW DEBUG: Result keys: {list(result.keys())}")
+            if 'interview_simulation' in result:
+                logger.info(f"🔍 MOCK INTERVIEW DEBUG: Interview simulation count: {len(result['interview_simulation'])}")
+                for i, question in enumerate(result.get('interview_simulation', [])):
+                    logger.info(f"🔍 MOCK INTERVIEW DEBUG: Question {i+1} keys: {list(question.keys())}")
+                    logger.info(f"🔍 MOCK INTERVIEW DEBUG: Question {i+1} text: {question.get('question', 'No question')[:100]}...")
+            else:
+                logger.warning(f"🔍 MOCK INTERVIEW DEBUG: No 'interview_simulation' key found in result")
+            
+            # Add metadata
+            result["_metadata"] = {
+                "analysis_type": analysis_type,
+                "service_version": "v4.1-interview",
+                "prompt_version": prompt_data.get("version", "unknown"),
+                "tokens_used": response.usage.total_tokens if hasattr(response, 'usage') else None
+            }
+            
+            logger.info(f"✅ Mock interview generation completed successfully")
+            return result
+            
+        except Exception as e:
+            error_msg = f"Mock interview generation failed: {str(e)}"
+            logger.error(error_msg)
+            raise AIAnalysisError(error_msg)
+    
+    async def generate_mock_interview_preview(
+        self,
+        resume_text: str,
+        job_posting: str
+    ) -> Dict[str, Any]:
+        """Generate free mock interview preview"""
+        return await self.generate_mock_interview(resume_text, job_posting, "free")
+    
+    async def generate_mock_interview_premium(
+        self,
+        resume_text: str,
+        job_posting: str
+    ) -> Dict[str, Any]:
+        """Generate premium mock interview simulation"""
+        return await self.generate_mock_interview(resume_text, job_posting, "premium")
 
 # Singleton instance
 analysis_service = AnalysisService()

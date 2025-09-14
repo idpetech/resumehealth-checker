@@ -1,0 +1,209 @@
+{% include 'base_embedded.html' %}
+
+<div class="premium-results">
+    <div class="premium-header">
+        <h2>💌 Professional Cover Letter</h2>
+        <p>Tailored cover letter optimized for your target position</p>
+    </div>
+    
+    <!-- Cover Letter Content -->
+    <div class="section">
+        <h3>📝 Your Personalized Cover Letter</h3>
+        <div class="content-block" id="cover-letter-content" style="font-family: 'Times New Roman', serif; line-height: 1.8; white-space: pre-line; background: white; border: 2px solid #e0e0e0; padding: 40px;">{{ cover_letter_text }}</div>
+    </div>
+    
+    <!-- Letter Analysis -->
+    {% if letter_analysis %}
+    <div class="section">
+        <h3>📊 Letter Analysis</h3>
+        <div class="grid-3">
+            {% if letter_analysis.tone_score %}
+            <div class="info-box">
+                <h4>🎭 Tone Quality</h4>
+                <div class="score-badge score-{{ 'excellent' if letter_analysis.tone_score >= 85 else 'good' if letter_analysis.tone_score >= 70 else 'fair' if letter_analysis.tone_score >= 50 else 'poor' }}">
+                    {{ letter_analysis.tone_score }}/100
+                </div>
+                <p style="margin-top: 10px;">{{ letter_analysis.tone_assessment }}</p>
+            </div>
+            {% endif %}
+            
+            {% if letter_analysis.keyword_coverage %}
+            <div class="highlight-box">
+                <h4>🔑 Keyword Coverage</h4>
+                <div class="score-badge score-{{ 'excellent' if letter_analysis.keyword_coverage >= 85 else 'good' if letter_analysis.keyword_coverage >= 70 else 'fair' if letter_analysis.keyword_coverage >= 50 else 'poor' }}">
+                    {{ letter_analysis.keyword_coverage }}%
+                </div>
+                <p style="margin-top: 10px;">Job-relevant keywords included</p>
+            </div>
+            {% endif %}
+            
+            {% if letter_analysis.structure_score %}
+            <div class="content-block">
+                <h4>📋 Structure Quality</h4>
+                <div class="score-badge score-{{ 'excellent' if letter_analysis.structure_score >= 85 else 'good' if letter_analysis.structure_score >= 70 else 'fair' if letter_analysis.structure_score >= 50 else 'poor' }}">
+                    {{ letter_analysis.structure_score }}/100
+                </div>
+                <p style="margin-top: 10px;">Professional formatting and flow</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Key Highlights -->
+    {% if key_highlights %}
+    <div class="section">
+        <h3>💡 Key Letter Highlights</h3>
+        <div class="grid-2">
+            {% for highlight in key_highlights %}
+            <div class="highlight-box">
+                <h4>{{ highlight.category }}</h4>
+                <p><strong>{{ highlight.title }}:</strong> {{ highlight.description }}</p>
+                {% if highlight.impact %}
+                <p><em>Impact:</em> {{ highlight.impact }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Strategic Elements -->
+    {% if strategic_elements %}
+    <div class="section">
+        <h3>🎯 Strategic Elements Included</h3>
+        <div class="grid-2">
+            {% for element in strategic_elements %}
+            <div class="info-box">
+                <h4>{{ element.element_type }}</h4>
+                <p><strong>Purpose:</strong> {{ element.purpose }}</p>
+                {% if element.example %}
+                <p><strong>Example:</strong> "{{ element.example }}"</p>
+                {% endif %}
+                {% if element.effectiveness %}
+                <div class="score-badge score-{{ 'excellent' if element.effectiveness >= 85 else 'good' if element.effectiveness >= 70 else 'fair' if element.effectiveness >= 50 else 'poor' }}" style="margin-top: 10px;">
+                    {{ element.effectiveness }}% Effective
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Customization Details -->
+    {% if customization_details %}
+    <div class="section">
+        <h3>🎨 Customization Applied</h3>
+        <div class="content-block">
+            <div class="grid-2">
+                {% if customization_details.company_research %}
+                <div class="highlight-box">
+                    <h4>🏢 Company Research</h4>
+                    <ul class="bullet-list">
+                        {% for research in customization_details.company_research %}
+                        <li>{{ research }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                {% if customization_details.role_alignment %}
+                <div class="info-box">
+                    <h4>🎯 Role Alignment</h4>
+                    <ul class="bullet-list">
+                        {% for alignment in customization_details.role_alignment %}
+                        <li>{{ alignment }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if customization_details.personal_brand %}
+            <div class="highlight-box" style="margin-top: 20px;">
+                <h4>✨ Personal Brand Elements</h4>
+                <p>{{ customization_details.personal_brand }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Next Steps -->
+    {% if next_steps %}
+    <div class="section">
+        <h3>🚀 Next Steps</h3>
+        <ol class="numbered-list">
+            {% for step in next_steps %}
+            <li>
+                <div class="content-block">
+                    <strong>{{ step.action }}</strong>
+                    {% if step.details %}
+                    <p>{{ step.details }}</p>
+                    {% endif %}
+                    {% if step.timeline %}
+                    <p><em>Timeline:</em> {{ step.timeline }}</p>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ol>
+    </div>
+    {% endif %}
+    
+    <!-- Success Metrics -->
+    {% if success_prediction %}
+    <div class="highlight-box" style="margin: 25px 0;">
+        <h3>🏆 Cover Letter Success Prediction</h3>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div class="score-badge score-{{ 'excellent' if success_prediction.score >= 85 else 'good' if success_prediction.score >= 70 else 'fair' if success_prediction.score >= 50 else 'poor' }}">
+                {{ success_prediction.score }}%
+            </div>
+            <div style="flex: 1;">
+                <p style="margin: 0; font-size: 1.1rem;">{{ success_prediction.assessment }}</p>
+                {% if success_prediction.strengths %}
+                <p style="margin: 10px 0 0 0;"><strong>Key Strengths:</strong> {{ success_prediction.strengths|join(', ') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="actions">
+        <button class="btn btn-success" onclick="window.print()">🖨️ Print Cover Letter</button>
+        <button class="btn btn-danger" onclick="exportToPDF('.premium-results')">📄 Export PDF</button>
+        <a href="/api/v1/export/{{ analysis_id }}/docx" class="btn btn-info" download>📝 Export Word</a>
+        <button class="btn" onclick="copyCoverLetter()">📋 Copy Cover Letter</button>
+        <a href="/" class="btn">🏠 Return to App</a>
+    </div>
+</div>
+
+<script>
+    function copyCoverLetter() {
+        const coverLetterContent = document.getElementById('cover-letter-content');
+        if (!coverLetterContent) {
+            alert('❌ Cover letter content not found to copy.');
+            return;
+        }
+        
+        const content = coverLetterContent.textContent || coverLetterContent.innerText;
+        navigator.clipboard.writeText(content).then(() => {
+            alert('✅ Cover letter copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = content;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert('✅ Cover letter copied to clipboard!');
+            } catch (err) {
+                alert('❌ Failed to copy to clipboard. Please select and copy manually.');
+            }
+            document.body.removeChild(textArea);
+        });
+    }
+</script>

@@ -58,9 +58,27 @@ class Config:
         # Application constants
         self.max_file_size = 10 * 1024 * 1024  # 10MB
         self.allowed_file_types = {".pdf", ".docx", ".txt"}
-        self.openai_model = "gpt-4o-mini"
-        self.openai_temperature = 0.7
-        self.openai_max_tokens = 1500
+        self.openai_model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        self.openai_temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.7"))
+        self.openai_max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", "3000"))
+        
+        # Context-specific token limits
+        self.token_limits = {
+            "resume_analysis": int(os.getenv("TOKENS_RESUME_ANALYSIS", "2000")),
+            "job_fit": int(os.getenv("TOKENS_JOB_FIT", "2500")), 
+            "cover_letter": int(os.getenv("TOKENS_COVER_LETTER", "2000")),
+            "mock_interview": int(os.getenv("TOKENS_MOCK_INTERVIEW", "4000")),  # Higher for 10 questions
+            "resume_rewrite": int(os.getenv("TOKENS_RESUME_REWRITE", "3500"))
+        }
+    
+    def get_token_limit(self, analysis_type: str, context: str = "default") -> int:
+        """Get appropriate token limit for specific analysis type"""
+        if context == "mock_interview":
+            return self.token_limits["mock_interview"]
+        elif analysis_type in self.token_limits:
+            return self.token_limits[analysis_type]
+        else:
+            return self.openai_max_tokens
         
     def _get_base_url(self) -> str:
         """Get the appropriate base URL for the current environment"""

@@ -23,6 +23,16 @@
           "name": "Cover Letter Generator",
           "price": 1.99,
           "display": "$1.99"
+        },
+        "resume_rewrite": {
+          "name": "Complete Resume Rewrite",
+          "price": 4.99,
+          "display": "$4.99"
+        },
+        "mock_interview": {
+          "name": "Mock Interview Simulation",
+          "price": 3.99,
+          "display": "$3.99"
         }
       },
       "bundles": {
@@ -73,6 +83,16 @@
           "name": "Cover Letter Generator", 
           "price": 960,
           "display": "₨960"
+        },
+        "resume_rewrite": {
+          "name": "Complete Resume Rewrite",
+          "price": 2400,
+          "display": "₨2,400"
+        },
+        "mock_interview": {
+          "name": "Mock Interview Simulation",
+          "price": 1920,
+          "display": "₨1,920"
         }
       },
       "bundles": {
@@ -123,6 +143,16 @@
           "name": "Cover Letter Generator",
           "price": 600,
           "display": "₹600"
+        },
+        "resume_rewrite": {
+          "name": "Complete Resume Rewrite",
+          "price": 1500,
+          "display": "₹1,500"
+        },
+        "mock_interview": {
+          "name": "Mock Interview Simulation",
+          "price": 1200,
+          "display": "₹1,200"
         }
       },
       "bundles": {
@@ -173,6 +203,16 @@
           "name": "Cover Letter Generator",
           "price": 56,
           "display": "HKD 56"
+        },
+        "resume_rewrite": {
+          "name": "Complete Resume Rewrite",
+          "price": 140,
+          "display": "HKD 140"
+        },
+        "mock_interview": {
+          "name": "Mock Interview Simulation",
+          "price": 112,
+          "display": "HKD 112"
         }
       },
       "bundles": {
@@ -223,6 +263,16 @@
           "name": "Cover Letter Generator",
           "price": 32,
           "display": "AED 32"
+        },
+        "resume_rewrite": {
+          "name": "Complete Resume Rewrite",
+          "price": 80,
+          "display": "AED 80"
+        },
+        "mock_interview": {
+          "name": "Mock Interview Simulation",
+          "price": 64,
+          "display": "AED 64"
         }
       },
       "bundles": {
@@ -273,6 +323,16 @@
           "name": "Cover Letter Generator",
           "price": 640,
           "display": "৳640"
+        },
+        "resume_rewrite": {
+          "name": "Complete Resume Rewrite",
+          "price": 1600,
+          "display": "৳1,600"
+        },
+        "mock_interview": {
+          "name": "Mock Interview Simulation",
+          "price": 1280,
+          "display": "৳1,280"
         }
       },
       "bundles": {

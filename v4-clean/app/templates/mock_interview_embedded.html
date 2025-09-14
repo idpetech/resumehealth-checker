@@ -1,0 +1,851 @@
+{% include 'base_embedded.html' %}
+
+<div class="premium-results">
+    <div class="premium-header">
+        <h2>🎭 Mock Interview Simulation</h2>
+        <p>Complete interview preparation with strategic guidance</p>
+    </div>
+    
+    <div class="section">
+        <h3>🎯 Interview Questions & Strategic Guidance</h3>
+        <div class="questions-overview">
+            <div class="overview-content">
+                <p>Click on any question below to expand and see detailed preparation guidance:</p>
+                <button class="expand-all-btn" id="expandAllBtn" onclick="toggleAllQuestions()">
+                    <span id="expandAllText">📂 Expand All</span>
+                </button>
+            </div>
+        </div>
+        
+        {% for question in interview_simulation %}
+        <div class="question-container">
+            <!-- Question Header (Always Visible) -->
+            <div class="question-header" onclick="toggleQuestion({{ loop.index }})">
+                <div class="question-header-content">
+                    <div class="question-category-badge">{{ question.question_category }}</div>
+                    <div class="question-title">
+                        <span class="question-number">Q{{ loop.index }}:</span>
+                        <span class="question-text">{{ question.question }}</span>
+                    </div>
+                    <div class="expand-icon" id="icon-{{ loop.index }}">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Question Details (Expandable) -->
+            <div class="question-details" id="details-{{ loop.index }}" style="display: none;">
+                <div class="question-content">
+                    
+                    <div class="guidance-section">
+                        <h4>🎯 Strategic Approach</h4>
+                        <div class="strategic-approach">{{ question.strategic_approach }}</div>
+                    </div>
+                    
+                    <div class="guidance-section">
+                        <h4>📋 Sample Answer Framework</h4>
+                        <div class="sample-framework">{{ question.sample_answer_framework }}</div>
+                    </div>
+                    
+                    <div class="guidance-section">
+                        <h4>💡 Key Points to Include</h4>
+                        <ul class="key-points">
+                            {% for point in question.key_points_to_include %}
+                            <li>{{ point }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    {% if question.success_tips %}
+                    <div class="guidance-section">
+                        <h4>⭐ Success Tips</h4>
+                        <div class="success-tips">{{ question.success_tips }}</div>
+                    </div>
+                    {% endif %}
+                    
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if interview_strategy %}
+    <div class="strategy-section">
+        <h3>🎯 Interview Strategy</h3>
+        
+        {% if interview_strategy.key_messages %}
+        <h4>Key Messages to Emphasize</h4>
+        <ul class="key-points">
+            {% for message in interview_strategy.key_messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        
+        {% if interview_strategy.preparation_focus %}
+        <h4>Preparation Focus</h4>
+        <p>{{ interview_strategy.preparation_focus }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Company-specific prep section removed for simplified structure -->
+    
+    {% if challenging_scenarios %}
+    <div class="section">
+        <h3>⚡ Challenging Scenarios</h3>
+        {% for scenario in challenging_scenarios %}
+        <div class="question-item">
+            <h4>Scenario:</h4>
+            <p>{{ scenario.scenario }}</p>
+            
+            <h4>Strategic Response:</h4>
+            <div class="strategic-approach">{{ scenario.strategic_response }}</div>
+            
+            {% if scenario.recovery_tips %}
+            <h4>Recovery Tips:</h4>
+            <div class="success-tips">{{ scenario.recovery_tips }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if confidence_boosters %}
+    <div class="confidence-section">
+        <h3>💪 Confidence Boosters</h3>
+        
+        {% if confidence_boosters.unique_strengths %}
+        <h4>Your Unique Strengths</h4>
+        <ul class="key-points">
+            {% for strength in confidence_boosters.unique_strengths %}
+            <li>{{ strength }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        
+        {% if confidence_boosters.competitive_advantages %}
+        <h4>Your Competitive Advantages</h4>
+        <ul class="key-points">
+            {% for advantage in confidence_boosters.competitive_advantages %}
+            <li>{{ advantage }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        
+        {% if confidence_boosters.success_visualization %}
+        <h4>Success Visualization</h4>
+        <p>{{ confidence_boosters.success_visualization }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if final_preparation_checklist %}
+    <div class="section">
+        <h3>✅ Final Preparation Checklist</h3>
+        <ul class="checklist">
+            {% for item in final_preparation_checklist %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    {% if interview_success_prediction %}
+    <div class="strategy-section">
+        <h3>🎯 Interview Success Prediction</h3>
+        <p>{{ interview_success_prediction }}</p>
+    </div>
+    {% endif %}
+    
+    <div class="actions">
+        <button class="btn print-btn" onclick="window.print()">🖨️ Print Interview Guide</button>
+        <button class="btn pdf-btn" onclick="exportToPDF('.premium-results')">📄 Save as PDF</button>
+        <button class="btn docx-btn" onclick="exportToWord('.premium-results')">📝 Save as DOCX</button>
+        <a href="/" class="btn">🏠 Return to App</a>
+    </div>
+</div>
+
+<style>
+    .premium-results {
+        padding: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .premium-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #667eea;
+    }
+    
+    .premium-header h2 {
+        color: #667eea;
+        margin: 0;
+        font-size: 1.8rem;
+    }
+    
+    .premium-header p {
+        color: #666;
+        margin: 10px 0 0 0;
+    }
+    
+    .section {
+        margin-bottom: 30px;
+    }
+    
+    .section h3 {
+        color: #667eea;
+        font-size: 1.4rem;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #667eea;
+        padding-bottom: 8px;
+    }
+    
+    .section h4 {
+        color: #333;
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        margin-top: 15px;
+    }
+    
+    .question-item {
+        background: #f8f9ff;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 15px 0;
+        border-left: 4px solid #667eea;
+    }
+    
+    .question-category {
+        background: #667eea;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        display: inline-block;
+        margin-bottom: 12px;
+    }
+    
+    .question-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+    }
+    
+    .strategic-approach {
+        background: #e8f4f8;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 8px 0;
+        border-left: 3px solid #17a2b8;
+    }
+    
+    .sample-framework {
+        background: #d4edda;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 8px 0;
+        border-left: 3px solid #28a745;
+    }
+    
+    .key-points, .follow-up-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .key-points li, .follow-up-list li {
+        background: #fff3cd;
+        margin: 6px 0;
+        padding: 8px 12px;
+        border-radius: 4px;
+        border-left: 3px solid #ffc107;
+    }
+    
+    .success-tips {
+        background: #f8d7da;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 8px 0;
+        border-left: 3px solid #dc3545;
+        font-style: italic;
+    }
+    
+    .strategy-section {
+        background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+        padding: 20px;
+        border-radius: 10px;
+        border: 2px solid #28a745;
+        margin: 15px 0;
+    }
+    
+    .confidence-section {
+        background: linear-gradient(135deg, #fff7e6 0%, #fffaef 100%);
+        padding: 20px;
+        border-radius: 10px;
+        border: 2px solid #ff9800;
+        margin: 15px 0;
+    }
+    
+    .checklist {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .checklist li {
+        background: #e1f5fe;
+        margin: 6px 0;
+        padding: 10px 12px;
+        border-radius: 4px;
+        border-left: 4px solid #03a9f4;
+        position: relative;
+        padding-left: 35px;
+    }
+    
+    .checklist li:before {
+        content: "✓";
+        color: #03a9f4;
+        font-weight: bold;
+        position: absolute;
+        left: 12px;
+    }
+    
+    .actions {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        margin: 8px;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .print-btn {
+        background: #28a745;
+    }
+    
+    /* New Expandable Question Styles */
+    .questions-overview {
+        background: #f0f7ff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .questions-overview p {
+        margin: 0;
+        color: #555;
+        font-style: italic;
+    }
+    
+    .question-container {
+        background: white;
+        border: 1px solid #e1e8ed;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .question-container:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+    
+    .question-header {
+        padding: 20px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        user-select: none;
+    }
+    
+    .question-header:hover {
+        background: #f8f9ff;
+    }
+    
+    .question-header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+    }
+    
+    .question-category-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .question-title {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .question-number {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 1.1rem;
+    }
+    
+    .question-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        line-height: 1.4;
+    }
+    
+    .expand-icon {
+        color: #667eea;
+        transition: transform 0.3s ease;
+        flex-shrink: 0;
+    }
+    
+    .expand-icon.expanded {
+        transform: rotate(180deg);
+    }
+    
+    .question-details {
+        border-top: 1px solid #e1e8ed;
+        background: #fafbfc;
+        transition: all 0.3s ease;
+    }
+    
+    .question-content {
+        padding: 25px;
+    }
+    
+    .guidance-section {
+        margin-bottom: 20px;
+    }
+    
+    .guidance-section:last-child {
+        margin-bottom: 0;
+    }
+    
+    .guidance-section h4 {
+        color: #333;
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .expand-all-btn {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-top: 10px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 6px rgba(40, 167, 69, 0.2);
+    }
+    
+    .expand-all-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    
+    .pdf-btn {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+    
+    .pdf-btn:hover {
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    }
+    
+    .docx-btn {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+    
+    .docx-btn:hover {
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    }
+</style>
+
+<script>
+    function copyToClipboard() {
+        const content = document.querySelector('.premium-results').textContent;
+        navigator.clipboard.writeText(content).then(() => {
+            alert('Interview guide copied to clipboard!');
+        });
+    }
+    
+    function toggleQuestion(questionNum) {
+        const details = document.getElementById(`details-${questionNum}`);
+        const icon = document.getElementById(`icon-${questionNum}`);
+        
+        if (details.style.display === 'none' || details.style.display === '') {
+            // Expand the question
+            details.style.display = 'block';
+            icon.classList.add('expanded');
+            
+            // Smooth scroll to question if needed
+            setTimeout(() => {
+                const questionContainer = details.closest('.question-container');
+                const rect = questionContainer.getBoundingClientRect();
+                if (rect.top < 0) {
+                    questionContainer.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }
+            }, 100);
+        } else {
+            // Collapse the question
+            details.style.display = 'none';
+            icon.classList.remove('expanded');
+        }
+    }
+    
+    function toggleAllQuestions() {
+        const expandAllBtn = document.getElementById('expandAllBtn');
+        const expandAllText = document.getElementById('expandAllText');
+        const allDetails = document.querySelectorAll('[id^="details-"]');
+        const allIcons = document.querySelectorAll('[id^="icon-"]');
+        
+        // Check if all questions are currently expanded
+        const isExpanded = Array.from(allDetails).some(detail => 
+            detail.style.display === 'block'
+        );
+        
+        if (isExpanded) {
+            // Collapse all questions
+            allDetails.forEach(detail => {
+                detail.style.display = 'none';
+            });
+            allIcons.forEach(icon => {
+                icon.classList.remove('expanded');
+            });
+            expandAllText.textContent = '📂 Expand All';
+        } else {
+            // Expand all questions
+            allDetails.forEach(detail => {
+                detail.style.display = 'block';
+            });
+            allIcons.forEach(icon => {
+                icon.classList.add('expanded');
+            });
+            expandAllText.textContent = '📁 Collapse All';
+        }
+    }
+    
+    // Enhanced PDF export that expands all questions and uses jsPDF for direct download
+    function exportToPDF(analysisId = null) {
+        console.log('PDF export function called');
+        
+        // Show loading message
+        const pdfBtn = document.querySelector('.pdf-btn, [onclick*="exportToPDF"]');
+        if (pdfBtn) {
+            const originalText = pdfBtn.textContent;
+            pdfBtn.textContent = '⏳ Generating PDF...';
+            pdfBtn.disabled = true;
+            
+            setTimeout(() => {
+                pdfBtn.textContent = originalText;
+                pdfBtn.disabled = false;
+            }, 3000);
+        }
+        
+        // Declare variables at function scope
+        let originalStates = [];
+        const allDetails = document.querySelectorAll('[id^="details-"]');
+        const allIcons = document.querySelectorAll('[id^="icon-"]');
+        
+        try {
+            console.log('Found', allDetails.length, 'question details to expand');
+            
+            // Expand all questions for complete PDF
+            allDetails.forEach((detail, index) => {
+                originalStates[index] = detail.style.display;
+                detail.style.display = 'block';
+            });
+            allIcons.forEach(icon => {
+                icon.classList.add('expanded');
+            });
+            
+            // Check if jsPDF is available
+            if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
+                console.log('jsPDF not available, using fallback');
+                exportToPDFFallback();
+                return;
+            }
+            
+            // Get the content to export and clean it
+            const content = document.querySelector('.premium-results');
+            
+            if (!content) {
+                alert('❌ Content not found for PDF export');
+                return;
+            }
+            
+            // Temporarily hide action buttons for clean screenshot
+            const actionElements = document.querySelectorAll('.actions, .btn, button, [onclick], .expand-icon, .expand-all-btn');
+            actionElements.forEach(element => {
+                element.style.display = 'none';
+            });
+            
+            // Use html2canvas to capture the content
+            html2canvas(content, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                width: content.scrollWidth,
+                height: content.scrollHeight
+            }).then(canvas => {
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = 190; // A4 width in mm minus margins
+                    const pageHeight = 290; // A4 height in mm minus margins
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    let heightLeft = imgHeight;
+                    
+                    let position = 10; // Start 10mm from top
+                    
+                    // Add first page
+                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                    
+                    // Add additional pages if needed
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight + 10;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    
+                    // Save the PDF
+                    const title = document.querySelector('.premium-header h2')?.textContent || 'Mock Interview Guide';
+                    const cleanTitle = title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
+                    const timestamp = new Date().toISOString().slice(0, 10);
+                    const filename = `${cleanTitle}_${timestamp}.pdf`;
+                    
+                    pdf.save(filename);
+                    console.log('PDF generated successfully');
+                    
+                } catch (error) {
+                    console.error('PDF generation error:', error);
+                    alert('Error generating PDF. Please try again.');
+                } finally {
+                    // Restore hidden action buttons
+                    actionElements.forEach(element => {
+                        element.style.display = '';
+                    });
+                }
+                
+            }).catch(error => {
+                console.error('html2canvas error:', error);
+                alert('Error capturing content for PDF. Please try again.');
+                // Restore hidden action buttons in case of error
+                actionElements.forEach(element => {
+                    element.style.display = '';
+                });
+            });
+            
+        } catch (error) {
+            console.error('exportToPDF error:', error);
+            alert('❌ PDF export failed: ' + error.message);
+        } finally {
+            // Always restore original question states
+            try {
+                allDetails.forEach((detail, index) => {
+                    if (originalStates && originalStates[index] !== undefined) {
+                        detail.style.display = originalStates[index];
+                    }
+                });
+                allIcons.forEach(icon => {
+                    if (!originalStates || !originalStates.some(state => state === 'block')) {
+                        icon.classList.remove('expanded');
+                    }
+                });
+            } catch (restoreError) {
+                console.error('Error restoring question states:', restoreError);
+            }
+        }
+    }
+    
+    // Fallback function if jsPDF is not available
+    function exportToPDFFallback() {
+        const content = document.querySelector('.premium-results');
+        const title = document.querySelector('.premium-header h2')?.textContent || 'Mock Interview Guide';
+        
+        const printWindow = window.open('', '_blank');
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>${title}</title>
+                <meta charset="utf-8">
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; color: #333; }
+                    .premium-results { background: white; }
+                    .question-details { display: block !important; }
+                    .actions, .btn, button, .expand-icon, .expand-all-btn, [onclick] { display: none !important; }
+                    .question-header { cursor: default; }
+                    .question-container { margin-bottom: 20px; page-break-inside: avoid; border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+                    @media print { body { margin: 0; } @page { margin: 2cm; } }
+                </style>
+            </head>
+            <body>
+                <div style="text-align: center; margin-bottom: 30px; padding: 20px; border-bottom: 2px solid #2c3e50;">
+                    <h1 style="color: #2c3e50; margin: 0; font-size: 24px;">${title}</h1>
+                    <p style="color: #888; font-size: 12px; margin-top: 10px;">To save as PDF: Press Cmd+P (Mac) or Ctrl+P (Windows), then choose "Save as PDF"</p>
+                </div>
+                ${content.innerHTML}
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+    }
+    
+    function exportToWord() {
+        // Get the content to export
+        const content = document.querySelector('.premium-results');
+        const title = 'Mock Interview Guide';
+        
+        // Clone the content and modify for export
+        const clonedContent = content.cloneNode(true);
+        
+        // Show all question details
+        const allDetails = clonedContent.querySelectorAll('[id^="details-"]');
+        allDetails.forEach(detail => {
+            detail.style.display = 'block';
+        });
+        
+        // Remove interactive elements
+        const elementsToRemove = clonedContent.querySelectorAll('.expand-icon, .expand-all-btn, .actions');
+        elementsToRemove.forEach(element => {
+            element.remove();
+        });
+        
+        // Remove click handlers
+        const questionHeaders = clonedContent.querySelectorAll('.question-header');
+        questionHeaders.forEach(header => {
+            header.style.cursor = 'default';
+            header.removeAttribute('onclick');
+        });
+        
+        // Create HTML content for Word
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>${title}</title>
+                <style>
+                    body { 
+                        font-family: 'Times New Roman', serif; 
+                        line-height: 1.6; 
+                        margin: 40px;
+                        color: #333;
+                    }
+                    .premium-header h2 {
+                        color: #2c3e50;
+                        text-align: center;
+                        border-bottom: 2px solid #2c3e50;
+                        padding-bottom: 10px;
+                    }
+                    .section h3 {
+                        color: #2c3e50;
+                        border-bottom: 1px solid #2c3e50;
+                        padding-bottom: 5px;
+                    }
+                    .question-container {
+                        margin-bottom: 25px;
+                        border: 1px solid #ddd;
+                        padding: 15px;
+                        border-radius: 5px;
+                    }
+                    .question-category-badge {
+                        background: #2c3e50;
+                        color: white;
+                        padding: 5px 10px;
+                        border-radius: 3px;
+                        font-size: 12px;
+                        margin-bottom: 10px;
+                        display: inline-block;
+                    }
+                    .strategic-approach, .sample-framework, .success-tips {
+                        background: #f8f9fa;
+                        padding: 10px;
+                        margin: 10px 0;
+                        border-left: 3px solid #007bff;
+                    }
+                    .key-points li {
+                        margin: 5px 0;
+                    }
+                </style>
+            </head>
+            <body>
+                ${clonedContent.outerHTML}
+            </body>
+            </html>
+        `;
+        
+        // Create blob and download
+        const blob = new Blob([htmlContent], {
+            type: 'application/msword'
+        });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Mock_Interview_Guide.doc';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    // Optional: Expand first question by default
+    document.addEventListener('DOMContentLoaded', function() {
+        // You can uncomment the line below to expand the first question by default
+        // toggleQuestion(1);
+    });
+</script>
+
+<!-- Load jsPDF library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>

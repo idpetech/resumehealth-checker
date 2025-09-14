@@ -221,19 +221,35 @@
                </button>
         </div>
         
-           <!-- Resume Rewrite Card - Coming Soon -->
-           <div class="bg-gray-50 bg-opacity-70 p-6 rounded-2xl border border-gray-200 flex flex-col justify-between opacity-60">
+           <!-- Resume Rewrite Card - EPIC 1 COMPLETE -->
+           <div class="bg-purple-50 bg-opacity-70 p-6 rounded-2xl border border-purple-100 flex flex-col justify-between">
                <div>
-                   <div class="flex items-center text-gray-500 mb-2">
+                   <div class="flex items-center text-purple-600 mb-2">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
                            <path d="M16 2H8a2 2 0 00-2 2v16a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2zM9 10h6v2H9v-2zm0-4h6v2H9V6zm0 8h6v2H9v-2z"/>
                        </svg>
                        <h2 class="text-xl font-bold">Resume Rewrite</h2>
                    </div>
-                   <p class="text-sm text-gray-500 mt-2">A complete rewrite of your resume to make it more professional and compelling.</p>
+                   <p class="text-sm text-gray-700 mt-2">Complete job-targeted resume transformation. Upload your resume + job posting for a professional rewrite.</p>
                </div>
-               <button class="mt-6 w-full py-3 px-4 rounded-xl font-bold text-gray-400 bg-gray-300 cursor-not-allowed" disabled>
-                   Coming Soon
+               <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-lg" data-product="resume_rewrite" data-price="4.99">
+                   Buy Now ($4.99)
+               </button>
+           </div>
+
+           <!-- Mock Interview Card -->
+           <div class="bg-red-50 bg-opacity-70 p-6 rounded-2xl border border-red-100 flex flex-col justify-between">
+               <div>
+                   <div class="flex items-center text-red-600 mb-2">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                           <path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm-1.5 15l-5-5 1.414-1.414L10.5 14.172l7.086-7.086L19 8.5l-8.5 8.5z"/>
+                       </svg>
+                       <h2 class="text-xl font-bold">Mock Interview</h2>
+                   </div>
+                   <p class="text-sm text-gray-700 mt-2">Complete interview simulation with strategic answers and company-specific preparation.</p>
+               </div>
+               <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-lg" data-product="mock_interview" data-price="3.99">
+                   Buy Now ($3.99)
                </button>
            </div>
 
@@ -891,7 +907,7 @@
            }
 
            // Check if job posting is required
-           if (productType === 'job_fit_analysis' || productType === 'cover_letter') {
+           if (productType === 'job_fit_analysis' || productType === 'cover_letter' || productType === 'resume_rewrite' || productType === 'mock_interview') {
                // Show job posting modal
                const jobPostingTextarea = document.getElementById('jobPostingTextarea');
                const jobPostingModal = document.getElementById('jobPostingModal');
@@ -1025,6 +1041,93 @@
                });
            }
        });
+
+       // Export functions for PDF and DOCX downloads
+       async function exportToPDF(analysisId) {
+           try {
+               showMessage('Generating PDF export...', 'info');
+               
+               const response = await fetch(`/api/v1/export/${analysisId}/pdf`);
+               
+               if (!response.ok) {
+                   if (response.status === 402) {
+                       showMessage('Payment required to export', 'error');
+                       return;
+                   } else if (response.status === 404) {
+                       showMessage('Analysis not found', 'error');
+                       return;
+                   } else {
+                       throw new Error(`HTTP ${response.status}`);
+                   }
+               }
+               
+               // Get the blob data
+               const blob = await response.blob();
+               
+               // Create download link
+               const url = window.URL.createObjectURL(blob);
+               const a = document.createElement('a');
+               a.href = url;
+               a.download = getExportFilename(analysisId, 'pdf');
+               document.body.appendChild(a);
+               a.click();
+               document.body.removeChild(a);
+               window.URL.revokeObjectURL(url);
+               
+               showMessage('PDF export completed!', 'success');
+               
+           } catch (error) {
+               console.error('PDF export error:', error);
+               showMessage('Failed to export PDF: ' + error.message, 'error');
+           }
+       }
+
+       async function exportToDOCX(analysisId) {
+           try {
+               showMessage('Generating DOCX export...', 'info');
+               
+               const response = await fetch(`/api/v1/export/${analysisId}/docx`);
+               
+               if (!response.ok) {
+                   if (response.status === 400) {
+                       showMessage('DOCX export not available for this analysis type', 'error');
+                       return;
+                   } else if (response.status === 402) {
+                       showMessage('Payment required to export', 'error');
+                       return;
+                   } else if (response.status === 404) {
+                       showMessage('Analysis not found', 'error');
+                       return;
+                   } else {
+                       throw new Error(`HTTP ${response.status}`);
+                   }
+               }
+               
+               // Get the blob data
+               const blob = await response.blob();
+               
+               // Create download link
+               const url = window.URL.createObjectURL(blob);
+               const a = document.createElement('a');
+               a.href = url;
+               a.download = getExportFilename(analysisId, 'docx');
+               document.body.appendChild(a);
+               a.click();
+               document.body.removeChild(a);
+               window.URL.revokeObjectURL(url);
+               
+               showMessage('DOCX export completed!', 'success');
+               
+           } catch (error) {
+               console.error('DOCX export error:', error);
+               showMessage('Failed to export DOCX: ' + error.message, 'error');
+           }
+       }
+
+       function getExportFilename(analysisId, extension) {
+           const timestamp = new Date().toISOString().split('T')[0];
+           return `resume-analysis-${timestamp}.${extension}`;
+       }
     </script>
 </body>
 </html>

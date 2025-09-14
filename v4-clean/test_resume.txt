@@ -1,0 +1,15 @@
+John Smith
+Software Engineer
+
+Experience:
+- Worked at ABC Company as a developer for 2 years
+- Built web applications using Python and JavaScript
+- Fixed bugs and added new features
+
+Education:
+- Bachelor's Degree in Computer Science from XYZ University
+
+Skills:
+- Python, JavaScript, HTML, CSS
+- Experience with databases
+- Problem solving

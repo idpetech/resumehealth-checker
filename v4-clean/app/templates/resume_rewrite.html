@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Rewrite Results - Resume Health Checker</title>
+    <style>
+        .premium-results {
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .premium-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .premium-header h2 {
+            color: #667eea;
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section h3 {
+            color: #667eea;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #667eea;
+            padding-bottom: 8px;
+        }
+        
+        .rewritten-content {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            line-height: 1.6;
+        }
+        
+        .experience-preview {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 12px 0;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .experience-preview h4 {
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+        }
+        
+        .bullet-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .bullet-list li {
+            padding: 4px 0;
+            padding-left: 16px;
+            position: relative;
+        }
+        
+        .bullet-list li:before {
+            content: "•";
+            color: #667eea;
+            position: absolute;
+            left: 0;
+        }
+        
+        .optimization-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        
+        .optimization-item {
+            background: #e8f5e8;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #28a745;
+        }
+        
+        .strengths-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .strengths-list li {
+            background: #f8f9ff;
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .success-prediction {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #28a745;
+            margin: 15px 0;
+        }
+        
+        .actions {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 8px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .print-btn {
+            background: #28a745;
+        }
+        
+        /* Print Styles - Hide actions and optimize for printing */
+        @media print {
+            .actions {
+                display: none !important;
+            }
+            
+            .premium-results {
+                background: white !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            body {
+                background: white !important;
+                margin: 0;
+                padding: 20px;
+                font-size: 12pt;
+                line-height: 1.5;
+            }
+            
+            .section {
+                break-inside: avoid;
+                margin-bottom: 20px;
+            }
+            
+            .premium-header {
+                border-bottom: 2px solid #000;
+            }
+            
+            .section h3 {
+                color: #000;
+                border-bottom: 1px solid #000;
+            }
+            
+            .rewritten-content, .experience-preview, .strengths-list li {
+                border: 1px solid #ccc;
+                background: #f9f9f9 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="premium-results">
+        <div class="premium-header">
+            <h2>📝 Complete Resume Rewrite</h2>
+            <p>Your job-targeted resume transformation</p>
+        </div>
+        
+        <div class="section">
+            <h3>🎯 Professional Summary</h3>
+            <div class="rewritten-content">
+                {{ rewritten_resume.professional_summary }}
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>💪 Core Competencies</h3>
+            <ul class="strengths-list">
+                {% for competency in rewritten_resume.core_competencies[:6] %}
+                <li>{{ competency }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h3>💼 Professional Experience</h3>
+            {% for exp in rewritten_resume.professional_experience[:2] %}
+            <div class="experience-preview">
+                <h4>{{ exp.title }} | {{ exp.company }}</h4>
+                <ul class="bullet-list">
+                    {% for bullet in exp.rewritten_bullets[:3] %}
+                    <li>{{ bullet }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="section">
+            <h3>🎯 Strategic Optimizations</h3>
+            <div class="optimization-grid">
+                <div class="optimization-item">
+                    <strong>Keywords Added:</strong> {{ (strategic_changes.keyword_optimization or [])|length }} job-specific terms
+                </div>
+                <div class="optimization-item">
+                    <strong>ATS Enhancements:</strong> {{ (strategic_changes.ats_enhancements or [])|length }} formatting improvements
+                </div>
+                <div class="optimization-item">
+                    <strong>Competitive Edge:</strong> {{ (strategic_changes.competitive_advantages or [])|length }} unique differentiators highlighted
+                </div>
+            </div>
+        </div>
+        
+        <div class="success-prediction">
+            <h3>🏆 Interview Generation Potential</h3>
+            <p>{{ interview_generation_potential }}</p>
+        </div>
+        
+        <div class="actions">
+            <button class="btn print-btn" onclick="window.print()">🖨️ Print Complete Resume</button>
+            <button class="btn" onclick="copyCompleteResume()">📋 Copy Complete Resume</button>
+            <a href="/" class="btn">🏠 Return to App</a>
+        </div>
+    </div>
+    
+    <script>
+        function copyCompleteResume() {
+            let resumeText = '';
+            
+            // Professional Summary
+            const summaryText = document.querySelector('.rewritten-content')?.textContent?.trim();
+            if (summaryText) {
+                resumeText += 'PROFESSIONAL SUMMARY\n' + summaryText + '\n\n';
+            }
+            
+            // Core Competencies
+            const competencies = Array.from(document.querySelectorAll('.strengths-list li'))
+                .map(li => li.textContent.trim());
+            if (competencies.length > 0) {
+                resumeText += 'CORE COMPETENCIES\n';
+                competencies.forEach(comp => {
+                    resumeText += '• ' + comp + '\n';
+                });
+                resumeText += '\n';
+            }
+            
+            // Professional Experience
+            const experienceItems = document.querySelectorAll('.experience-preview');
+            if (experienceItems.length > 0) {
+                resumeText += 'PROFESSIONAL EXPERIENCE\n';
+                experienceItems.forEach(item => {
+                    const header = item.querySelector('h4')?.textContent?.trim();
+                    if (header) {
+                        resumeText += '\n' + header + '\n';
+                    }
+                    const bullets = Array.from(item.querySelectorAll('.bullet-list li'))
+                        .map(li => li.textContent.trim());
+                    bullets.forEach(bullet => {
+                        resumeText += '• ' + bullet + '\n';
+                    });
+                });
+            }
+            
+            // Copy to clipboard
+            if (resumeText.trim()) {
+                navigator.clipboard.writeText(resumeText.trim()).then(() => {
+                    alert('✅ Complete resume (Summary + Skills + Experience) copied to clipboard!');
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = resumeText.trim();
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        alert('✅ Complete resume copied to clipboard!');
+                    } catch (err) {
+                        alert('❌ Failed to copy to clipboard. Please select and copy manually.');
+                    }
+                    document.body.removeChild(textArea);
+                });
+            } else {
+                alert('❌ No resume content found to copy.');
+            }
+        }
+    </script>
+</body>
+</html>

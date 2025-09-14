@@ -1,0 +1,936 @@
+<!-- Base template for embedded analysis results -->
+<style>
+    .premium-results {
+        padding: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        max-width: 1200px;
+        margin: 0 auto;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+    
+    .premium-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #667eea;
+    }
+    
+    .premium-header h2 {
+        color: #667eea;
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+    
+    .premium-header p {
+        color: #666;
+        margin: 10px 0 0 0;
+        font-size: 1rem;
+    }
+    
+    .section {
+        margin-bottom: 30px;
+    }
+    
+    .section h3 {
+        color: #667eea;
+        font-size: 1.4rem;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #667eea;
+        padding-bottom: 8px;
+        font-weight: 600;
+    }
+    
+    .section h4 {
+        color: #333;
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        margin-top: 15px;
+        font-weight: 600;
+    }
+    
+    .content-block {
+        background: #f8f9ff;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+        line-height: 1.6;
+        margin: 15px 0;
+    }
+    
+    .highlight-box {
+        background: #e8f5e8;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 3px solid #28a745;
+        margin: 12px 0;
+    }
+    
+    .warning-box {
+        background: #fff3cd;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 3px solid #ffc107;
+        margin: 12px 0;
+    }
+    
+    .error-box {
+        background: #f8d7da;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 3px solid #dc3545;
+        margin: 12px 0;
+    }
+    
+    .info-box {
+        background: #d1ecf1;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 3px solid #17a2b8;
+        margin: 12px 0;
+    }
+    
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin: 15px 0;
+    }
+    
+    .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin: 15px 0;
+    }
+    
+    @media (max-width: 768px) {
+        .grid-2, .grid-3 {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .score-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-align: center;
+        min-width: 60px;
+    }
+    
+    .score-excellent {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    
+    .score-good {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+    }
+    
+    .score-fair {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: #333;
+    }
+    
+    .score-poor {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+    }
+    
+    .bullet-list {
+        list-style: none;
+        padding: 0;
+        margin: 10px 0;
+    }
+    
+    .bullet-list li {
+        padding: 6px 0 6px 20px;
+        position: relative;
+        line-height: 1.5;
+    }
+    
+    .bullet-list li:before {
+        content: "•";
+        color: #667eea;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+        top: 6px;
+    }
+    
+    .numbered-list {
+        counter-reset: item;
+        list-style: none;
+        padding: 0;
+    }
+    
+    .numbered-list li {
+        counter-increment: item;
+        padding: 8px 0 8px 30px;
+        position: relative;
+        line-height: 1.5;
+    }
+    
+    .numbered-list li:before {
+        content: counter(item);
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        left: 0;
+        top: 8px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .actions {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        margin: 6px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn:active {
+        transform: translateY(0);
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    
+    .btn-success:hover {
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    .btn-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+    
+    .btn-info:hover {
+        box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+    }
+    
+    .btn-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: #333;
+    }
+    
+    .btn-warning:hover {
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+    
+    .btn-danger:hover {
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    }
+    
+    /* Progress bars */
+    .progress-container {
+        background: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 10px 0;
+        height: 20px;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        transition: width 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    .progress-excellent {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    
+    .progress-good {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+    
+    .progress-fair {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    }
+    
+    .progress-poor {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+    
+    /* Print styles */
+    @media print {
+        .actions {
+            display: none !important;
+        }
+        
+        .premium-results {
+            background: white !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        body {
+            background: white !important;
+            margin: 0;
+            padding: 15px;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #000 !important;
+        }
+        
+        .section {
+            break-inside: avoid;
+            margin-bottom: 20px;
+        }
+        
+        .premium-header {
+            border-bottom: 2px solid #000;
+        }
+        
+        .premium-header h2 {
+            color: #000 !important;
+        }
+        
+        .section h3 {
+            color: #000 !important;
+            border-bottom: 1px solid #000;
+        }
+        
+        .content-block, .highlight-box, .warning-box, .error-box, .info-box {
+            border: 1px solid #ccc;
+            background: #f9f9f9 !important;
+            color: #000 !important;
+        }
+        
+        .score-badge {
+            border: 1px solid #ccc !important;
+            background: #f0f0f0 !important;
+            color: #000 !important;
+        }
+        
+        .btn {
+            display: none !important;
+        }
+    }
+</style>
+
+<script>
+    // Common export functions for all templates
+    function copyToClipboard(elementSelector) {
+        const element = document.querySelector(elementSelector);
+        if (!element) {
+            alert('❌ Content not found to copy.');
+            return;
+        }
+        
+        const content = element.textContent || element.innerText;
+        navigator.clipboard.writeText(content).then(() => {
+            alert('✅ Content copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = content;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert('✅ Content copied to clipboard!');
+            } catch (err) {
+                alert('❌ Failed to copy to clipboard. Please select and copy manually.');
+            }
+            document.body.removeChild(textArea);
+        });
+    }
+    
+    function exportToPDF(analysisId = null) {
+        // Show loading message
+        const pdfBtn = document.querySelector('.btn-danger, .pdf-btn, [onclick*="exportToPDF"]');
+        if (pdfBtn) {
+            const originalText = pdfBtn.textContent;
+            pdfBtn.textContent = '⏳ Generating PDF...';
+            pdfBtn.disabled = true;
+            
+            setTimeout(() => {
+                pdfBtn.textContent = originalText;
+                pdfBtn.disabled = false;
+            }, 3000);
+        }
+        
+        try {
+            // Check if jsPDF is available
+            if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
+                console.log('jsPDF not available, using fallback');
+                exportToPDFFallback();
+                return;
+            }
+            
+            // Get the content to export
+            const content = document.querySelector('.premium-results');
+            
+            // Use html2canvas to capture the content
+            html2canvas(content, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                width: content.scrollWidth,
+                height: content.scrollHeight
+            }).then(canvas => {
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = 190; // A4 width in mm minus margins
+                    const pageHeight = 290; // A4 height in mm minus margins
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    let heightLeft = imgHeight;
+                    
+                    let position = 10; // Start 10mm from top
+                    
+                    // Add first page
+                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                    
+                    // Add additional pages if needed
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight + 10;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    
+                    // Save the PDF with appropriate filename
+                    const filename = getFilename('pdf', analysisId);
+                    pdf.save(filename);
+                    
+                } catch (error) {
+                    console.error('PDF generation error:', error);
+                    alert('Error generating PDF. Please try the fallback option.');
+                    exportToPDFFallback();
+                }
+                
+            }).catch(error => {
+                console.error('html2canvas error:', error);
+                alert('Error capturing content. Using fallback method.');
+                exportToPDFFallback();
+            });
+            
+        } catch (error) {
+            console.error('exportToPDF error:', error);
+            exportToPDFFallback();
+        }
+    }
+    
+    function exportToPDFFallback(analysisId = null) {
+        // Get the content to export
+        const content = document.querySelector('.premium-results');
+        const title = document.querySelector('.premium-header h2')?.textContent || 'Analysis Results';
+        
+        // Create a new window with PDF-optimized content
+        const printWindow = window.open('', '_blank');
+        const filename = getFilename('pdf', analysisId);
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>${title}</title>
+                <meta charset="utf-8">
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        margin: 20px;
+                        line-height: 1.6;
+                        color: #333;
+                    }
+                    .premium-results { background: white; }
+                    .actions { display: none !important; }
+                    .btn { display: none !important; }
+                    .premium-header h2 {
+                        color: #2c3e50;
+                        text-align: center;
+                        border-bottom: 2px solid #2c3e50;
+                        padding-bottom: 10px;
+                    }
+                    .section h3 {
+                        color: #2c3e50;
+                        border-bottom: 1px solid #2c3e50;
+                        padding-bottom: 5px;
+                    }
+                    .content-block, .highlight-box, .warning-box, .error-box, .info-box {
+                        background: #f8f9fa;
+                        padding: 10px;
+                        margin: 10px 0;
+                        border-left: 3px solid #007bff;
+                        border-radius: 4px;
+                    }
+                    .bullet-list { list-style-type: disc; padding-left: 20px; }
+                    .bullet-list li { margin: 5px 0; }
+                    @media print {
+                        body { margin: 0; }
+                        @page { margin: 2cm; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="pdf-header" style="text-align: center; margin-bottom: 30px; padding: 20px; border-bottom: 2px solid #2c3e50;">
+                    <h1 style="color: #2c3e50; margin: 0; font-size: 24px;">${title}</h1>
+                    <p style="color: #888; font-size: 12px; margin-top: 10px;">To save as PDF: Press Cmd+P (Mac) or Ctrl+P (Windows), then choose "Save as PDF"</p>
+                </div>
+                ${content.innerHTML}
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+    }
+    
+    function exportToWord(analysisId = null) {
+        // Get the content to export
+        const content = document.querySelector('.premium-results');
+        const title = document.querySelector('.premium-header h2')?.textContent || 'Analysis Results';
+        
+        // Clone the content and modify for export
+        const clonedContent = content.cloneNode(true);
+        
+        // Remove interactive elements
+        const elementsToRemove = clonedContent.querySelectorAll('.actions, .btn');
+        elementsToRemove.forEach(element => {
+            element.remove();
+        });
+        
+        // Create HTML content for Word
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>${title}</title>
+                <style>
+                    body { 
+                        font-family: 'Times New Roman', serif; 
+                        line-height: 1.6; 
+                        margin: 40px;
+                        color: #333;
+                    }
+                    .premium-header h2 {
+                        color: #2c3e50;
+                        text-align: center;
+                        border-bottom: 2px solid #2c3e50;
+                        padding-bottom: 10px;
+                    }
+                    .section h3 {
+                        color: #2c3e50;
+                        border-bottom: 1px solid #2c3e50;
+                        padding-bottom: 5px;
+                    }
+                    .content-block, .highlight-box, .warning-box, .error-box, .info-box {
+                        background: #f8f9fa;
+                        padding: 10px;
+                        margin: 10px 0;
+                        border-left: 3px solid #007bff;
+                    }
+                    .bullet-list li {
+                        margin: 5px 0;
+                    }
+                </style>
+            </head>
+            <body>
+                ${clonedContent.outerHTML}
+            </body>
+            </html>
+        `;
+        
+        // Create blob and download
+        const blob = new Blob([htmlContent], {
+            type: 'application/msword'
+        });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = getFilename('docx', analysisId);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    function getFilename(extension, analysisId = null) {
+        const title = document.querySelector('.premium-header h2')?.textContent || 'Analysis_Results';
+        const cleanTitle = title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
+        const timestamp = new Date().toISOString().slice(0, 10);
+        
+        if (analysisId) {
+            return `${cleanTitle}_${analysisId}_${timestamp}.${extension}`;
+        }
+        return `${cleanTitle}_${timestamp}.${extension}`;
+    }
+    
+    // Utility function to format scores with appropriate styling
+    function getScoreClass(score) {
+        if (score >= 85) return 'score-excellent';
+        if (score >= 70) return 'score-good';
+        if (score >= 50) return 'score-fair';
+        return 'score-poor';
+    }
+    
+    // Utility function to format progress bar styling
+    function getProgressClass(score) {
+        if (score >= 85) return 'progress-excellent';
+        if (score >= 70) return 'progress-good';
+        if (score >= 50) return 'progress-fair';
+        return 'progress-poor';
+    }
+</script>
+
+<!-- Load external libraries for PDF generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<div class="premium-results">
+    <div class="premium-header">
+        <h2>📊 Complete Resume Analysis</h2>
+        <p>Comprehensive review with actionable improvements</p>
+    </div>
+    
+    <!-- Overall Score Section -->
+    <div class="section">
+        <h3>🎯 Overall Resume Score</h3>
+        <div class="grid-2">
+            <div class="content-block">
+                <div style="text-align: center;">
+                    
+                        <div class="score-badge score-good">
+                            80/100
+                        </div>
+                        <div class="progress-container" style="margin-top: 15px;">
+                            <div class="progress-bar progress-good" 
+                                 style="width: 80%;">
+                                80%
+                            </div>
+                        </div>
+                    
+                </div>
+            </div>
+            <div class="content-block">
+                <h4>📈 Score Breakdown</h4>
+                <ul class="bullet-list">
+                    
+                    <li><strong>Content Quality:</strong> 80/100</li>
+                    
+                    <li><strong>Formatting:</strong> 75/100</li>
+                    
+                    <li><strong>Keywords:</strong> 70/100</li>
+                    
+                    <li><strong>Experience:</strong> 85/100</li>
+                    
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Key Strengths -->
+    
+    <div class="section">
+        <h3>💪 Key Strengths</h3>
+        <div class="grid-2">
+            
+            <div class="highlight-box">
+                <strong>Strength 1:</strong> Proficient in multiple programming languages (Python, JavaScript, React) which are in high demand, showcasing versatility.
+            </div>
+            
+            <div class="highlight-box">
+                <strong>Strength 2:</strong> Experience leading a team indicates strong leadership skills and the ability to mentor others, making you a valuable asset to any organization.
+            </div>
+            
+            <div class="highlight-box">
+                <strong>Strength 3:</strong> Recent degree in Computer Science coupled with hands-on experience positions you as a fresh yet competent candidate ready to tackle modern challenges.
+            </div>
+            
+        </div>
+    </div>
+    
+    
+    <!-- Critical Issues -->
+    
+    <div class="section">
+        <h3>🚨 Critical Issues to Fix</h3>
+        <ol class="numbered-list">
+            
+            <li>
+                <div class="error-box">
+                    <strong>Issue 1:</strong> The experience section could benefit from more detail about your contributions and impacts on projects.
+                    
+                    <br><strong>Fix:</strong> Review the strategic additions section for recommendations
+                    
+                </div>
+            </li>
+            
+            <li>
+                <div class="error-box">
+                    <strong>Issue 2:</strong> A professional summary or objective statement is missing, which can encapsulate your career aspirations and what you bring to potential employers.
+                    
+                    <br><strong>Fix:</strong> Review the strategic additions section for recommendations
+                    
+                </div>
+            </li>
+            
+        </ol>
+    </div>
+    
+    
+    <!-- Detailed Section Analysis -->
+    <div class="section">
+        <h3>🔍 Section-by-Section Analysis</h3>
+        
+        
+        
+        <div class="content-block" style="margin-bottom: 25px;">
+            <h4>Professional Summary</h4>
+            
+            
+            
+                <div class="score-badge score-good" style="margin-bottom: 15px;">
+                    75/100
+                </div>
+            
+            
+            
+            
+            <div class="highlight-box">
+                <strong>✅ Strengths:</strong>
+                <ul class="bullet-list" style="margin-top: 10px;">
+                    
+                    <li>This summary immediately highlights your experience, leadership, and passion for technology, making a strong first impression on hiring managers.</li>
+                    
+                </ul>
+            </div>
+            
+            
+            
+            
+            
+            <div class="info-box">
+                <strong>💡 Recommendations:</strong>
+                <ul class="bullet-list" style="margin-top: 10px;">
+                    
+                    <li>Enthusiastic Software Engineer with over 3 years of experience in developing scalable web applications using Python, JavaScript, and React. Proven ability to lead and mentor teams towards successful project delivery. Passionate about leveraging technology to solve complex problems and improve user experiences.</li>
+                    
+                </ul>
+            </div>
+            
+        </div>
+        
+        <div class="content-block" style="margin-bottom: 25px;">
+            <h4>Experience - Tech Corp</h4>
+            
+            
+            
+                <div class="score-badge score-good" style="margin-bottom: 15px;">
+                    75/100
+                </div>
+            
+            
+            
+            
+            <div class="highlight-box">
+                <strong>✅ Strengths:</strong>
+                <ul class="bullet-list" style="margin-top: 10px;">
+                    
+                    <li>This revision quantifies your impact, making it clear how your leadership directly contributed to the company&#39;s success.</li>
+                    
+                </ul>
+            </div>
+            
+            
+            
+            <div class="warning-box">
+                <strong>⚠️ Areas for Improvement:</strong>
+                <ul class="bullet-list" style="margin-top: 10px;">
+                    
+                    <li>- Led team of 3 developers</li>
+                    
+                </ul>
+            </div>
+            
+            
+            
+            <div class="info-box">
+                <strong>💡 Recommendations:</strong>
+                <ul class="bullet-list" style="margin-top: 10px;">
+                    
+                    <li>- Spearheaded a team of 3 developers in the successful delivery of 5+ projects, resulting in a 30% increase in deployment efficiency and improved user satisfaction ratings by 20%.</li>
+                    
+                </ul>
+            </div>
+            
+        </div>
+        
+        
+    </div>
+    
+    <!-- ATS Optimization -->
+    
+    <div class="section">
+        <h3>🤖 ATS Optimization</h3>
+        <div class="grid-2">
+            <div class="info-box">
+                <h4>ATS Score</h4>
+                
+                    <div class="score-badge score-good">
+                        75/100
+                    </div>
+                    <div class="progress-container" style="margin-top: 15px;">
+                        <div class="progress-bar progress-good" 
+                             style="width: 75%;">
+                            75%
+                        </div>
+                    </div>
+                
+            </div>
+            <div class="warning-box">
+                <h4>⚠️ ATS Issues Found</h4>
+                
+                <ul class="bullet-list">
+                    
+                    <li>Incorporate more specific metrics to quantify your achievements, such as project success rates or performance improvements.</li>
+                    
+                    <li>Add relevant certifications or professional development courses, if any, to enhance ATS visibility.</li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+    
+    
+    <!-- Keyword Analysis -->
+    
+    <div class="section">
+        <h3>🔑 Keyword Analysis</h3>
+        <div class="grid-3">
+            
+            <div class="warning-box">
+                <h4>❌ Missing Keywords</h4>
+                <ul class="bullet-list">
+                    
+                    <li>Add relevant industry keywords</li>
+                    
+                </ul>
+            </div>
+            
+            
+            
+            <div class="highlight-box">
+                <h4>✅ Present Keywords</h4>
+                <ul class="bullet-list">
+                    
+                    <li>Python</li>
+                    
+                    <li>JavaScript</li>
+                    
+                    <li>React</li>
+                    
+                </ul>
+            </div>
+            
+            
+            
+            <div class="info-box">
+                <h4>💡 Recommended Additions</h4>
+                <ul class="bullet-list">
+                    
+                    <li>Include more specific technical terms</li>
+                    
+                </ul>
+            </div>
+            
+        </div>
+    </div>
+    
+    
+    <!-- Action Plan -->
+    
+    <div class="section">
+        <h3>📋 Priority Action Plan</h3>
+        <ol class="numbered-list">
+            
+            <li>
+                <div class="content-block">
+                    <strong>High Priority:</strong> Incorporate a Professional Summary at the top of your resume.
+                    
+                    <br><em>Impact:</em> Will improve your resume effectiveness
+                    
+                </div>
+            </li>
+            
+            <li>
+                <div class="content-block">
+                    <strong>High Priority:</strong> Add project descriptions under your work experience that illustrate your contributions and the technologies used.
+                    
+                    <br><em>Impact:</em> Will improve your resume effectiveness
+                    
+                </div>
+            </li>
+            
+        </ol>
+    </div>
+    
+    
+    <!-- Success Prediction -->
+    
+    <div class="highlight-box" style="margin: 25px 0;">
+        <h3>🏆 Interview Generation Potential</h3>
+        <p style="font-size: 1.1rem; margin-bottom: 0;">With these enhancements, you are well on your way to standing out in a competitive job market. Your ability to articulate your value will resonate with employers, leading to increased interview opportunities. Remember, your journey is just beginning, and with your skill set and determination, success is within your reach!</p>
+    </div>
+    
+    
+    <div class="actions">
+        <button class="btn btn-success" onclick="window.print()">🖨️ Print Analysis</button>
+        <button class="btn btn-danger" onclick="exportToPDF('test-123')">📄 Export PDF</button>
+        <button class="btn btn-info" onclick="exportToWord('test-123')">📝 Export DOCX</button>
+        <button class="btn" onclick="copyToClipboard('.premium-results')">📋 Copy Analysis</button>
+        <a href="/" class="btn">🏠 Return to App</a>
+    </div>
+</div>
