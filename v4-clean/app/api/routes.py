@@ -287,7 +287,7 @@ async def create_payment_session(
     - job_posting: Optional job posting text for job-specific products
     """
     logger.info(f"Payment session creation: {analysis_id}, {product_type}, price={price}")
-    print(f"DEBUG: Received price parameter: '{price}' (type: {type(price)})")
+    logger.debug(f"Received price parameter: '{price}' (type: {type(price)})")
     
     try:
         # Verify analysis exists
@@ -480,77 +480,12 @@ async def payment_success(
                     "analysis_id": analysis_id
                 }
         
-        # Return success page with results
-        success_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Payment Successful - Resume Health Checker</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
-                .success {{ color: #28a745; }}
-                .analysis-box {{ background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px; }}
-                .btn {{ background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; }}
-            </style>
-        </head>
-        <body>
-            <h1 class="success">&#10003; Payment Successful!</h1>
-            <p>Thank you for your payment. Your premium analysis is ready!</p>
-            
-            <div class="analysis-box">
-                <h3>Your Premium {product_type.replace('_', ' ').title()}</h3>"""
-        
-        # Handle different types of premium results
-        premium_result = analysis.get('premium_result')
-        if premium_result is None:
-            success_html += """
-                <p style="color: #ffc107;">⏳ Your premium analysis is being generated. Please refresh this page in a moment.</p>"""
-        elif isinstance(premium_result, dict) and premium_result.get('error'):
-            success_html += f"""
-                <div style="color: #dc3545; background: #f8d7da; padding: 15px; border-radius: 5px;">
-                    <h4>&#9888; Analysis Service Issue</h4>
-                    <p>{premium_result.get('message', 'Unknown error occurred')}</p>
-                    <p><strong>Analysis ID:</strong> {analysis_id}</p>
-                    <p><em>Please screenshot this page and contact support for assistance.</em></p>
-                </div>"""
-        else:
-            # Generate detailed HTML based on product type
-            try:
-                if product_type == "resume_analysis":
-                    analysis_html = generate_embedded_resume_analysis_html(premium_result, analysis_id)
-                elif product_type == "job_fit_analysis":
-                    analysis_html = generate_embedded_job_fit_html(premium_result, analysis_id)
-                elif product_type == "cover_letter":
-                    analysis_html = generate_embedded_cover_letter_html(premium_result, analysis_id)
-                elif product_type == "resume_rewrite":
-                    analysis_html = generate_embedded_resume_rewrite_html(premium_result, analysis_id)
-                elif product_type == "mock_interview":
-                    analysis_html = generate_embedded_mock_interview_html(premium_result, analysis_id)
-                else:
-                    raise ValueError(f"Unknown product type for HTML generation: {product_type}")
-                
-                success_html += analysis_html
-                # Note: Action buttons are already included in the embedded HTML generators
-                    
-            except Exception as e:
-                logger.error(f"Failed to generate premium {product_type} HTML: {e}")
-                success_html += f"""
-                    <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                        <h3>Your Premium {product_type.replace('_', ' ').title()}</h3>
-                        <pre style="white-space: pre-wrap; font-family: Arial, sans-serif;">{premium_result}</pre>
-                        <div style="text-align: center; margin-top: 30px;">
-                            <button onclick="window.print()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; cursor: pointer;">&#128424; Print</button>
-                            <a href="/" style="background: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; margin: 5px; display: inline-block;">&#127968; Back to App</a>
-                        </div>
-                    </div>"""
-        
-        success_html += """
-            </div>
-        </body>
-        </html>
-        """
-        
-        return HTMLResponse(content=success_html)
+        # Return success page using template
+        return templates.TemplateResponse("payment_success.html", {
+            "request": request,
+            "analysis_id": analysis_id,
+            "product_type": product_type
+        })
         
     except Exception as e:
         logger.error(f"Payment success handler error: {e}")
@@ -560,32 +495,15 @@ async def payment_success(
         )
 
 @router.get("/payment/cancel")
-async def payment_cancel(analysis_id: str, product_type: str):
+async def payment_cancel(request: Request, analysis_id: str, product_type: str):
     """Handle payment cancellation"""
     logger.info(f"Payment cancelled: analysis {analysis_id}, product {product_type}")
     
-    cancel_html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Payment Cancelled - Resume Health Checker</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; text-align: center; }}
-            .cancel {{ color: #dc3545; }}
-            .btn {{ background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 10px; }}
-        </style>
-    </head>
-    <body>
-        <h1 class="cancel">Payment Cancelled</h1>
-        <p>Your payment was cancelled. No charges were made.</p>
-        <p>You can still access your free analysis results.</p>
-        
-        <a href="/" class="btn">Return to Resume Checker</a>
-    </body>
-    </html>
-    """
-    
-    return HTMLResponse(content=cancel_html)
+    return templates.TemplateResponse("payment_cancel.html", {
+        "request": request,
+        "analysis_id": analysis_id,
+        "product_type": product_type
+    })
 
 @router.post("/webhooks/stripe")
 async def stripe_webhook(request: Request):
@@ -1019,6 +937,7 @@ async def generate_mock_interview_premium(
 
 @router.get("/payment/mock")
 async def mock_payment_page(
+    request: Request,
     session_id: str,
     analysis_id: str,
     product_type: str
@@ -1026,125 +945,13 @@ async def mock_payment_page(
     """Mock payment page for testing when Stripe is not configured"""
     from ..core.config import config
     
-    # Return a simple HTML page for mock payment
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Mock Payment - Resume Health Checker</title>
-        <style>
-            body {{
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin: 0;
-                color: #333;
-            }}
-            .container {{
-                background: white;
-                padding: 40px;
-                border-radius: 16px;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-                text-align: center;
-                max-width: 500px;
-                width: 90%;
-            }}
-            .success-icon {{
-                font-size: 4rem;
-                color: #28a745;
-                margin-bottom: 20px;
-            }}
-            h1 {{
-                color: #333;
-                margin-bottom: 20px;
-            }}
-            .info {{
-                background: #f8f9fa;
-                padding: 20px;
-                border-radius: 8px;
-                margin: 20px 0;
-                text-align: left;
-            }}
-            .info p {{
-                margin: 5px 0;
-                font-size: 14px;
-            }}
-            .btn {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 16px;
-                font-weight: 600;
-                margin: 10px;
-                text-decoration: none;
-                display: inline-block;
-            }}
-            .btn:hover {{
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="success-icon">&#10003;</div>
-            <h1>Mock Payment Successful!</h1>
-            <p>This is a test payment page for development purposes.</p>
-            
-            <div class="info">
-                <p><strong>Session ID:</strong> {session_id}</p>
-                <p><strong>Analysis ID:</strong> {analysis_id}</p>
-                <p><strong>Product Type:</strong> {product_type}</p>
-                <p><strong>Environment:</strong> {config.environment}</p>
-            </div>
-            
-            <p>In a real implementation, this would redirect to Stripe Checkout.</p>
-            
-            <div class="actions">
-                <a href="/" class="btn" onclick="returnToApp()">Return to App</a>
-                <a href="/api/v1/admin/stats" class="btn">View Stats</a>
-            </div>
-            
-            <script>
-                // Mark analysis as paid and redirect to app
-                async function returnToApp() {{
-                    try {{
-                        // Mark payment as completed
-                        await fetch('/api/v1/payment/complete', {{
-                            method: 'POST',
-                            headers: {{'Content-Type': 'application/json'}},
-                            body: JSON.stringify({{
-                                analysis_id: '{analysis_id}',
-                                product_type: '{product_type}',
-                                session_id: '{session_id}'
-                            }})
-                        }});
-                        
-                        // Redirect to main app with premium results
-                        window.location.href = '/?premium=true&product={product_type}&analysis_id={analysis_id}';
-                    }} catch (error) {{
-                        console.error('Error completing payment:', error);
-                        window.location.href = '/';
-                    }}
-                }}
-                
-                // Auto-redirect after 3 seconds
-                setTimeout(returnToApp, 3000);
-            </script>
-        </div>
-    </body>
-    </html>
-    """
-    
-    return HTMLResponse(content=html_content)
+    return templates.TemplateResponse("mock_payment.html", {
+        "request": request,
+        "session_id": session_id,
+        "analysis_id": analysis_id,
+        "product_type": product_type,
+        "environment": config.environment
+    })
 
 @router.get("/premium-results/{analysis_id}")
 async def premium_results_page(

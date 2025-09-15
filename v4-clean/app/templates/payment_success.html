@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Successful - Resume Health Checker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .success-icon {
+            font-size: 4rem;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">✅</div>
+        <h1>Payment Successful!</h1>
+        <p>Thank you! Your payment has been processed successfully.</p>
+        <p><strong>Analysis ID:</strong> {{ analysis_id }}</p>
+        <p><strong>Product:</strong> {{ product_type }}</p>
+        
+        <div style="margin: 30px 0;">
+            <p>Your premium analysis is being generated. You'll be redirected to your results automatically.</p>
+        </div>
+        
+        <a href="/?premium=true&product={{ product_type }}&analysis_id={{ analysis_id }}" class="btn">
+            View Premium Results
+        </a>
+        
+        <script>
+            // Auto-redirect to results after 3 seconds
+            setTimeout(() => {
+                window.location.href = '/?premium=true&product={{ product_type }}&analysis_id={{ analysis_id }}';
+            }, 3000);
+        </script>
+    </div>
+</body>
+</html>

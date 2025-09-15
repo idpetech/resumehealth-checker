@@ -1,0 +1,81 @@
+# Resume Health Checker v4.0 - Security & Build Exclusions
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+app.log
+server.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+test_database.db
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Test outputs
+test_export.*
+test_results.*
+*.docx
+*.pdf
+
+# Railway
+.railway/
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Local development
+local_config.py
+debug_*.py
+test_*.txt

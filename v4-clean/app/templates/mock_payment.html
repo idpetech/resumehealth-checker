@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Payment - Resume Health Checker</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        .success-icon {
+            font-size: 4rem;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">&#10003;</div>
+        <h1>Mock Payment Successful!</h1>
+        <p>This is a test payment page for development purposes.</p>
+        
+        <div class="info">
+            <p><strong>Session ID:</strong> {{ session_id }}</p>
+            <p><strong>Analysis ID:</strong> {{ analysis_id }}</p>
+            <p><strong>Product Type:</strong> {{ product_type }}</p>
+            <p><strong>Environment:</strong> {{ environment }}</p>
+        </div>
+        
+        <p>In a real implementation, this would redirect to Stripe Checkout.</p>
+        
+        <div class="actions">
+            <a href="/" class="btn" onclick="returnToApp()">Return to App</a>
+            <a href="/api/v1/admin/stats" class="btn">View Stats</a>
+        </div>
+        
+        <script>
+            // Mark analysis as paid and redirect to app
+            async function returnToApp() {
+                try {
+                    // Mark payment as completed
+                    await fetch('/api/v1/payment/complete', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            analysis_id: '{{ analysis_id }}',
+                            product_type: '{{ product_type }}',
+                            session_id: '{{ session_id }}'
+                        })
+                    });
+                    
+                    // Redirect to main app with premium results
+                    window.location.href = '/?premium=true&product={{ product_type }}&analysis_id={{ analysis_id }}';
+                } catch (error) {
+                    console.error('Error completing payment:', error);
+                    window.location.href = '/';
+                }
+            }
+            
+            // Auto-redirect after 3 seconds
+            setTimeout(returnToApp, 3000);
+        </script>
+    </div>
+</body>
+</html>
