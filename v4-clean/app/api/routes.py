@@ -1064,17 +1064,23 @@ def generate_premium_results_html(product_type: str, result: dict, analysis_id: 
         return f"<h1>Premium results for {product_type}</h1><pre>{result}</pre>"
 
 def generate_resume_analysis_html(result: dict, analysis_id: str) -> str:
-    """Generate HTML for premium resume analysis results"""
+    """Generate HTML for premium resume analysis results using template"""
     
-    # Extract data safely
-    overall_score = result.get('overall_score', 'N/A')
-    strengths = result.get('strength_highlights', [])
-    opportunities = result.get('improvement_opportunities', [])
-    ats_opt = result.get('ats_optimization', {})
-    content_enhancement = result.get('content_enhancement', {})
-    text_rewrites = result.get('text_rewrites', [])
-    competitive_advantages = result.get('competitive_advantages', '')
-    success_prediction = result.get('success_prediction', '')
+    # Prepare template context
+    context = {
+        "overall_score": result.get('overall_score', 'N/A'),
+        "industry_identified": result.get('industry_identified', 'Not specified'),
+        "strength_highlights": result.get('strength_highlights', []),
+        "improvement_opportunities": result.get('improvement_opportunities', []),
+        "ats_optimization": result.get('ats_optimization', {}),
+        "text_rewrites": result.get('text_rewrites', []),
+        "success_prediction": result.get('success_prediction', ''),
+        "analysis_id": analysis_id
+    }
+    
+    # Render template
+    template = templates.get_template("resume_analysis_full.html")
+    return template.render(context)
     
     html_content = f"""
     <!DOCTYPE html>
