@@ -2078,7 +2078,7 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
     # Create basic keyword_analysis (AI doesn't provide this, so create placeholder)
     keyword_analysis = {
         'missing_keywords': ['Add relevant industry keywords'],
-        'present_keywords': ['Python', 'JavaScript', 'React'],
+        'present_keywords': [],
         'recommended_additions': ['Include more specific technical terms']
     }
     
@@ -2176,8 +2176,21 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
     
     # Create keyword_match from optimization_keywords
     optimization_keywords = result.get('optimization_keywords', [])
+    # Extract actual matched keywords from the analysis result
+    matched_keywords = []
+    if 'matched_keywords' in result:
+        matched_keywords = result['matched_keywords']
+    elif 'keywords_found' in result:
+        matched_keywords = result['keywords_found']
+    elif 'present_keywords' in result:
+        matched_keywords = result['present_keywords']
+    
+    # If no matched keywords found, use empty list instead of hardcoded tech terms
+    if not matched_keywords:
+        matched_keywords = []
+    
     keyword_match = {
-        'matched_keywords': ['Python', 'JavaScript', 'React', 'Leadership'],  # Common matches
+        'matched_keywords': matched_keywords,  # Use actual keywords from analysis
         'missing_keywords': optimization_keywords[:6],  # First 6 optimization keywords
         'keyword_density': min(15, len(optimization_keywords) * 2)  # Calculate density
     }
