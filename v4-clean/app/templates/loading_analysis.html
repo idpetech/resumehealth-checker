@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Analyzing Your Resume - Resume Health Checker</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-container {
+            background: white;
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .hourglass {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 2rem;
+            position: relative;
+        }
+        
+        .hourglass::before {
+            content: "⏳";
+            font-size: 80px;
+            display: block;
+            animation: rotate 2s linear infinite;
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        
+        .loading-message {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+        
+        .progress-bar-container {
+            background: #e5e7eb;
+            border-radius: 10px;
+            height: 8px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+        
+        .status-message {
+            font-size: 0.9rem;
+            color: #4b5563;
+            font-style: italic;
+        }
+        
+        .gpt5-badge {
+            display: inline-block;
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+        
+        .error-container {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .error-title {
+            color: #dc2626;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .error-message {
+            color: #7f1d1d;
+            font-size: 0.9rem;
+        }
+        
+        .retry-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background 0.2s;
+        }
+        
+        .retry-button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-container">
+        <div class="hourglass"></div>
+        
+        <h1 class="loading-title">Analyzing Your Resume</h1>
+        <p class="loading-message">
+            Our AI is performing an in-depth analysis of your resume using advanced language models. 
+            This process takes 90-120 seconds to ensure the highest quality insights.
+        </p>
+        
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="status-message" id="statusMessage">
+            Starting analysis...
+        </div>
+        
+        <div class="gpt5-badge">
+            ✨ Powered by GPT-5
+        </div>
+        
+        <div class="error-container" id="errorContainer">
+            <div class="error-title">Analysis Error</div>
+            <div class="error-message" id="errorMessage"></div>
+            <button class="retry-button" onclick="retryAnalysis()">Retry Analysis</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const ANALYSIS_ID = "{{ analysis_id }}";
+        const PRODUCT_TYPE = "{{ product_type }}";
+        const SESSION_ID = "{{ session_id }}";
+        const MAX_POLL_TIME = 180000; // 3 minutes max
+        const POLL_INTERVAL = 2000; // Check every 2 seconds
+        
+        // Progress tracking
+        let startTime = Date.now();
+        let pollCount = 0;
+        let progressInterval;
+        let pollInterval;
+        
+        // Status messages that rotate during analysis
+        const statusMessages = [
+            "Initializing AI analysis engine...",
+            "Processing resume content...",
+            "Identifying industry and role type...",
+            "Analyzing professional experience...",
+            "Evaluating skills and qualifications...",
+            "Generating industry-specific recommendations...",
+            "Creating personalized improvement suggestions...",
+            "Optimizing for ATS compatibility...",
+            "Crafting professional text rewrites...",
+            "Finalizing comprehensive analysis...",
+            "Nearly complete - preparing results..."
+        ];
+        
+        function updateProgress() {
+            const elapsed = Date.now() - startTime;
+            const maxTime = 120000; // 120 seconds expected max (GPT-5 can take 90+ seconds)
+            const progress = Math.min((elapsed / maxTime) * 100, 95); // Cap at 95% until complete
+            
+            document.getElementById('progressBar').style.width = progress + '%';
+            
+            // Update status message based on progress
+            const messageIndex = Math.min(
+                Math.floor((progress / 100) * statusMessages.length),
+                statusMessages.length - 1
+            );
+            document.getElementById('statusMessage').textContent = statusMessages[messageIndex];
+        }
+        
+        async function checkAnalysisStatus() {
+            try {
+                pollCount++;
+                const response = await fetch(`/api/v1/analysis/${ANALYSIS_ID}/status`);
+                const data = await response.json();
+                
+                // Debug logging
+                console.log(`Poll ${pollCount}: Status response:`, data);
+                
+                if (data.status === 'completed' && data.premium_result) {
+                    // Analysis complete - redirect to results
+                    clearInterval(progressInterval);
+                    clearInterval(pollInterval);
+                    
+                    // Set progress to 100%
+                    document.getElementById('progressBar').style.width = '100%';
+                    document.getElementById('statusMessage').textContent = 'Analysis complete! Redirecting to results...';
+                    
+                    // Redirect to HTML results page after brief delay
+                    setTimeout(() => {
+                        window.location.href = `/api/v1/premium-results/${ANALYSIS_ID}`;
+                    }, 1000);
+                    
+                } else if (data.status === 'error') {
+                    // Analysis failed
+                    showError('Analysis failed: ' + (data.error || 'Unknown error occurred'));
+                    
+                } else if (Date.now() - startTime > MAX_POLL_TIME) {
+                    // Timeout
+                    showError('Analysis is taking longer than expected. Please try again or contact support.');
+                    
+                } else {
+                    // Still processing - continue polling
+                    console.log(`Poll ${pollCount}: Analysis still in progress...`);
+                }
+                
+            } catch (error) {
+                console.error('Error checking analysis status:', error);
+                
+                if (Date.now() - startTime > MAX_POLL_TIME) {
+                    showError('Unable to check analysis status. Please refresh the page or contact support.');
+                }
+                // Continue polling for temporary network errors
+            }
+        }
+        
+        function showError(message) {
+            clearInterval(progressInterval);
+            clearInterval(pollInterval);
+            
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorContainer').style.display = 'block';
+        }
+        
+        function retryAnalysis() {
+            // Reload the page to restart the process
+            window.location.reload();
+        }
+        
+        // Start the progress and polling
+        function startAnalysis() {
+            startTime = Date.now();
+            
+            // Update progress bar every 500ms
+            progressInterval = setInterval(updateProgress, 500);
+            
+            // Check analysis status every 2 seconds
+            pollInterval = setInterval(checkAnalysisStatus, POLL_INTERVAL);
+            
+            // Do first check immediately
+            setTimeout(checkAnalysisStatus, 1000);
+        }
+        
+        // Start when page loads
+        document.addEventListener('DOMContentLoaded', startAnalysis);
+    </script>
+</body>
+</html>
