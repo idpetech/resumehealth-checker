@@ -5,6 +5,7 @@ All analysis-related endpoints including resume analysis, job fit analysis,
 cover letter generation, resume rewrites, and mock interviews.
 """
 import logging
+import datetime
 from typing import Optional
 from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
@@ -91,7 +92,7 @@ async def analyze_resume(
             "result": result,
             "validation": validation,
             "region_info": region_info,
-            "timestamp": "2025-09-02T13:00:00Z"
+            "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
         }
         
     except FileProcessingError as e:
@@ -193,7 +194,7 @@ async def get_premium_service(analysis_id: str, product_type: str = "resume_anal
             "analysis_id": analysis_id,
             "product_type": product_type,
             "result": result,
-            "timestamp": "2025-09-02T13:00:00Z"
+            "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
         }
         
     except HTTPException:
@@ -285,7 +286,7 @@ async def preview_resume_rewrite(
                     "includes": ["Full resume rewrite", "ATS optimization", "Keyword integration", "Multi-format output"]
                 }
             },
-            "timestamp": "2025-09-10T00:00:00Z"
+            "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
         }
         
     except FileProcessingError as e:
@@ -350,7 +351,7 @@ async def get_premium_resume_rewrite(analysis_id: str):
                 "formats": ["PDF", "DOCX", "TXT"],
                 "note": "Multi-format downloads available in future update"
             },
-            "timestamp": "2025-09-10T00:00:00Z"
+            "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
         }
         
     except HTTPException:
@@ -474,7 +475,7 @@ async def generate_mock_interview_premium(
             "interview_simulation": interview_simulation,
             "analysis_type": "premium",
             "product_type": "mock_interview",
-            "timestamp": "2025-09-11T00:00:00Z"
+            "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
         }
         
     except HTTPException:

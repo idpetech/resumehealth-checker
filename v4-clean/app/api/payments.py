@@ -307,8 +307,11 @@ async def complete_payment(request: Request):
         if not analysis_id:
             raise HTTPException(status_code=400, detail="Analysis ID required")
         
-        # Mark analysis as paid
-        AnalysisDB.mark_as_paid(analysis_id, 1000, "usd")  # Mock amount
+        # Mark analysis as paid (mock payment with configurable amount)
+        from ..core.config import config
+        mock_amount = getattr(config, 'mock_payment_amount', 1000)  # Default 1000 cents if not configured
+        mock_currency = getattr(config, 'mock_payment_currency', 'usd')
+        AnalysisDB.mark_as_paid(analysis_id, mock_amount, mock_currency)
         
         logger.info(f"Payment completed for analysis {analysis_id}, product {product_type}")
         

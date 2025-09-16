@@ -18,6 +18,12 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter()
 
+def _get_default_score(context: str, fallback: int) -> int:
+    """Get configurable default score for template contexts"""
+    from ..core.config import config
+    default_scores = getattr(config, 'template_default_scores', {})
+    return default_scores.get(context, fallback)
+
 # Setup Jinja2 templates
 templates = Jinja2Templates(directory="app/templates")
 
@@ -308,7 +314,7 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
     for rewrite in result.get('text_rewrites', []):
         section_analysis.append({
             'section_name': rewrite.get('section', 'Unknown Section'),
-            'score': 75,  # Default score since AI doesn't provide numeric scores
+            'score': _get_default_score('section_analysis', 75),  # Configurable default score
             'strengths': [rewrite.get('why_better', 'Improved content')],
             'weaknesses': [rewrite.get('original', 'Original content')] if rewrite.get('original') else [],
             'recommendations': [rewrite.get('improved', 'No specific recommendations')]
@@ -317,7 +323,7 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
     # Transform ats_optimization to expected format
     ats_optimization = result.get('ats_optimization', {})
     ats_analysis = {
-        'ats_score': 75,  # Default score since AI doesn't provide numeric ATS score
+        'ats_score': _get_default_score('ats_analysis', 75),  # Configurable default ATS score
         'issues': ats_optimization.get('enhancement_opportunities', [])
     }
     
@@ -338,12 +344,12 @@ def generate_embedded_resume_analysis_html(result: dict, analysis_id: str) -> st
             'impact': 'Will improve your resume effectiveness'
         })
     
-    # Create basic score_breakdown (AI doesn't provide this)
+    # Create configurable score_breakdown (AI doesn't provide this)
     score_breakdown = {
-        'content_quality': 80,
-        'formatting': 75,
-        'keywords': 70,
-        'experience': 85
+        'content_quality': _get_default_score('content_quality', 80),
+        'formatting': _get_default_score('formatting', 75),
+        'keywords': _get_default_score('keywords', 70),
+        'experience': _get_default_score('experience', 85)
     }
     
     # Prepare template context with the result data
@@ -376,9 +382,9 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
             try:
                 overall_match_score = int(numeric_match.group())
             except ValueError:
-                overall_match_score = 75  # Default fallback
+                overall_match_score = _get_default_score('job_fit_fallback', 75)  # Configurable fallback
         else:
-            overall_match_score = 75  # Default if no number found
+            overall_match_score = _get_default_score('job_fit_default', 75)  # Configurable default
     
     # Transform strategic_advantages to key_strengths format expected by template
     key_strengths = []
@@ -404,7 +410,7 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
     # Create experience_alignment from positioning_strategy
     positioning_strategy = result.get('positioning_strategy', {})
     experience_alignment = {
-        'alignment_score': 80,  # Default good alignment score
+        'alignment_score': _get_default_score('experience_alignment', 80),  # Configurable alignment score
         'relevant_experiences': [{
             'role': 'Current Role',
             'relevance': positioning_strategy.get('primary_value', 'Strong alignment with role requirements')
