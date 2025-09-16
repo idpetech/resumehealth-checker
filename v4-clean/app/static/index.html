@@ -355,6 +355,69 @@
            const cancelJobPosting = document.getElementById('cancelJobPosting');
            const closeJobPostingModal = document.getElementById('closeJobPostingModal');
 
+           // Define all file handling functions in the same scope
+           function handleFile(file) {
+               if (!file) return;
+
+               // Validate file type
+               const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+               if (!allowedTypes.includes(file.type)) {
+                   window.showMessage ? window.showMessage('Please upload a PDF, DOC, or DOCX file.', 'error') : alert('Please upload a PDF, DOC, or DOCX file.');
+                   return;
+               }
+
+               // Validate file size (10MB)
+               if (file.size > 10 * 1024 * 1024) {
+                   window.showMessage ? window.showMessage('File size must be less than 10MB.', 'error') : alert('File size must be less than 10MB.');
+                   return;
+               }
+
+               // Store file for analysis
+               window.currentFile = file;
+               
+               // Update UI to show file loaded state
+               const uploadDefault = document.getElementById('uploadDefault');
+               const uploadLoaded = document.getElementById('uploadLoaded');
+               const loadedFileName = document.getElementById('loadedFileName');
+               
+               if (uploadDefault && uploadLoaded && loadedFileName) {
+                   // Hide default state, show loaded state
+                   uploadDefault.classList.add('hidden');
+                   uploadLoaded.classList.remove('hidden');
+                   
+                   // Set filename
+                   loadedFileName.textContent = file.name;
+               }
+               
+               window.showMessage ? window.showMessage(`File "${file.name}" ready for analysis!`) : console.log(`File "${file.name}" ready for analysis!`);
+           }
+
+           const handleDragOver = function(e) {
+               e.preventDefault();
+               fileUploadArea.classList.add('dragover');
+           };
+
+           const handleDragLeave = function(e) {
+               e.preventDefault();
+               fileUploadArea.classList.remove('dragover');
+           };
+
+           const handleDrop = function(e) {
+               e.preventDefault();
+               fileUploadArea.classList.remove('dragover');
+               const files = e.dataTransfer.files;
+               if (files.length > 0) {
+                   handleFile(files[0]);
+               }
+           };
+
+           const handleFileSelect = function(e) {
+               const file = e.target.files[0];
+               if (file) {
+                   handleFile(file);
+               }
+           };
+
            // File upload handling
            fileUploadArea.addEventListener('click', () => fileInput.click());
            fileUploadArea.addEventListener('dragover', handleDragOver);
@@ -485,71 +548,11 @@
                }
            }
 
-           function handleDragOver(e) {
-               e.preventDefault();
-               fileUploadArea.classList.add('dragover');
-           }
+           // handleDragOver moved earlier to avoid ReferenceError
 
-           function handleDragLeave(e) {
-               e.preventDefault();
-               fileUploadArea.classList.remove('dragover');
-           }
+           // handleDragLeave moved earlier
 
-           function handleDrop(e) {
-            e.preventDefault();
-               fileUploadArea.classList.remove('dragover');
-               const files = e.dataTransfer.files;
-               if (files.length > 0) {
-                   handleFile(files[0]);
-               }
-           }
-
-           function handleFileSelect(e) {
-               const file = e.target.files[0];
-               if (file) {
-                   handleFile(file);
-               }
-           }
-
-           function handleFile(file) {
-               if (!file) return;
-
-               // Validate file type
-               const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-               if (!allowedTypes.includes(file.type)) {
-                   showMessage('Please upload a PDF, DOC, or DOCX file.', 'error');
-                   return;
-               }
-
-               // Validate file size (10MB)
-               if (file.size > 10 * 1024 * 1024) {
-                   showMessage('File size must be less than 10MB.', 'error');
-                   return;
-               }
-
-               // Store file for analysis
-               window.currentFile = file;
-               
-               // Update UI to show file loaded state
-               updateFileUploadUI(file.name);
-               
-               showMessage(`File "${file.name}" ready for analysis!`);
-           }
-
-           function updateFileUploadUI(filename) {
-               const uploadDefault = document.getElementById('uploadDefault');
-               const uploadLoaded = document.getElementById('uploadLoaded');
-               const loadedFileName = document.getElementById('loadedFileName');
-               
-               if (uploadDefault && uploadLoaded && loadedFileName) {
-                   // Hide default state, show loaded state
-                   uploadDefault.classList.add('hidden');
-                   uploadLoaded.classList.remove('hidden');
-                   
-                   // Set filename
-                   loadedFileName.textContent = filename;
-               }
-           }
+           // handleDrop moved earlier
 
            function resetFileUploadUI() {
                const uploadDefault = document.getElementById('uploadDefault');
