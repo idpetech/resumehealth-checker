@@ -188,12 +188,13 @@ class AnalysisService:
                 logger.error(f"Cleaned response length: {len(cleaned_response)}")
                 
                 # Try to extract any meaningful content
+                import datetime
                 return {
                     "analysis_type": analysis_type,
                     "raw_response": ai_response[:500],  # Limit size
                     "cleaned_response": cleaned_response[:500],  # Limit size
                     "error": f"JSON parsing failed: {str(e)}",
-                    "timestamp": "2025-09-07T00:00:00Z"
+                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
                 }
             
         except openai.RateLimitError:
