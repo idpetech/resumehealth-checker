@@ -433,6 +433,171 @@
                }
            });
 
+           // Define button handler functions in the same scope
+           async function handleFreeAnalysis() {
+               if (!window.currentFile) {
+                   window.showMessage ? window.showMessage('Please upload a resume file first.', 'error') : alert('Please upload a resume file first.');
+                   return;
+               }
+
+               if (isProcessing) {
+                   window.showMessage ? window.showMessage('Analysis already in progress...') : alert('Analysis already in progress...');
+                   return;
+               }
+            
+               isProcessing = true;
+               showLoadingOverlay();
+            
+               try {
+                   const formData = new FormData();
+                   formData.append('file', window.currentFile);
+                   formData.append('analysis_type', 'free');
+
+                   const controller = new AbortController();
+                   const timeoutId = setTimeout(() => controller.abort(), 60000);
+                
+                   const response = await fetch('/api/v1/analyze', {
+                       method: 'POST',
+                       body: formData,
+                       signal: controller.signal
+                   });
+
+                   clearTimeout(timeoutId);
+
+                   if (!response.ok) {
+                       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                   }
+
+                   const result = await response.json();
+                   currentAnalysisId = result.analysis_id;
+                   
+                   displayResults(result);
+                   window.showMessage ? window.showMessage('Free analysis completed!') : console.log('Free analysis completed!');
+
+               } catch (error) {
+                   console.error('Analysis error:', error);
+                   if (error.name === 'AbortError') {
+                       window.showMessage ? window.showMessage('Analysis timed out. Please try again.', 'error') : alert('Analysis timed out. Please try again.');
+                   } else {
+                       window.showMessage ? window.showMessage('Analysis failed: ' + error.message, 'error') : alert('Analysis failed: ' + error.message);
+                   }
+               } finally {
+                   isProcessing = false;
+                   hideLoadingOverlay();
+               }
+           }
+
+           async function handlePremiumPurchase(productType, price) {
+               if (!window.currentFile) {
+                   window.showMessage ? window.showMessage('Please upload a resume file first.', 'error') : alert('Please upload a resume file first.');
+                   return;
+               }
+
+               if (isProcessing) {
+                   window.showMessage ? window.showMessage('Operation already in progress...') : alert('Operation already in progress...');
+                   return;
+               }
+
+               // Check if job posting is required
+               if (productType === 'job_fit_analysis' || productType === 'cover_letter' || productType === 'resume_rewrite' || productType === 'mock_interview') {
+                   // Show job posting modal
+                   if (jobPostingTextarea && jobPostingModal) {
+                       jobPostingTextarea.value = '';
+                       jobPostingModal.classList.add('show');
+                       
+                       // Store the product info for when user submits
+                       window.pendingPurchase = { productType, price };
+                       return;
+                   }
+               }
+
+               // Proceed directly if no job posting required
+               await processPremiumPurchase(productType, price);
+           }
+
+           async function processPremiumPurchase(productType, price, jobPosting = null) {
+               isProcessing = true;
+               showLoadingOverlay();
+
+               try {
+                   // First, create an analysis if we don't have one
+                   let analysisId = currentAnalysisId;
+                   
+                   if (!analysisId) {
+                       const formData = new FormData();
+                       formData.append('file', window.currentFile);
+                       formData.append('analysis_type', 'free');
+
+                       const controller = new AbortController();
+                       const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+                       const response = await fetch('/api/v1/analyze', {
+                           method: 'POST',
+                           body: formData,
+                           signal: controller.signal
+                       });
+
+                       clearTimeout(timeoutId);
+
+                       if (!response.ok) {
+                           throw new Error(`Analysis failed: HTTP ${response.status}`);
+                       }
+
+                       const result = await response.json();
+                       analysisId = result.analysis_id;
+                       currentAnalysisId = analysisId;
+                   }
+
+                   // Now create payment session
+                   const paymentFormData = new FormData();
+                   paymentFormData.append('analysis_id', analysisId);
+                   paymentFormData.append('product_type', productType);
+                   paymentFormData.append('price', price);
+
+                   // Add job posting if provided
+                   if (jobPosting) {
+                       paymentFormData.append('job_posting', jobPosting);
+                   }
+
+                   const controller = new AbortController();
+                   const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+                   const response = await fetch('/api/v1/payment/create', {
+                       method: 'POST',
+                       body: paymentFormData,
+                       signal: controller.signal
+                   });
+
+                   clearTimeout(timeoutId);
+
+                   if (!response.ok) {
+                       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                   }
+
+                   const result = await response.json();
+                   const paymentUrl = result.payment_url || result.payment_session?.payment_url;
+                   
+                   if (paymentUrl) {
+                       // Redirect immediately - no toast needed
+                       window.location.href = paymentUrl;
+                   } else {
+                       console.log('Payment response:', result);
+                       throw new Error('No payment URL received');
+                   }
+
+               } catch (error) {
+                   console.error('Premium purchase error:', error);
+                   if (error.name === 'AbortError') {
+                       window.showMessage ? window.showMessage('Request timed out. Please try again.', 'error') : alert('Request timed out. Please try again.');
+                   } else {
+                       window.showMessage ? window.showMessage('Payment failed: ' + error.message, 'error') : alert('Payment failed: ' + error.message);
+                   }
+               } finally {
+                   isProcessing = false;
+                   hideLoadingOverlay();
+               }
+           }
+
            // Free analysis button
            freeButton.addEventListener('click', handleFreeAnalysis);
 
@@ -444,6 +609,10 @@
                    handlePremiumPurchase(productType, price);
                });
            });
+
+           // Make functions globally accessible for upsell buttons
+           window.handlePremiumPurchase = handlePremiumPurchase;
+           window.processPremiumPurchase = processPremiumPurchase;
 
            // Check for premium results on page load
            checkForPremiumResults();
@@ -562,59 +731,6 @@
                    // Show default state, hide loaded state
                    uploadDefault.classList.remove('hidden');
                    uploadLoaded.classList.add('hidden');
-               }
-           }
-
-           async function handleFreeAnalysis() {
-               if (!window.currentFile) {
-                   showMessage('Please upload a resume file first.', 'error');
-                   return;
-               }
-
-               if (isProcessing) {
-                   showMessage('Analysis already in progress...');
-                return;
-            }
-            
-               isProcessing = true;
-               showLoadingOverlay();
-            
-            try {
-                const formData = new FormData();
-                   formData.append('file', window.currentFile);
-                   formData.append('analysis_type', 'free');
-
-                   const controller = new AbortController();
-                   const timeoutId = setTimeout(() => controller.abort(), 60000);
-                
-                const response = await fetch('/api/v1/analyze', {
-                    method: 'POST',
-                       body: formData,
-                       signal: controller.signal
-                   });
-
-                   clearTimeout(timeoutId);
-
-                   if (!response.ok) {
-                       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                   }
-
-                   const result = await response.json();
-                   currentAnalysisId = result.analysis_id;
-                   
-                   displayResults(result);
-                   showMessage('Free analysis completed!');
-
-            } catch (error) {
-                console.error('Analysis error:', error);
-                   if (error.name === 'AbortError') {
-                       showMessage('Analysis timed out. Please try again.', 'error');
-                   } else {
-                       showMessage('Analysis failed: ' + error.message, 'error');
-                   }
-            } finally {
-                   isProcessing = false;
-                   hideLoadingOverlay();
                }
            }
 
@@ -945,121 +1061,7 @@
            await handlePremiumPurchase(productType, price);
        }
 
-       // Global function for premium purchase
-       async function handlePremiumPurchase(productType, price) {
-           if (!window.currentFile) {
-               showMessage('Please upload a resume file first.', 'error');
-               return;
-           }
-
-           if (isProcessing) {
-               showMessage('Operation already in progress...');
-               return;
-           }
-
-           // Check if job posting is required
-           if (productType === 'job_fit_analysis' || productType === 'cover_letter' || productType === 'resume_rewrite' || productType === 'mock_interview') {
-               // Show job posting modal
-               const jobPostingTextarea = document.getElementById('jobPostingTextarea');
-               const jobPostingModal = document.getElementById('jobPostingModal');
-               
-               if (jobPostingTextarea && jobPostingModal) {
-                   jobPostingTextarea.value = '';
-                   jobPostingModal.classList.add('show');
-                   
-                   // Store the product info for when user submits
-                   window.pendingPurchase = { productType, price };
-                   return;
-               }
-           }
-
-           // Proceed directly if no job posting required
-           await processPremiumPurchase(productType, price);
-       }
-
-       // Global function for processing premium purchase
-       async function processPremiumPurchase(productType, price, jobPosting = null) {
-           isProcessing = true;
-           showLoadingOverlay();
-
-           try {
-               // First, create an analysis if we don't have one
-               let analysisId = currentAnalysisId;
-               
-               if (!analysisId) {
-                   const formData = new FormData();
-                   formData.append('file', window.currentFile);
-                   formData.append('analysis_type', 'free');
-
-                   const controller = new AbortController();
-                   const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-                   const response = await fetch('/api/v1/analyze', {
-                       method: 'POST',
-                       body: formData,
-                       signal: controller.signal
-                   });
-
-                   clearTimeout(timeoutId);
-
-                   if (!response.ok) {
-                       throw new Error(`Analysis failed: HTTP ${response.status}`);
-                   }
-
-                   const result = await response.json();
-                   analysisId = result.analysis_id;
-                   currentAnalysisId = analysisId;
-               }
-
-               // Now create payment session
-               const paymentFormData = new FormData();
-               paymentFormData.append('analysis_id', analysisId);
-               paymentFormData.append('product_type', productType);
-               paymentFormData.append('price', price);
-
-               // Add job posting if provided
-               if (jobPosting) {
-                   paymentFormData.append('job_posting', jobPosting);
-               }
-
-               const controller = new AbortController();
-               const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-               const response = await fetch('/api/v1/payment/create', {
-                   method: 'POST',
-                   body: paymentFormData,
-                   signal: controller.signal
-               });
-
-               clearTimeout(timeoutId);
-
-               if (!response.ok) {
-                   throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-               }
-
-               const result = await response.json();
-               const paymentUrl = result.payment_url || result.payment_session?.payment_url;
-               
-               if (paymentUrl) {
-                   // Redirect immediately - no toast needed
-                   window.location.href = paymentUrl;
-               } else {
-                   console.log('Payment response:', result);
-                   throw new Error('No payment URL received');
-               }
-
-           } catch (error) {
-               console.error('Premium purchase error:', error);
-               if (error.name === 'AbortError') {
-                   showMessage('Request timed out. Please try again.', 'error');
-               } else {
-                   showMessage('Payment failed: ' + error.message, 'error');
-               }
-           } finally {
-               isProcessing = false;
-               hideLoadingOverlay();
-           }
-       }
+       // Note: handlePremiumPurchase and processPremiumPurchase are defined in the DOMContentLoaded scope above
 
        // Global function for upselling button
 
