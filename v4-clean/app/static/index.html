@@ -905,15 +905,9 @@
                window.showMessage(text, type);
            } else {
                // Fallback to console if toast system not available
-                   console.log(`[${type.toUpperCase()}] ${text}`);
-               }
+               console.log(`[${type.toUpperCase()}] ${text}`);
            }
-
-           // Functions moved to the first DOMContentLoaded scope for proper scoping
-           // showLoadingOverlay and hideLoadingOverlay are defined in the first script tag
-           
-           // Debug functions moved to global scope since they need to reference scoped variables
-       });
+       }
        
        // Debug functions (available in console) - moved outside DOMContentLoaded
        window.testFunctions = {
