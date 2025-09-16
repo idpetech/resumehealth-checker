@@ -79,7 +79,7 @@
     
     <div class="actions">
         <button class="btn print-btn" onclick="window.print()">🖨️ Print Complete Resume</button>
-        <button class="btn export-btn" onclick="exportToPDF('{{ analysis_id }}')">📄 Export PDF</button>
+        <button class="btn export-btn" onclick="exportToPDFClient('{{ analysis_id }}')">📄 Export PDF</button>
         <a href="/api/v1/export/{{ analysis_id }}/docx" class="btn export-btn" download>📝 Export Word</a>
         <button class="btn" onclick="copyCompleteResume()">📋 Copy Complete Resume</button>
         <a href="/" class="btn">🏠 Return to App</a>

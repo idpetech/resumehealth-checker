@@ -12,6 +12,8 @@ from fastapi.templating import Jinja2Templates
 
 # Try to import WeasyPrint, fall back to alternative approach if not available
 try:
+    # WeasyPrint requires system dependencies (gobject-2.0, pango, etc.)
+    # Commented out until system dependencies are installed
     # from weasyprint import HTML, CSS
     HTML = None
     CSS = None

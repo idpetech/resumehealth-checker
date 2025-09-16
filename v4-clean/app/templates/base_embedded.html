@@ -381,9 +381,9 @@
         });
     }
     
-    function exportToPDF(analysisId = null) {
+    function exportToPDFClient(analysisId = null) {
         // Show loading message
-        const pdfBtn = document.querySelector('.btn-danger, .pdf-btn, [onclick*="exportToPDF"]');
+        const pdfBtn = document.querySelector('.btn-danger, .pdf-btn, [onclick*="exportToPDFClient"]');
         if (pdfBtn) {
             const originalText = pdfBtn.textContent;
             pdfBtn.textContent = '⏳ Generating PDF...';
