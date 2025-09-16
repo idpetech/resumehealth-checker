@@ -599,6 +599,7 @@
                    return;
                }
 
+               console.log('📊 displayResults called with:', result);
                analysisResults.innerHTML = '';
 
                if (result.analysis_type === 'free' && result.result) {
@@ -701,8 +702,14 @@
                 `;
             }
             
+               // Reset file upload UI to allow new file
+               resetFileUploadUI();
+               window.currentFile = null;
+               
                // Show the modal
+               console.log('🎯 About to show modal:', resultsModal);
                resultsModal.classList.add('show');
+               console.log('✅ Modal show class added');
            }
 
            function checkForPremiumResults() {

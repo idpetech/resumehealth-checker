@@ -172,7 +172,7 @@
     
     <div class="actions">
         <button class="btn btn-success" onclick="window.print()">🖨️ Print Cover Letter</button>
-        <button class="btn btn-danger" onclick="exportToPDF('.premium-results')">📄 Export PDF</button>
+        <button class="btn btn-danger" onclick="exportToPDF('{{ analysis_id }}')">📄 Export PDF</button>
         <a href="/api/v1/export/{{ analysis_id }}/docx" class="btn btn-info" download>📝 Export Word</a>
         <button class="btn" onclick="copyCoverLetter()">📋 Copy Cover Letter</button>
         <a href="/" class="btn">🏠 Return to App</a>
