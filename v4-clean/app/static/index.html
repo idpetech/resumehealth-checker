@@ -909,38 +909,34 @@
                }
            }
 
-           function showLoadingOverlay() {
-               loadingOverlay.classList.add('show');
-           }
-
-           function hideLoadingOverlay() {
-               loadingOverlay.classList.remove('show');
-           }
-
            // Functions moved to the first DOMContentLoaded scope for proper scoping
-
-           // Debug functions (available in console)
-        window.testFunctions = {
-               testPremiumResults: (analysisId, productType) => {
-                   displayPremiumResults(analysisId, productType);
-               },
-               checkResultsDiv: () => {
-                   console.log('Results modal:', resultsModal);
-                   console.log('Analysis results:', analysisResults);
-               },
-               testRegion: (countryCode) => {
-                   fetch(`/api/v1/pricing?region=${countryCode}`)
-                       .then(r => r.json())
-                       .then(console.log);
-               },
-               testStats: () => {
-                   fetch('/api/v1/stats')
-                       .then(r => r.json())
-                       .then(console.log);
-               }
-           };
-
+           // showLoadingOverlay and hideLoadingOverlay are defined in the first script tag
+           
+           // Debug functions moved to global scope since they need to reference scoped variables
        });
+       
+       // Debug functions (available in console) - moved outside DOMContentLoaded
+       window.testFunctions = {
+           testPremiumResults: (analysisId, productType) => {
+               console.log('Test function called - functions are scoped in DOMContentLoaded');
+           },
+           checkResultsDiv: () => {
+               const resultsModal = document.getElementById('resultsModal');
+               const analysisResults = document.getElementById('analysisResults');
+               console.log('Results modal:', resultsModal);
+               console.log('Analysis results:', analysisResults);
+           },
+           testRegion: (countryCode) => {
+               fetch(`/api/v1/pricing?region=${countryCode}`)
+                   .then(r => r.json())
+                   .then(console.log);
+           },
+           testStats: () => {
+               fetch('/api/v1/stats')
+                   .then(r => r.json())
+                   .then(console.log);
+           }
+       };
    </script>
 
    <script>
