@@ -614,129 +614,7 @@
            window.handlePremiumPurchase = handlePremiumPurchase;
            window.processPremiumPurchase = processPremiumPurchase;
 
-           // Check for premium results on page load
-           checkForPremiumResults();
-
-           // Modal close functionality
-           closeResultsModal.addEventListener('click', () => {
-               resultsModal.classList.remove('show');
-               clearCurrentFile(); // Clear file when user exits modal
-           });
-
-           // Close modal when clicking outside
-           resultsModal.addEventListener('click', (e) => {
-               if (e.target === resultsModal) {
-                   resultsModal.classList.remove('show');
-                   clearCurrentFile(); // Clear file when user exits modal
-               }
-           });
-
-           // Close modal with Escape key
-           document.addEventListener('keydown', (e) => {
-               if (e.key === 'Escape') {
-                   if (resultsModal.classList.contains('show')) {
-                       resultsModal.classList.remove('show');
-                       clearCurrentFile(); // Clear file when user exits modal
-                   }
-                   if (jobPostingModal.classList.contains('show')) {
-                       jobPostingModal.classList.remove('show');
-                   }
-               }
-           });
-
-           // Job posting modal functionality
-           closeJobPostingModal.addEventListener('click', () => {
-               jobPostingModal.classList.remove('show');
-           });
-
-           jobPostingModal.addEventListener('click', (e) => {
-               if (e.target === jobPostingModal) {
-                   jobPostingModal.classList.remove('show');
-               }
-           });
-
-           cancelJobPosting.addEventListener('click', () => {
-               jobPostingModal.classList.remove('show');
-               isProcessing = false;
-               hideLoadingOverlay();
-           });
-
-           submitJobPosting.addEventListener('click', async () => {
-               const jobPosting = jobPostingTextarea.value.trim();
-               if (!jobPosting) {
-                   showMessageFallback('Please enter a job description.', 'error');
-                   return;
-               }
-
-               jobPostingModal.classList.remove('show');
-               
-               if (window.pendingPurchase) {
-                   const { productType, price } = window.pendingPurchase;
-                   window.pendingPurchase = null;
-                   await processPremiumPurchase(productType, price, jobPosting);
-               }
-           });
-
-           // Function moved to global scope below
-       });
-   </script>
-   
-   <script>
-       // Helper function for showing messages within DOMContentLoaded scope
-       function showMessageFallback(text, type = 'success') {
-           // Use the global showMessage function from the second script tag
-           if (typeof window.showMessage === 'function') {
-               window.showMessage(text, type);
-           } else {
-               // Fallback to console if toast system not available
-                   console.log(`[${type.toUpperCase()}] ${text}`);
-               }
-           }
-
-           function showLoadingOverlay() {
-               loadingOverlay.classList.add('show');
-           }
-
-           function hideLoadingOverlay() {
-               loadingOverlay.classList.remove('show');
-           }
-
-           function clearCurrentFile() {
-               console.log('Clearing current file for new upload');
-               window.currentFile = null;
-               resetFileUploadUI();
-               
-               // SECURITY: Clear session markers when starting fresh
-               premiumResultsDisplayed = false;
-               // Clear all premium session markers
-               for (let i = sessionStorage.length - 1; i >= 0; i--) {
-                   const key = sessionStorage.key(i);
-                   if (key && key.startsWith('premium_displayed_')) {
-                       sessionStorage.removeItem(key);
-                   }
-               }
-           }
-
-           // handleDragOver moved earlier to avoid ReferenceError
-
-           // handleDragLeave moved earlier
-
-           // handleDrop moved earlier
-
-           function resetFileUploadUI() {
-               const uploadDefault = document.getElementById('uploadDefault');
-               const uploadLoaded = document.getElementById('uploadLoaded');
-               
-               if (uploadDefault && uploadLoaded) {
-                   // Show default state, hide loaded state
-                   uploadDefault.classList.remove('hidden');
-                   uploadLoaded.classList.add('hidden');
-               }
-           }
-
-
-
-
+           // Define essential functions in this scope
            function displayResults(result) {
                if (premiumResultsDisplayed) {
                    console.log('Premium results already displayed, not overwriting');
@@ -881,7 +759,7 @@
                const sessionKey = `premium_displayed_${analysisId}`;
                if (sessionStorage.getItem(sessionKey)) {
                    console.log('Premium results already displayed for this analysis in this session');
-                   showMessage('Results already displayed in this session. Please complete a new payment for additional access.', 'warning');
+                   window.showMessage ? window.showMessage('Results already displayed in this session. Please complete a new payment for additional access.', 'warning') : console.log('Results already displayed in this session.');
                    return;
                }
 
@@ -916,14 +794,130 @@
             } catch (error) {
                    console.error('Premium results error:', error);
                    if (error.name === 'AbortError') {
-                       showMessage('Premium results timed out. Please try again.', 'error');
+                       window.showMessage ? window.showMessage('Premium results timed out. Please try again.', 'error') : console.log('Premium results timed out.');
                    } else {
-                       showMessage('Failed to load premium results: ' + error.message, 'error');
+                       window.showMessage ? window.showMessage('Failed to load premium results: ' + error.message, 'error') : console.log('Failed to load premium results:', error.message);
                    }
                } finally {
                    hideLoadingOverlay();
                }
            }
+
+           function resetFileUploadUI() {
+               const uploadDefault = document.getElementById('uploadDefault');
+               const uploadLoaded = document.getElementById('uploadLoaded');
+               
+               if (uploadDefault && uploadLoaded) {
+                   // Show default state, hide loaded state
+                   uploadDefault.classList.remove('hidden');
+                   uploadLoaded.classList.add('hidden');
+               }
+           }
+
+           function clearCurrentFile() {
+               console.log('Clearing current file for new upload');
+               window.currentFile = null;
+               resetFileUploadUI();
+               
+               // SECURITY: Clear session markers when starting fresh
+               premiumResultsDisplayed = false;
+               // Clear all premium session markers
+               for (let i = sessionStorage.length - 1; i >= 0; i--) {
+                   const key = sessionStorage.key(i);
+                   if (key && key.startsWith('premium_displayed_')) {
+                       sessionStorage.removeItem(key);
+                   }
+               }
+           }
+
+           // Check for premium results on page load
+           checkForPremiumResults();
+
+           // Modal close functionality
+           closeResultsModal.addEventListener('click', () => {
+               resultsModal.classList.remove('show');
+               clearCurrentFile(); // Clear file when user exits modal
+           });
+
+           // Close modal when clicking outside
+           resultsModal.addEventListener('click', (e) => {
+               if (e.target === resultsModal) {
+                   resultsModal.classList.remove('show');
+                   clearCurrentFile(); // Clear file when user exits modal
+               }
+           });
+
+           // Close modal with Escape key
+           document.addEventListener('keydown', (e) => {
+               if (e.key === 'Escape') {
+                   if (resultsModal.classList.contains('show')) {
+                       resultsModal.classList.remove('show');
+                       clearCurrentFile(); // Clear file when user exits modal
+                   }
+                   if (jobPostingModal.classList.contains('show')) {
+                       jobPostingModal.classList.remove('show');
+                   }
+               }
+           });
+
+           // Job posting modal functionality
+           closeJobPostingModal.addEventListener('click', () => {
+               jobPostingModal.classList.remove('show');
+           });
+
+           jobPostingModal.addEventListener('click', (e) => {
+               if (e.target === jobPostingModal) {
+                   jobPostingModal.classList.remove('show');
+               }
+           });
+
+           cancelJobPosting.addEventListener('click', () => {
+               jobPostingModal.classList.remove('show');
+               isProcessing = false;
+               hideLoadingOverlay();
+           });
+
+           submitJobPosting.addEventListener('click', async () => {
+               const jobPosting = jobPostingTextarea.value.trim();
+               if (!jobPosting) {
+                   showMessageFallback('Please enter a job description.', 'error');
+                   return;
+               }
+
+               jobPostingModal.classList.remove('show');
+               
+               if (window.pendingPurchase) {
+                   const { productType, price } = window.pendingPurchase;
+                   window.pendingPurchase = null;
+                   await processPremiumPurchase(productType, price, jobPosting);
+               }
+           });
+
+           // Function moved to global scope below
+       });
+   </script>
+   
+   <script>
+       // Helper function for showing messages within DOMContentLoaded scope
+       function showMessageFallback(text, type = 'success') {
+           // Use the global showMessage function from the second script tag
+           if (typeof window.showMessage === 'function') {
+               window.showMessage(text, type);
+           } else {
+               // Fallback to console if toast system not available
+                   console.log(`[${type.toUpperCase()}] ${text}`);
+               }
+           }
+
+           function showLoadingOverlay() {
+               loadingOverlay.classList.add('show');
+           }
+
+           function hideLoadingOverlay() {
+               loadingOverlay.classList.remove('show');
+           }
+
+           // Functions moved to the first DOMContentLoaded scope for proper scoping
 
            // Debug functions (available in console)
         window.testFunctions = {
