@@ -7,7 +7,7 @@ with dedicated HTML generation functions for premium results.
 import logging
 import io
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 # Try to import WeasyPrint, fall back to alternative approach if not available
@@ -37,11 +37,33 @@ templates = Jinja2Templates(directory="app/templates")
 async def export_pdf(analysis_id: str):
     """Export analysis results as PDF"""
     try:
-        # Check if WeasyPrint is available
+        # For now, provide HTML version instead of PDF when WeasyPrint unavailable
         if not WEASYPRINT_AVAILABLE:
-            return JSONResponse(
-                status_code=503,
-                content={"error": "pdf_export_unavailable", "message": "PDF export is temporarily unavailable due to missing system dependencies"}
+            logger.warning(f"PDF export requested for {analysis_id} but WeasyPrint not available, returning HTML")
+            # Get analysis data
+            analysis = AnalysisDB.get(analysis_id)
+            if not analysis:
+                raise HTTPException(status_code=404, detail="Analysis not found")
+            
+            # Check if payment was successful
+            if analysis.get('payment_status') != 'paid':
+                raise HTTPException(status_code=402, detail="Payment required")
+            
+            # Get premium result
+            premium_result = analysis.get('premium_result')
+            if not premium_result:
+                raise HTTPException(status_code=404, detail="Premium result not found")
+            
+            # Determine product type from analysis metadata or assume from result structure
+            product_type = analysis.get('product_type', 'resume_analysis')
+            
+            # Generate clean HTML for PDF export (without interactive elements)
+            html_content = generate_pdf_html(premium_result, analysis_id, product_type)
+            
+            # Return HTML with PDF-like styling as fallback
+            return HTMLResponse(
+                content=html_content,
+                headers={"Content-Disposition": f"attachment; filename=analysis-{analysis_id}.html"}
             )
         
         # Get analysis data
