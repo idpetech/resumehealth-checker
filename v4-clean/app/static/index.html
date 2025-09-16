@@ -1136,6 +1136,117 @@
            const timestamp = new Date().toISOString().split('T')[0];
            return `resume-analysis-${timestamp}.${extension}`;
        }
+
+       // Client-side PDF generation function (using jsPDF + html2canvas)
+       function exportToPDFClient(analysisId = null) {
+           try {
+               // Show loading message
+               const pdfBtn = document.querySelector('.btn-danger, .pdf-btn, [onclick*="exportToPDFClient"]');
+               if (pdfBtn) {
+                   const originalText = pdfBtn.textContent;
+                   pdfBtn.textContent = '⏳ Generating PDF...';
+                   pdfBtn.disabled = true;
+                   
+                   setTimeout(() => {
+                       pdfBtn.textContent = originalText;
+                       pdfBtn.disabled = false;
+                   }, 3000);
+               }
+
+               // Check if jsPDF is available
+               if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
+                   console.log('jsPDF not available, using fallback');
+                   exportToPDFFallback();
+                   return;
+               }
+               
+               // Get the content to export and clean it
+               const content = document.querySelector('.premium-results');
+               if (!content) {
+                   showMessage('No content found to export', 'error');
+                   return;
+               }
+               
+               // Temporarily hide action buttons for clean screenshot
+               const actionElements = document.querySelectorAll('.actions, .btn, button, [onclick]');
+               actionElements.forEach(element => {
+                   element.style.display = 'none';
+               });
+               
+               // Use html2canvas to capture the content
+               html2canvas(content, {
+                   scale: 2,
+                   useCORS: true,
+                   allowTaint: true,
+                   backgroundColor: '#ffffff',
+                   width: content.scrollWidth,
+                   height: content.scrollHeight
+               }).then(canvas => {
+                   try {
+                       const { jsPDF } = window.jspdf;
+                       const pdf = new jsPDF('p', 'mm', 'a4');
+                       
+                       const imgData = canvas.toDataURL('image/png');
+                       const imgWidth = 190; // A4 width in mm minus margins
+                       const pageHeight = 290; // A4 height in mm minus margins
+                       const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                       let heightLeft = imgHeight;
+                       
+                       let position = 10; // Start 10mm from top
+                       
+                       // Add first page
+                       pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                       heightLeft -= pageHeight;
+                       
+                       // Add additional pages if needed
+                       while (heightLeft >= 0) {
+                           position = heightLeft - imgHeight + 10;
+                           pdf.addPage();
+                           pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                           heightLeft -= pageHeight;
+                       }
+                       
+                       // Save the PDF with appropriate filename
+                       const filename = `resume-analysis-${new Date().toISOString().split('T')[0]}.pdf`;
+                       pdf.save(filename);
+                       
+                       showMessage('PDF downloaded successfully!', 'success');
+                       
+                   } catch (error) {
+                       console.error('PDF generation error:', error);
+                       showMessage('Error generating PDF. Please try again.', 'error');
+                   } finally {
+                       // Restore hidden action buttons
+                       actionElements.forEach(element => {
+                           element.style.display = '';
+                       });
+                   }
+                   
+               }).catch(error => {
+                   console.error('html2canvas error:', error);
+                   showMessage('Error capturing content. Please try again.', 'error');
+                   // Restore hidden action buttons
+                   const actionElements = document.querySelectorAll('.actions, .btn, button, [onclick]');
+                   actionElements.forEach(element => {
+                       element.style.display = '';
+                   });
+               });
+               
+           } catch (error) {
+               console.error('exportToPDFClient error:', error);
+               showMessage('Error exporting PDF: ' + error.message, 'error');
+           }
+       }
+
+       function exportToPDFFallback(analysisId = null) {
+           // Fallback: use browser's print function
+           showMessage('Using browser print dialog as fallback', 'info');
+           window.print();
+       }
     </script>
+
+    <!-- Load external libraries for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body>
 </html>
