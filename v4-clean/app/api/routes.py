@@ -1066,639 +1066,69 @@ def generate_premium_results_html(product_type: str, result: dict, analysis_id: 
 def generate_resume_analysis_html(result: dict, analysis_id: str) -> str:
     """Generate HTML for premium resume analysis results using template"""
     
-    # Prepare template context
+    # Prepare template context with robust None handling
     context = {
-        "overall_score": result.get('overall_score', 'N/A'),
-        "industry_identified": result.get('industry_identified', 'Not specified'),
-        "strength_highlights": result.get('strength_highlights', []),
-        "improvement_opportunities": result.get('improvement_opportunities', []),
-        "ats_optimization": result.get('ats_optimization', {}),
-        "text_rewrites": result.get('text_rewrites', []),
-        "success_prediction": result.get('success_prediction', ''),
+        "overall_score": result.get('overall_score') or 'N/A',
+        "industry_identified": result.get('industry_identified') or 'Not specified',
+        "strength_highlights": result.get('strength_highlights') or [],
+        "improvement_opportunities": result.get('improvement_opportunities') or [],
+        "ats_optimization": result.get('ats_optimization') or {},
+        "text_rewrites": result.get('text_rewrites') or [],
+        "success_prediction": result.get('success_prediction') or '',
         "analysis_id": analysis_id
     }
     
     # Render template
     template = templates.get_template("resume_analysis_full.html")
     return template.render(context)
-    
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Premium Resume Analysis - Resume Health Checker</title>
-        <style>
-            body {{
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-                margin: 0;
-                padding: 20px;
-                color: #333;
-            }}
-            .container {{
-                max-width: 1000px;
-                margin: 0 auto;
-                background: white;
-                border-radius: 16px;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                overflow: hidden;
-            }}
-            .header {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 40px;
-                text-align: center;
-            }}
-            .header h1 {{
-                margin: 0;
-                font-size: 2.5rem;
-                font-weight: 700;
-            }}
-            .header p {{
-                margin: 10px 0 0 0;
-                font-size: 1.1rem;
-                opacity: 0.9;
-            }}
-            .content {{
-                padding: 40px;
-            }}
-            .score-section {{
-                text-align: center;
-                margin-bottom: 40px;
-                padding: 30px;
-                background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
-                border-radius: 12px;
-                border: 2px solid #667eea;
-            }}
-            .score {{
-                font-size: 4rem;
-                font-weight: 700;
-                color: #667eea;
-                margin: 0;
-            }}
-            .score-label {{
-                font-size: 1.2rem;
-                color: #666;
-                margin-top: 10px;
-            }}
-            .section {{
-                margin-bottom: 40px;
-            }}
-            .section h2 {{
-                color: #667eea;
-                font-size: 1.8rem;
-                margin-bottom: 20px;
-                border-bottom: 2px solid #667eea;
-                padding-bottom: 10px;
-            }}
-            .section h3 {{
-                color: #333;
-                font-size: 1.3rem;
-                margin-bottom: 15px;
-            }}
-            .strengths-list, .opportunities-list {{
-                list-style: none;
-                padding: 0;
-            }}
-            .strengths-list li, .opportunities-list li {{
-                background: #f8f9ff;
-                margin: 10px 0;
-                padding: 15px;
-                border-radius: 8px;
-                border-left: 4px solid #667eea;
-            }}
-            .strengths-list li {{
-                border-left-color: #28a745;
-            }}
-            .opportunities-list li {{
-                border-left-color: #ffc107;
-            }}
-            .text-rewrite {{
-                background: #f8f9ff;
-                padding: 20px;
-                border-radius: 8px;
-                margin: 15px 0;
-                border: 1px solid #e0e0e0;
-            }}
-            .original {{
-                background: #fff3cd;
-                padding: 15px;
-                border-radius: 6px;
-                margin: 10px 0;
-                border-left: 4px solid #ffc107;
-            }}
-            .improved {{
-                background: #d4edda;
-                padding: 15px;
-                border-radius: 6px;
-                margin: 10px 0;
-                border-left: 4px solid #28a745;
-            }}
-            .why-better {{
-                font-style: italic;
-                color: #666;
-                margin-top: 10px;
-            }}
-            .competitive-advantages, .success-prediction {{
-                background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
-                padding: 25px;
-                border-radius: 12px;
-                border: 2px solid #28a745;
-                margin: 20px 0;
-            }}
-            .actions {{
-                text-align: center;
-                margin-top: 40px;
-                padding-top: 30px;
-                border-top: 1px solid #e0e0e0;
-            }}
-            .btn {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                border: none;
-                padding: 15px 30px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 16px;
-                font-weight: 600;
-                margin: 10px;
-                text-decoration: none;
-                display: inline-block;
-            }}
-            .btn:hover {{
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-            }}
-            .print-btn {{
-                background: #28a745;
-            }}
-            
-            /* Hide buttons and interactive elements when printing */
-            @media print {{
-                .actions {{
-                    display: none !important;
-                }}
-                .btn {{
-                    display: none !important;
-                }}
-                button {{
-                    display: none !important;
-                }}
-                .header {{
-                    background: #667eea !important;
-                    -webkit-print-color-adjust: exact;
-                    color-adjust: exact;
-                }}
-                body {{
-                    background: white !important;
-                }}
-                .container {{
-                    box-shadow: none !important;
-                    margin: 0 !important;
-                    border-radius: 0 !important;
-                }}
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>&#127919; Premium Resume Analysis</h1>
-                <p>Your comprehensive resume optimization report</p>
-            </div>
-            
-            <div class="content">
-                <div class="score-section">
-                    <div class="score">{overall_score}</div>
-                    <div class="score-label">Overall Resume Score</div>
-                </div>
-                
-                <div class="section">
-                    <h2>&#128170; Key Strengths</h2>
-                    <ul class="strengths-list">
-    """
-    
-    for strength in strengths:
-        html_content += f'<li>{strength}</li>'
-    
-    html_content += f"""
-                    </ul>
-                </div>
-                
-                <div class="section">
-                    <h2>&#128640; Improvement Opportunities</h2>
-                    <ul class="opportunities-list">
-    """
-    
-    for opportunity in opportunities:
-        html_content += f'<li>{opportunity}</li>'
-    
-    html_content += f"""
-                    </ul>
-                </div>
-                
-                <div class="section">
-                    <h2>&#128202; ATS Optimization</h2>
-                    <h3>Current Strength</h3>
-                    <p>{ats_opt.get('current_strength', 'N/A')}</p>
-                    
-                    <h3>Enhancement Opportunities</h3>
-                    <ul>
-    """
-    
-    for enhancement in ats_opt.get('enhancement_opportunities', []):
-        html_content += f'<li>{enhancement}</li>'
-    
-    html_content += f"""
-                    </ul>
-                    
-                    <h3>Impact Prediction</h3>
-                    <p>{ats_opt.get('impact_prediction', 'N/A')}</p>
-                </div>
-                
-                <div class="section">
-                    <h2>&#128221; Content Enhancement</h2>
-                    <h3>Strong Sections</h3>
-                    <ul>
-    """
-    
-    for section in content_enhancement.get('strong_sections', []):
-        html_content += f'<li>{section}</li>'
-    
-    html_content += f"""
-                    </ul>
-                    
-                    <h3>Growth Areas</h3>
-                    <ul>
-    """
-    
-    for area in content_enhancement.get('growth_areas', []):
-        html_content += f'<li>{area}</li>'
-    
-    html_content += f"""
-                    </ul>
-                    
-                    <h3>Strategic Additions</h3>
-                    <ul>
-    """
-    
-    for addition in content_enhancement.get('strategic_additions', []):
-        html_content += f'<li>{addition}</li>'
-    
-    html_content += f"""
-                    </ul>
-                </div>
-    """
-    
-    if text_rewrites:
-        html_content += """
-                <div class="section">
-                    <h2>&#9999; Text Rewrites</h2>
-        """
-        
-        for rewrite in text_rewrites:
-            html_content += f"""
-                    <div class="text-rewrite">
-                        <h3>{rewrite.get('section', 'Section')}</h3>
-                        <div class="original">
-                            <strong>Original:</strong><br>
-                            {rewrite.get('original', 'N/A')}
-                        </div>
-                        <div class="improved">
-                            <strong>Improved:</strong><br>
-                            {rewrite.get('improved', 'N/A')}
-                        </div>
-                        <div class="why-better">
-                            <strong>Why this is better:</strong> {rewrite.get('why_better', 'N/A')}
-                        </div>
-                    </div>
-            """
-        
-        html_content += """
-                </div>
-        """
-    
-    html_content += f"""
-                <div class="competitive-advantages">
-                    <h2>&#127942; Competitive Advantages</h2>
-                    <p>{competitive_advantages}</p>
-                </div>
-                
-                <div class="success-prediction">
-                    <h2>&#127919; Success Prediction</h2>
-                    <p>{success_prediction}</p>
-                </div>
-                
-                <div class="actions">
-                    <button class="btn print-btn" onclick="window.print()">&#128424; Print Report</button>
-                    <a href="/" class="btn">&#127968; Return to App</a>
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    return html_content
 
 def generate_job_fit_html(result: dict, analysis_id: str) -> str:
-    """Generate HTML for job fit analysis results"""
+    """Generate HTML for job fit analysis results using template"""
     
-    match_percentage = result.get('match_percentage', 'N/A')
-    requirements_met = result.get('requirements_met', [])
-    missing_qualifications = result.get('missing_qualifications', [])
-    strengths = result.get('strengths', [])
-    improvements = result.get('improvements', [])
-    recommendations = result.get('recommendations', [])
+    # Extract data from result with robust None handling
+    match_percentage = result.get('match_percentage') or 'N/A'
+    requirements_met = result.get('requirements_met') or []
+    missing_qualifications = result.get('missing_qualifications') or []
+    strengths = result.get('strengths') or []
+    improvements = result.get('improvements') or []
+    recommendations = result.get('recommendations') or []
     
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Job Fit Analysis - Resume Health Checker</title>
-        <style>
-            body {{
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-                margin: 0;
-                padding: 20px;
-                color: #333;
-            }}
-            .container {{
-                max-width: 1000px;
-                margin: 0 auto;
-                background: white;
-                border-radius: 16px;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                overflow: hidden;
-            }}
-            .header {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 40px;
-                text-align: center;
-            }}
-            .header h1 {{
-                margin: 0;
-                font-size: 2.5rem;
-                font-weight: 700;
-            }}
-            .content {{
-                padding: 40px;
-            }}
-            .score-section {{
-                text-align: center;
-                margin-bottom: 40px;
-                padding: 30px;
-                background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
-                border-radius: 12px;
-                border: 2px solid #667eea;
-            }}
-            .score {{
-                font-size: 4rem;
-                font-weight: 700;
-                color: #667eea;
-                margin: 0;
-            }}
-            .section {{
-                margin-bottom: 40px;
-            }}
-            .section h2 {{
-                color: #667eea;
-                font-size: 1.8rem;
-                margin-bottom: 20px;
-                border-bottom: 2px solid #667eea;
-                padding-bottom: 10px;
-            }}
-            .list {{
-                list-style: none;
-                padding: 0;
-            }}
-            .list li {{
-                background: #f8f9ff;
-                margin: 10px 0;
-                padding: 15px;
-                border-radius: 8px;
-                border-left: 4px solid #667eea;
-            }}
-            .actions {{
-                text-align: center;
-                margin-top: 40px;
-                padding-top: 30px;
-                border-top: 1px solid #e0e0e0;
-            }}
-            .btn {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                border: none;
-                padding: 15px 30px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 16px;
-                font-weight: 600;
-                margin: 10px;
-                text-decoration: none;
-                display: inline-block;
-            }}
-            
-            /* Hide buttons and interactive elements when printing */
-            @media print {{
-                .actions {{
-                    display: none !important;
-                }}
-                .btn {{
-                    display: none !important;
-                }}
-                button {{
-                    display: none !important;
-                }}
-                .header {{
-                    background: #667eea !important;
-                    -webkit-print-color-adjust: exact;
-                    color-adjust: exact;
-                }}
-                body {{
-                    background: white !important;
-                }}
-                .container {{
-                    box-shadow: none !important;
-                    margin: 0 !important;
-                    border-radius: 0 !important;
-                }}
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>&#127919; Job Fit Analysis</h1>
-                <p>How well your resume matches the job requirements</p>
-            </div>
-            
-            <div class="content">
-                <div class="score-section">
-                    <div class="score">{match_percentage}%</div>
-                    <div class="score-label">Job Match Score</div>
-                </div>
-                
-                <div class="section">
-                    <h2>&#10003; Requirements Met</h2>
-                    <ul class="list">
-    """
+    # Create context for template
+    context = {
+        "fit_score": match_percentage,
+        "strong_matches": requirements_met + strengths,  # Combine requirements met and strengths
+        "skill_gaps": missing_qualifications + improvements,  # Combine missing qualifications and improvements
+        "recommendations": recommendations,
+        "analysis_id": analysis_id,
+        "keyword_analysis": result.get('keyword_analysis') or {},
+        "improvement_plan": result.get('improvement_plan') or ''
+    }
     
-    for req in requirements_met:
-        html_content += f'<li>{req}</li>'
-    
-    html_content += f"""
-                    </ul>
-                </div>
-                
-                <div class="section">
-                    <h2>&#10060; Missing Qualifications</h2>
-                    <ul class="list">
-    """
-    
-    for missing in missing_qualifications:
-        html_content += f'<li>{missing}</li>'
-    
-    html_content += f"""
-                    </ul>
-                </div>
-                
-                <div class="section">
-                    <h2>&#128170; Strengths</h2>
-                    <ul class="list">
-    """
-    
-    for strength in strengths:
-        html_content += f'<li>{strength}</li>'
-    
-    html_content += f"""
-                    </ul>
-                </div>
-                
-                <div class="section">
-                    <h2>&#128640; Improvements</h2>
-                    <ul class="list">
-    """
-    
-    for improvement in improvements:
-        html_content += f'<li>{improvement}</li>'
-    
-    html_content += f"""
-                    </ul>
-                </div>
-                
-                <div class="actions">
-                    <button class="btn" onclick="window.print()">&#128424; Print Report</button>
-                    <a href="/" class="btn">&#127968; Return to App</a>
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    return html_content
+    # Render template
+    template = templates.get_template("job_fit_analysis_full.html")
+    return template.render(context)
 
 def generate_cover_letter_html(result: dict, analysis_id: str) -> str:
-    """Generate HTML for cover letter results"""
+    """Generate HTML for cover letter results using Jinja2 template"""
     
+    # Extract variables from result dict
     cover_letter = result.get('cover_letter', '')
     key_points = result.get('key_points_highlighted', [])
     tone = result.get('tone', '')
     word_count = result.get('word_count', '')
     
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>AI Cover Letter - Resume Health Checker</title>
-        <style>
-            body {{
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-                margin: 0;
-                padding: 20px;
-                color: #333;
-            }}
-            .container {{
-                max-width: 800px;
-                margin: 0 auto;
-                background: white;
-                border-radius: 16px;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                overflow: hidden;
-            }}
-            .header {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 40px;
-                text-align: center;
-            }}
-            .content {{
-                padding: 40px;
-            }}
-            .cover-letter {{
-                background: #f8f9ff;
-                padding: 30px;
-                border-radius: 12px;
-                border: 1px solid #e0e0e0;
-                white-space: pre-line;
-                line-height: 1.6;
-                font-size: 1.1rem;
-            }}
-            .actions {{
-                text-align: center;
-                margin-top: 40px;
-                padding-top: 30px;
-                border-top: 1px solid #e0e0e0;
-            }}
-            .btn {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                border: none;
-                padding: 15px 30px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 16px;
-                font-weight: 600;
-                margin: 10px;
-                text-decoration: none;
-                display: inline-block;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>&#128221; AI Cover Letter</h1>
-                <p>Your personalized cover letter</p>
-            </div>
-            
-            <div class="content">
-                <div class="cover-letter">{cover_letter}</div>
-                
-                <div class="actions">
-                    <button class="btn" onclick="window.print()">&#128424; Print Letter</button>
-                    <a href="/" class="btn">&#127968; Return to App</a>
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+    # Create context for template
+    context = {
+        "cover_letter_text": cover_letter,
+        "key_points_highlighted": key_points,
+        "tone": tone,
+        "word_count": word_count,
+        "analysis_id": analysis_id
+    }
     
-    return html_content
+    # Render template
+    template = templates.get_template("cover_letter_full.html")
+    return template.render(context)
 
 def generate_interview_prep_html(result: dict, analysis_id: str) -> str:
     """Generate HTML for interview prep results"""
@@ -2369,65 +1799,12 @@ def generate_embedded_job_fit_html(result: dict, analysis_id: str) -> str:
         }}
         
         function exportToPDFFallback() {{
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Job Fit Analysis Report</title>
-                    <style>
-                        body {{ font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }}
-                        .premium-results {{ background: white; }}
-                        .actions {{ display: none !important; }}
-                        @media print {{ body {{ margin: 0; }} @page {{ margin: 2cm; }} }}
-                    </style>
-                </head>
-                <body>
-                    <h1 style="text-align: center; color: #2c3e50;">🎯 Job Fit Analysis Report</h1>
-                    <p style="text-align: center; color: #888; font-size: 12px;">To save as PDF: Press Cmd+P (Mac) or Ctrl+P (Windows), then choose "Save as PDF"</p>
-                    ` + document.querySelector('.premium-results').innerHTML + `
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.focus();
+            window.print();
         }}
         
         function exportToWord() {{
-            const content = document.querySelector('.premium-results');
-            const clonedContent = content.cloneNode(true);
-            
-            // Remove interactive elements
-            const elementsToRemove = clonedContent.querySelectorAll('.actions');
-            elementsToRemove.forEach(element => element.remove());
-            
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <title>Job Fit Analysis Report</title>
-                    <style>
-                        body {{ font-family: 'Times New Roman', serif; line-height: 1.6; margin: 40px; }}
-                        .premium-header h2 {{ color: #2c3e50; text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; }}
-                        .section h3 {{ color: #2c3e50; border-bottom: 1px solid #2c3e50; padding-bottom: 5px; }}
-                    </style>
-                </head>
-                <body>
-                    ` + clonedContent.outerHTML + `
-                </body>
-                </html>
-            `;
-            
-            const blob = new Blob([htmlContent], {{ type: 'application/msword' }});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Job_Fit_Analysis_Report.doc';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // Use the server-side DOCX export endpoint
+            window.location.href = '/api/v1/export/{analysis_id}/docx';
         }}
     </script>
     
@@ -2571,302 +1948,21 @@ def generate_embedded_salary_insights_html(result: dict, analysis_id: str) -> st
     """
 
 def generate_resume_rewrite_html(result: dict, analysis_id: str) -> str:
-    """Generate full HTML page for resume rewrite results"""
+    """Generate full HTML page for resume rewrite results using Jinja2 template"""
     
-    rewritten_resume = result.get('rewritten_resume', {})
-    strategic_changes = result.get('strategic_changes', {})
-    before_after_comparison = result.get('before_after_comparison', [])
-    interview_generation_potential = result.get('interview_generation_potential', '')
-    next_steps = result.get('next_steps', '')
+    # Prepare template context with robust None handling
+    context = {
+        "rewritten_resume": result.get('rewritten_resume') or {},
+        "strategic_changes": result.get('strategic_changes') or {},
+        "before_after_comparison": result.get('before_after_comparison') or [],
+        "interview_generation_potential": result.get('interview_generation_potential') or '',
+        "next_steps": result.get('next_steps') or '',
+        "analysis_id": analysis_id
+    }
     
-    # Extract resume sections
-    professional_summary = rewritten_resume.get('professional_summary', '')
-    core_competencies = rewritten_resume.get('core_competencies', [])
-    professional_experience = rewritten_resume.get('professional_experience', [])
-    education = rewritten_resume.get('education', '')
-    additional_sections = rewritten_resume.get('additional_sections', '')
-    
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Resume Rewrite - Resume Health Checker</title>
-        <style>
-            body {{
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-                margin: 0;
-                padding: 20px;
-                color: #333;
-            }}
-            .container {{
-                max-width: 1200px;
-                margin: 0 auto;
-                background: white;
-                border-radius: 16px;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                overflow: hidden;
-            }}
-            .header {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 40px;
-                text-align: center;
-            }}
-            .header h1 {{
-                margin: 0;
-                font-size: 2.5rem;
-                font-weight: 700;
-            }}
-            .content {{
-                padding: 40px;
-            }}
-            .two-column {{
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 40px;
-                margin: 30px 0;
-            }}
-            .section {{
-                margin-bottom: 40px;
-            }}
-            .section h2 {{
-                color: #667eea;
-                font-size: 1.8rem;
-                margin-bottom: 20px;
-                border-bottom: 2px solid #667eea;
-                padding-bottom: 10px;
-            }}
-            .section h3 {{
-                color: #333;
-                font-size: 1.3rem;
-                margin-bottom: 15px;
-            }}
-            .rewritten-resume {{
-                background: #f8f9ff;
-                padding: 30px;
-                border-radius: 12px;
-                border: 2px solid #667eea;
-            }}
-            .resume-section {{
-                margin-bottom: 25px;
-            }}
-            .resume-section h3 {{
-                color: #667eea;
-                border-bottom: 1px solid #667eea;
-                padding-bottom: 8px;
-                margin-bottom: 15px;
-            }}
-            .experience-item {{
-                background: white;
-                padding: 20px;
-                border-radius: 8px;
-                margin: 15px 0;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            }}
-            .experience-header {{
-                font-weight: 600;
-                color: #333;
-                margin-bottom: 10px;
-            }}
-            .bullet-points {{
-                list-style: none;
-                padding: 0;
-            }}
-            .bullet-points li {{
-                padding: 5px 0;
-                padding-left: 20px;
-                position: relative;
-            }}
-            .bullet-points li:before {{
-                content: "•";
-                color: #667eea;
-                font-weight: bold;
-                position: absolute;
-                left: 0;
-            }}
-            .comparison-item {{
-                background: #f8f9ff;
-                padding: 20px;
-                border-radius: 8px;
-                margin: 15px 0;
-                border-left: 4px solid #ffc107;
-            }}
-            .actions {{
-                text-align: center;
-                margin-top: 40px;
-                padding-top: 30px;
-                border-top: 1px solid #e0e0e0;
-            }}
-            .btn {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                border: none;
-                padding: 15px 30px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 16px;
-                font-weight: 600;
-                margin: 10px;
-                text-decoration: none;
-                display: inline-block;
-            }}
-            .btn:hover {{
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-            }}
-            .success-section {{
-                background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
-                padding: 25px;
-                border-radius: 12px;
-                border: 2px solid #28a745;
-                margin: 20px 0;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>&#128221; Complete Resume Rewrite</h1>
-                <p>Your job-targeted resume transformation</p>
-            </div>
-            
-            <div class="content">
-                <div class="section">
-                    <h2>&#127919; Your Rewritten Resume</h2>
-                    <div class="rewritten-resume">
-                        <div class="resume-section">
-                            <h3>Professional Summary</h3>
-                            <p>{professional_summary}</p>
-                        </div>
-                        
-                        <div class="resume-section">
-                            <h3>Core Competencies</h3>
-                            <ul class="bullet-points">
-    """
-    
-    for competency in core_competencies:
-        html_content += f'<li>{competency}</li>'
-    
-    html_content += f"""
-                            </ul>
-                        </div>
-                        
-                        <div class="resume-section">
-                            <h3>Professional Experience</h3>
-    """
-    
-    for exp in professional_experience:
-        company = exp.get('company', '')
-        title = exp.get('title', '')
-        duration = exp.get('duration', '')
-        bullets = exp.get('rewritten_bullets', [])
-        
-        html_content += f"""
-                            <div class="experience-item">
-                                <div class="experience-header">{title} | {company} | {duration}</div>
-                                <ul class="bullet-points">
-        """
-        
-        for bullet in bullets:
-            html_content += f'<li>{bullet}</li>'
-        
-        html_content += """
-                                </ul>
-                            </div>
-        """
-    
-    html_content += f"""
-                        </div>
-                        
-                        <div class="resume-section">
-                            <h3>Education</h3>
-                            <p>{education}</p>
-                        </div>
-                        
-                        {f'<div class="resume-section"><h3>Additional Information</h3><p>{additional_sections}</p></div>' if additional_sections else ''}
-                    </div>
-                </div>
-                
-                <div class="two-column">
-                    <div class="section">
-                        <h2>&#128640; Strategic Changes</h2>
-                        <h3>Keyword Optimization</h3>
-                        <ul>
-    """
-    
-    for keyword in strategic_changes.get('keyword_optimization', []):
-        html_content += f'<li>{keyword}</li>'
-    
-    html_content += f"""
-                        </ul>
-                        
-                        <h3>Narrative Positioning</h3>
-                        <p>{strategic_changes.get('narrative_positioning', '')}</p>
-                        
-                        <h3>Competitive Advantages</h3>
-                        <ul>
-    """
-    
-    for advantage in strategic_changes.get('competitive_advantages', []):
-        html_content += f'<li>{advantage}</li>'
-    
-    html_content += f"""
-                        </ul>
-                    </div>
-                    
-                    <div class="section">
-                        <h2>&#128202; Before & After</h2>
-    """
-    
-    for comparison in before_after_comparison:
-        html_content += f"""
-                        <div class="comparison-item">
-                            <h3>{comparison.get('section', 'Section')}</h3>
-                            <p><strong>Original Issue:</strong> {comparison.get('original_weakness', '')}</p>
-                            <p><strong>Rewrite Improvement:</strong> {comparison.get('rewritten_strength', '')}</p>
-                            <p><strong>Expected Impact:</strong> {comparison.get('expected_impact', '')}</p>
-                        </div>
-        """
-    
-    html_content += f"""
-                    </div>
-                </div>
-                
-                <div class="success-section">
-                    <h2>&#127942; Interview Generation Potential</h2>
-                    <p>{interview_generation_potential}</p>
-                </div>
-                
-                <div class="success-section">
-                    <h2>&#128161; Next Steps</h2>
-                    <p>{next_steps}</p>
-                </div>
-                
-                <div class="actions">
-                    <button class="btn" onclick="window.print()">&#128424; Print Resume</button>
-                    <button class="btn" onclick="copyToClipboard()">&#128203; Copy Text</button>
-                    <a href="/" class="btn">&#127968; Return to App</a>
-                </div>
-            </div>
-        </div>
-        
-        <script>
-            function copyToClipboard() {{
-                const resumeText = document.querySelector('.rewritten-resume').textContent;
-                navigator.clipboard.writeText(resumeText).then(() => {{
-                    alert('Resume copied to clipboard!');
-                }});
-            }}
-        </script>
-    </body>
-    </html>
-    """
-    
-    return html_content
+    # Render the template to HTML string
+    template = templates.get_template("resume_rewrite_full.html")
+    return template.render(context)
 
 def generate_embedded_resume_rewrite_html(result: dict, analysis_id: str) -> str:
     """Generate embedded HTML for resume rewrite results using Jinja2 template"""
@@ -3038,371 +2134,60 @@ def generate_pdf_html(result: dict, analysis_id: str, product_type: str) -> str:
         return f"<h1>Export for {product_type}</h1><pre>{result}</pre>"
 
 def generate_pdf_resume_analysis_html(result: dict, analysis_id: str) -> str:
-    """Generate PDF-optimized HTML for resume analysis"""
+    """Generate PDF-optimized HTML for resume analysis using template"""
     
-    overall_score = result.get('overall_score', 'N/A')
-    strengths = result.get('strength_highlights', [])
-    opportunities = result.get('improvement_opportunities', [])
-    ats_opt = result.get('ats_optimization', {})
-    content_enhancement = result.get('content_enhancement', {})
-    text_rewrites = result.get('text_rewrites', [])
-    competitive_advantages = result.get('competitive_advantages', '')
-    success_prediction = result.get('success_prediction', '')
+    context = {
+        "overall_score": result.get('overall_score') or 'N/A',
+        "strengths": result.get('strength_highlights') or [],
+        "opportunities": result.get('improvement_opportunities') or [],
+        "ats_opt": result.get('ats_optimization') or {},
+        "content_enhancement": result.get('content_enhancement') or {},
+        "text_rewrites": result.get('text_rewrites') or [],
+        "competitive_advantages": result.get('competitive_advantages') or '',
+        "success_prediction": result.get('success_prediction') or ''
+    }
     
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Resume Analysis Report</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; color: #333; }}
-            h1 {{ color: #333; text-align: center; margin-bottom: 30px; }}
-            h2 {{ color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-top: 30px; }}
-            h3 {{ color: #333; margin-top: 20px; }}
-            .score {{ font-size: 28px; font-weight: bold; text-align: center; margin: 30px 0; color: #667eea; }}
-            ul {{ list-style: none; padding: 0; }}
-            li {{ background: #f9f9f9; margin: 8px 0; padding: 12px; border-left: 4px solid #667eea; }}
-            .text-rewrite {{ background: #f8f9ff; padding: 15px; margin: 15px 0; border: 1px solid #e0e0e0; border-radius: 6px; }}
-            .original {{ background: #fff3cd; padding: 12px; margin: 8px 0; border-left: 3px solid #ffc107; border-radius: 4px; }}
-            .improved {{ background: #d4edda; padding: 12px; margin: 8px 0; border-left: 3px solid #28a745; border-radius: 4px; }}
-            .why-better {{ font-style: italic; color: #666; margin-top: 8px; }}
-            .highlight-section {{ background: #e8f5e8; padding: 20px; border: 2px solid #28a745; border-radius: 8px; margin: 20px 0; }}
-        </style>
-    </head>
-    <body>
-        <h1>📊 Premium Resume Analysis Report</h1>
-        <div class="score">Overall Score: {overall_score}/100</div>
-        
-        <h2>💪 Key Strengths</h2>
-        <ul>
-    """
-    
-    for strength in strengths:
-        html_content += f'<li>{strength}</li>'
-    
-    html_content += """
-        </ul>
-        
-        <h2>🚀 Improvement Opportunities</h2>
-        <ul>
-    """
-    
-    for opportunity in opportunities:
-        html_content += f'<li>{opportunity}</li>'
-    
-    html_content += f"""
-        </ul>
-        
-        <h2>🎯 ATS Optimization</h2>
-        <h3>Current Strength</h3>
-        <p>{ats_opt.get('current_strength', 'N/A')}</p>
-        
-        <h3>Enhancement Opportunities</h3>
-        <ul>
-    """
-    
-    for enhancement in ats_opt.get('enhancement_opportunities', []):
-        html_content += f'<li>{enhancement}</li>'
-    
-    html_content += f"""
-        </ul>
-        
-        <h3>Impact Prediction</h3>
-        <p>{ats_opt.get('impact_prediction', 'N/A')}</p>
-        
-        <h2>📝 Content Enhancement</h2>
-        <h3>Strong Sections</h3>
-        <ul>
-    """
-    
-    for strong in content_enhancement.get('strong_sections', []):
-        html_content += f'<li>{strong}</li>'
-    
-    html_content += f"""
-        </ul>
-        
-        <h3>Growth Areas</h3>
-        <ul>
-    """
-    
-    for growth in content_enhancement.get('growth_areas', []):
-        html_content += f'<li>{growth}</li>'
-    
-    html_content += f"""
-        </ul>
-        
-        <h3>Strategic Additions</h3>
-        <ul>
-    """
-    
-    for addition in content_enhancement.get('strategic_additions', []):
-        html_content += f'<li>{addition}</li>'
-    
-    # Add text rewrites if available
-    if text_rewrites:
-        html_content += """
-        </ul>
-        
-        <h2>✏️ Text Rewrites</h2>
-        """
-        
-        for rewrite in text_rewrites:
-            html_content += f"""
-        <div class="text-rewrite">
-            <h3>{rewrite.get('section', 'Section')}</h3>
-            <div class="original">
-                <strong>Original:</strong><br>
-                {rewrite.get('original', 'N/A')}
-            </div>
-            <div class="improved">
-                <strong>Improved:</strong><br>
-                {rewrite.get('improved', 'N/A')}
-            </div>
-            <div class="why-better">
-                <strong>Why this is better:</strong> {rewrite.get('why_better', 'N/A')}
-            </div>
-        </div>
-            """
-    else:
-        html_content += "</ul>"
-    
-    # Add competitive advantages and success prediction if available
-    if competitive_advantages:
-        html_content += f"""
-        
-        <div class="highlight-section">
-            <h2>🏆 Competitive Advantages</h2>
-            <p>{competitive_advantages}</p>
-        </div>
-        """
-    
-    if success_prediction:
-        html_content += f"""
-        
-        <div class="highlight-section">
-            <h2>📈 Success Prediction</h2>
-            <p>{success_prediction}</p>
-        </div>
-        """
-    
-    html_content += """
-    </body>
-    </html>
-    """
-    
-    return html_content
+    template = templates.get_template("pdf_resume_analysis.html")
+    return template.render(context)
 
 def generate_pdf_job_fit_html(result: dict, analysis_id: str) -> str:
-    """Generate PDF-optimized HTML for job fit analysis"""
+    """Generate PDF-optimized HTML for job fit analysis using template"""
     
-    job_fit_score = result.get('job_fit_score', 'N/A')
-    strategic_advantages = result.get('strategic_advantages', [])
-    positioning_strategy = result.get('positioning_strategy', {})
-    optimization_keywords = result.get('optimization_keywords', [])
-    resume_enhancements = result.get('resume_enhancements', [])
-    text_rewrites = result.get('text_rewrites', [])
-    interview_confidence = result.get('interview_confidence', '')
+    context = {
+        "job_fit_score": result.get('job_fit_score') or 'N/A',
+        "strategic_advantages": result.get('strategic_advantages') or [],
+        "positioning_strategy": result.get('positioning_strategy') or {},
+        "optimization_keywords": result.get('optimization_keywords') or [],
+        "resume_enhancements": result.get('resume_enhancements') or [],
+        "text_rewrites": result.get('text_rewrites') or [],
+        "interview_confidence": result.get('interview_confidence') or ''
+    }
     
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Job Fit Analysis Report</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; color: #333; }}
-            h1 {{ color: #333; text-align: center; margin-bottom: 30px; }}
-            h2 {{ color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-top: 30px; }}
-            h3 {{ color: #333; margin-top: 20px; }}
-            .score {{ font-size: 28px; font-weight: bold; text-align: center; margin: 30px 0; color: #667eea; }}
-            ul {{ list-style: none; padding: 0; }}
-            li {{ background: #f9f9f9; margin: 8px 0; padding: 12px; border-left: 4px solid #667eea; }}
-            .text-rewrite {{ background: #f8f9ff; padding: 15px; margin: 15px 0; border: 1px solid #e0e0e0; border-radius: 6px; }}
-            .original {{ background: #fff3cd; padding: 12px; margin: 8px 0; border-left: 3px solid #ffc107; border-radius: 4px; }}
-            .improved {{ background: #d4edda; padding: 12px; margin: 8px 0; border-left: 3px solid #28a745; border-radius: 4px; }}
-            .why-better {{ font-style: italic; color: #666; margin-top: 8px; }}
-            .highlight-section {{ background: #e8f5e8; padding: 20px; border: 2px solid #28a745; border-radius: 8px; margin: 20px 0; }}
-            .keyword-tag {{ background: #667eea; color: white; padding: 6px 12px; margin: 4px; border-radius: 20px; font-size: 14px; display: inline-block; }}
-        </style>
-    </head>
-    <body>
-        <h1>🎯 Job Fit Analysis Report</h1>
-        <div class="score">Job Fit Score: {job_fit_score}/100</div>
-        
-        <h2>⭐ Strategic Advantages</h2>
-        <ul>
-    """
-    
-    for advantage in strategic_advantages:
-        html_content += f'<li>{advantage}</li>'
-    
-    # Add positioning strategy if available
-    primary_value = positioning_strategy.get('primary_value', '')
-    supporting_qualifications = positioning_strategy.get('supporting_qualifications', [])
-    unique_differentiators = positioning_strategy.get('unique_differentiators', [])
-    
-    if primary_value:
-        html_content += f"""
-        </ul>
-        
-        <h2>🏆 Primary Value Proposition</h2>
-        <p>{primary_value}</p>
-        """
-    
-    if supporting_qualifications:
-        html_content += """
-        
-        <h2>✅ Supporting Qualifications</h2>
-        <ul>
-        """
-        for qual in supporting_qualifications:
-            html_content += f'<li>{qual}</li>'
-        html_content += "</ul>"
-    
-    if unique_differentiators:
-        html_content += """
-        
-        <h2>💎 Unique Differentiators</h2>
-        <ul>
-        """
-        for diff in unique_differentiators:
-            html_content += f'<li>{diff}</li>'
-        html_content += "</ul>"
-    
-    if optimization_keywords:
-        html_content += """
-        
-        <h2>🔑 Optimization Keywords</h2>
-        <div>
-        """
-        for keyword in optimization_keywords:
-            html_content += f'<span class="keyword-tag">{keyword}</span>'
-        html_content += "</div>"
-    
-    if resume_enhancements:
-        html_content += """
-        
-        <h2>📝 Resume Enhancements</h2>
-        <ul>
-        """
-        for enhancement in resume_enhancements:
-            html_content += f'<li>{enhancement}</li>'
-        html_content += "</ul>"
-    
-    # Add text rewrites if available
-    if text_rewrites:
-        html_content += """
-        
-        <h2>✏️ Text Rewrites</h2>
-        """
-        
-        for rewrite in text_rewrites:
-            section = rewrite.get('section', 'Section')
-            original = rewrite.get('original', '')
-            job_optimized = rewrite.get('job_optimized', '')
-            strategic_impact = rewrite.get('strategic_impact', '')
-            
-            html_content += f"""
-        <div class="text-rewrite">
-            <h3>{section}</h3>
-            <div class="original">
-                <strong>Before:</strong><br>
-                {original}
-            </div>
-            <div class="improved">
-                <strong>Job-Optimized:</strong><br>
-                {job_optimized}
-            </div>
-            <div class="why-better">
-                <strong>Strategic Impact:</strong> {strategic_impact}
-            </div>
-        </div>
-            """
-    
-    if interview_confidence:
-        html_content += f"""
-        
-        <div class="highlight-section">
-            <h2>🎯 Interview Confidence</h2>
-            <p>{interview_confidence}</p>
-        </div>
-        """
-    
-    html_content += """
-    </body>
-    </html>
-    """
-    
-    return html_content
+    template = templates.get_template("pdf_job_fit_analysis.html")
+    return template.render(context)
 
 def generate_pdf_cover_letter_html(result: dict, analysis_id: str) -> str:
-    """Generate PDF-optimized HTML for cover letter"""
+    """Generate PDF-optimized HTML for cover letter using template"""
     
-    cover_letter = result.get('cover_letter', '')
+    context = {
+        "cover_letter": result.get('cover_letter') or ''
+    }
     
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Cover Letter</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }}
-            h1 {{ color: #333; text-align: center; margin-bottom: 30px; }}
-            .cover-letter {{ white-space: pre-line; }}
-        </style>
-    </head>
-    <body>
-        <h1>Cover Letter</h1>
-        <div class="cover-letter">{cover_letter}</div>
-    </body>
-    </html>
-    """
-    
-    return html_content
+    template = templates.get_template("pdf_cover_letter.html")
+    return template.render(context)
 
 def generate_pdf_resume_rewrite_html(result: dict, analysis_id: str) -> str:
-    """Generate PDF-optimized HTML for resume rewrite"""
+    """Generate PDF-optimized HTML for resume rewrite using template"""
     
     rewritten_resume = result.get('rewritten_resume', {})
-    professional_summary = rewritten_resume.get('professional_summary', '')
-    core_competencies = rewritten_resume.get('core_competencies', [])
     
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Rewritten Resume</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }}
-            h1 {{ color: #333; text-align: center; }}
-            h2 {{ color: #667eea; border-bottom: 1px solid #667eea; }}
-            ul {{ list-style: none; padding: 0; }}
-            li {{ margin: 4px 0; padding: 8px; background: #f9f9f9; }}
-        </style>
-    </head>
-    <body>
-        <h1>Rewritten Resume</h1>
-        
-        <h2>Professional Summary</h2>
-        <p>{professional_summary}</p>
-        
-        <h2>Core Competencies</h2>
-        <ul>
-    """
+    context = {
+        "professional_summary": rewritten_resume.get('professional_summary') or '',
+        "core_competencies": rewritten_resume.get('core_competencies') or []
+    }
     
-    for competency in core_competencies:
-        html_content += f'<li>• {competency}</li>'
-    
-    html_content += """
-        </ul>
-    </body>
-    </html>
-    """
-    
-    return html_content
+    template = templates.get_template("pdf_resume_rewrite.html")
+    return template.render(context)
 
 def generate_resume_analysis_docx(doc: Document, result: dict, analysis_id: str) -> None:
     """Generate DOCX document for resume analysis"""

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Rewritten Resume</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.6; 
+            margin: 20px; 
+        }
+        h1 { 
+            color: #333; 
+            text-align: center; 
+        }
+        h2 { 
+            color: #667eea; 
+            border-bottom: 1px solid #667eea; 
+        }
+        ul { 
+            list-style: none; 
+            padding: 0; 
+        }
+        li { 
+            margin: 4px 0; 
+            padding: 8px; 
+            background: #f9f9f9; 
+        }
+    </style>
+</head>
+<body>
+    <h1>Rewritten Resume</h1>
+    
+    <h2>Professional Summary</h2>
+    <p>{{ professional_summary }}</p>
+    
+    <h2>Core Competencies</h2>
+    <ul>
+        {% for competency in core_competencies %}
+        <li>• {{ competency }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

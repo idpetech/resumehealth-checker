@@ -22,7 +22,8 @@
       "Bash(curl:*)",
       "Bash(./test_stripe_sandbox.sh:*)",
       "Bash(git add:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Rewrite - Resume Health Checker</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        .content {
+            padding: 40px;
+        }
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 30px 0;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            color: #667eea;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .section h3 {
+            color: #333;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+        .rewritten-resume {
+            background: #f8f9ff;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #667eea;
+        }
+        .resume-section {
+            margin-bottom: 25px;
+        }
+        .resume-section h3 {
+            color: #667eea;
+            border-bottom: 1px solid #667eea;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+        .experience-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .experience-header {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .bullet-points {
+            list-style: none;
+            padding: 0;
+        }
+        .bullet-points li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .bullet-points li:before {
+            content: "•";
+            color: #667eea;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        .comparison-item {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .actions {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        .success-section {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #28a745;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 12px;
+            }
+            .header {
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            .content {
+                padding: 20px;
+            }
+            .two-column {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+                margin: 5px;
+            }
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+                margin: 0;
+            }
+            .header {
+                background: white !important;
+                color: #000 !important;
+                border-bottom: 2px solid #000;
+            }
+            .actions {
+                display: none !important;
+            }
+            .section h2 {
+                color: #000 !important;
+                border-bottom-color: #000;
+            }
+            .resume-section h3 {
+                color: #000 !important;
+                border-bottom-color: #000;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 Complete Resume Rewrite</h1>
+            <p>Your job-targeted resume transformation</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2>🎯 Your Rewritten Resume</h2>
+                <div class="rewritten-resume">
+                    <div class="resume-section">
+                        <h3>Professional Summary</h3>
+                        <p>{{ rewritten_resume.professional_summary }}</p>
+                    </div>
+                    
+                    <div class="resume-section">
+                        <h3>Core Competencies</h3>
+                        <ul class="bullet-points">
+                            {% for competency in rewritten_resume.core_competencies %}
+                            <li>{{ competency }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    <div class="resume-section">
+                        <h3>Professional Experience</h3>
+                        {% for exp in rewritten_resume.professional_experience %}
+                        <div class="experience-item">
+                            <div class="experience-header">{{ exp.title }} | {{ exp.company }} | {{ exp.duration }}</div>
+                            <ul class="bullet-points">
+                                {% for bullet in exp.rewritten_bullets %}
+                                <li>{{ bullet }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if rewritten_resume.education %}
+                    <div class="resume-section">
+                        <h3>Education</h3>
+                        <p>{{ rewritten_resume.education }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if rewritten_resume.additional_sections %}
+                    <div class="resume-section">
+                        <h3>Additional Information</h3>
+                        <p>{{ rewritten_resume.additional_sections }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="two-column">
+                <div class="section">
+                    <h2>🚀 Strategic Changes</h2>
+                    <h3>Keyword Optimization</h3>
+                    <ul>
+                        {% for keyword in strategic_changes.keyword_optimization %}
+                        <li>{{ keyword }}</li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <h3>Narrative Positioning</h3>
+                    <p>{{ strategic_changes.narrative_positioning }}</p>
+                    
+                    <h3>Competitive Advantages</h3>
+                    <ul>
+                        {% for advantage in strategic_changes.competitive_advantages %}
+                        <li>{{ advantage }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <div class="section">
+                    <h2>📊 Before & After</h2>
+                    {% for comparison in before_after_comparison %}
+                    <div class="comparison-item">
+                        <h3>{{ comparison.section }}</h3>
+                        <p><strong>Original Issue:</strong> {{ comparison.original_weakness }}</p>
+                        <p><strong>Rewrite Improvement:</strong> {{ comparison.rewritten_strength }}</p>
+                        <p><strong>Expected Impact:</strong> {{ comparison.expected_impact }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="success-section">
+                <h2>🏆 Interview Generation Potential</h2>
+                <p>{{ interview_generation_potential }}</p>
+            </div>
+            
+            {% if next_steps %}
+            <div class="success-section">
+                <h2>💡 Next Steps</h2>
+                <p>{{ next_steps }}</p>
+            </div>
+            {% endif %}
+            
+            <div class="actions">
+                <button class="btn" onclick="window.print()">🖨️ Print Resume</button>
+                <button class="btn" onclick="copyToClipboard()">📋 Copy Text</button>
+                <a href="/api/v1/export/{{ analysis_id }}/pdf" class="btn">📄 Export PDF</a>
+                <a href="/api/v1/export/{{ analysis_id }}/docx" class="btn">📝 Export Word</a>
+                <a href="/" class="btn">🏠 Return to App</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function copyToClipboard() {
+            const resumeText = document.querySelector('.rewritten-resume').textContent;
+            navigator.clipboard.writeText(resumeText).then(() => {
+                alert('✅ Resume copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = resumeText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('✅ Resume copied to clipboard!');
+                } catch (err) {
+                    alert('❌ Failed to copy to clipboard. Please select and copy manually.');
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+    </script>
+</body>
+</html>

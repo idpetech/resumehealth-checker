@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Job Fit Analysis Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        .premium-results { background: white; }
+        .actions { display: none !important; }
+        @media print { body { margin: 0; } @page { margin: 2cm; } }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: #2c3e50;">🎯 Job Fit Analysis Report</h1>
+    <p style="text-align: center; color: #888; font-size: 12px;">To save as PDF: Press Cmd+P (Mac) or Ctrl+P (Windows), then choose "Save as PDF"</p>
+    {{ content|safe }}
+</body>
+</html>
