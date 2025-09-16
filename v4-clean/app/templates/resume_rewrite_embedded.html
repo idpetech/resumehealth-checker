@@ -57,24 +57,27 @@
     </div>
     {% endif %}
     
-    <div class="section">
-        <h3>🎯 Strategic Optimizations</h3>
-        <div class="optimization-grid">
-            <div class="optimization-item">
-                <strong>Keywords Added:</strong> {{ (strategic_changes.keyword_optimization or [])|length }} job-specific terms
-            </div>
-            <div class="optimization-item">
-                <strong>ATS Enhancements:</strong> {{ (strategic_changes.ats_enhancements or [])|length }} formatting improvements
-            </div>
-            <div class="optimization-item">
-                <strong>Competitive Edge:</strong> {{ (strategic_changes.competitive_advantages or [])|length }} unique differentiators highlighted
+    <!-- Analysis section - separate from resume content -->
+    <div class="analysis-section" style="page-break-before: always;">
+        <div class="section">
+            <h3>🎯 Strategic Optimizations</h3>
+            <div class="optimization-grid">
+                <div class="optimization-item">
+                    <strong>Keywords Added:</strong> {{ (strategic_changes.keyword_optimization or [])|length }} job-specific terms
+                </div>
+                <div class="optimization-item">
+                    <strong>ATS Enhancements:</strong> {{ (strategic_changes.ats_enhancements or [])|length }} formatting improvements
+                </div>
+                <div class="optimization-item">
+                    <strong>Competitive Edge:</strong> {{ (strategic_changes.competitive_advantages or [])|length }} unique differentiators highlighted
+                </div>
             </div>
         </div>
-    </div>
-    
-    <div class="success-prediction">
-        <h3>🏆 Interview Generation Potential</h3>
-        <p>{{ interview_generation_potential }}</p>
+        
+        <div class="success-prediction">
+            <h3>🏆 Interview Generation Potential</h3>
+            <p>{{ interview_generation_potential }}</p>
+        </div>
     </div>
     
     <div class="actions">

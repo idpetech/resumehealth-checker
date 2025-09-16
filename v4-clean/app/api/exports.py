@@ -429,34 +429,5 @@ def generate_resume_rewrite_docx(doc: Document, result: dict, analysis_id: str) 
         doc.add_heading('Additional Qualifications', level=1)
         doc.add_paragraph(additional_sections)
     
-    # Strategic Optimizations
-    strategic_changes = result.get('strategic_changes', {})
-    if strategic_changes:
-        doc.add_heading('Strategic Optimizations', level=1)
-        
-        # Keywords Added
-        keyword_optimization = strategic_changes.get('keyword_optimization', [])
-        if keyword_optimization:
-            doc.add_paragraph(f"Keywords Added: {len(keyword_optimization)} job-specific terms")
-            for keyword in keyword_optimization:
-                doc.add_paragraph(f"• {keyword}", style='List Bullet')
-        
-        # ATS Enhancements
-        ats_enhancements = strategic_changes.get('ats_enhancements', [])
-        if ats_enhancements:
-            doc.add_paragraph(f"ATS Enhancements: {len(ats_enhancements)} formatting improvements")
-            for enhancement in ats_enhancements:
-                doc.add_paragraph(f"• {enhancement}", style='List Bullet')
-        
-        # Competitive Edge
-        competitive_advantages = strategic_changes.get('competitive_advantages', [])
-        if competitive_advantages:
-            doc.add_paragraph(f"Competitive Edge: {len(competitive_advantages)} unique differentiators highlighted")
-            for advantage in competitive_advantages:
-                doc.add_paragraph(f"• {advantage}", style='List Bullet')
-    
-    # Interview Generation Potential
-    interview_generation_potential = result.get('interview_generation_potential', '')
-    if interview_generation_potential:
-        doc.add_heading('Interview Generation Potential', level=1)
-        doc.add_paragraph(interview_generation_potential)
+    # Note: Strategic Optimizations and Interview Generation Potential are analysis content
+    # and should NOT be included in the resume document export

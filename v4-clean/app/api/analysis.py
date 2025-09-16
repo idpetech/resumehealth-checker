@@ -80,6 +80,8 @@ async def analyze_resume(
         # Store results
         if analysis_type == "free":
             AnalysisDB.update_free_result(analysis_id, result)
+            # Set payment status to 'free' to allow access to free results
+            AnalysisDB.update_payment_status(analysis_id, 'free')
         else:
             AnalysisDB.update_premium_result(analysis_id, result)
         

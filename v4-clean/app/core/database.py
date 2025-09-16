@@ -157,6 +157,19 @@ class AnalysisDB:
         logger.info(f"Updated premium result for analysis {analysis_id}")
     
     @staticmethod
+    def update_payment_status(analysis_id: str, status: str):
+        """Update payment status for analysis"""
+        with get_db_connection() as conn:
+            conn.execute("""
+                UPDATE analyses 
+                SET payment_status = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (status, analysis_id))
+            conn.commit()
+        
+        logger.info(f"Updated payment status for analysis {analysis_id} to {status}")
+    
+    @staticmethod
     def update_job_posting(analysis_id: str, job_posting: str):
         """Update job posting for analysis"""
         with get_db_connection() as conn:

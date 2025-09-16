@@ -1,0 +1,85 @@
+#!/bin/bash
+#
+# MANDATORY PRE-COMMIT HOOK - STOPS THE FIX-TO-BREAK CYCLE
+# This ENFORCES stable SDLC and prevents breaking working functionality
+#
+
+echo "🚨 MANDATORY PRE-COMMIT VALIDATION"
+echo "=================================="
+echo "This hook prevents the fix-to-break cycle."
+echo "ALL tests must pass before commit."
+echo ""
+
+# Make sure the server is running
+echo "🔍 Checking server status..."
+if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then
+    echo "❌ Server not running at localhost:8000"
+    echo "   Please start the server with: python main.py"
+    echo "   Then try committing again."
+    exit 1
+fi
+
+echo "✅ Server is running"
+echo ""
+
+# MANDATORY TEST 1: Core Flow Testing
+echo "🔍 MANDATORY TEST 1: Core Flow Validation"
+echo "========================================="
+if ! ./test_core_flows.sh; then
+    echo ""
+    echo "❌ CORE FLOWS BROKEN - COMMIT BLOCKED"
+    echo "======================================"
+    echo "CRITICAL: Working functionality is broken."
+    echo ""
+    echo "This means users cannot:"
+    echo "- Use free analysis properly"
+    echo "- Export their results"
+    echo "- Access JavaScript functions"
+    echo ""
+    echo "To fix:"
+    echo "1. Run './test_core_flows.sh' to see what's broken"
+    echo "2. Fix the specific issues"
+    echo "3. Re-run './test_core_flows.sh' until it passes"
+    echo "4. Try committing again"
+    echo ""
+    echo "⚠️  DO NOT USE --no-verify"
+    echo "⚠️  Fix the issue instead"
+    exit 1
+fi
+
+echo ""
+echo "✅ Core flows working"
+echo ""
+
+# MANDATORY TEST 2: UI Regression Testing
+echo "🔍 MANDATORY TEST 2: UI Regression Prevention"
+echo "============================================="
+if ! python3 test_ui_regression.py; then
+    echo ""
+    echo "❌ UI REGRESSIONS DETECTED - COMMIT BLOCKED"
+    echo "==========================================="
+    echo "Changes break existing UI functionality."
+    echo ""
+    echo "To fix:"
+    echo "1. Run 'python3 test_ui_regression.py' to see what's broken"
+    echo "2. Fix the regressions"
+    echo "3. Re-run tests until they pass"
+    echo "4. Try committing again"
+    echo ""
+    echo "⚠️  DO NOT USE --no-verify"
+    echo "⚠️  Fix the regressions instead"
+    exit 1
+fi
+
+echo ""
+echo "🎉 ALL MANDATORY TESTS PASSED"
+echo "============================="
+echo "✅ Core user flows working"
+echo "✅ No UI regressions detected"
+echo "✅ JavaScript functions accessible"
+echo "✅ Export functionality intact"
+echo ""
+echo "💚 COMMIT ALLOWED - SDLC ENFORCED"
+echo ""
+
+exit 0

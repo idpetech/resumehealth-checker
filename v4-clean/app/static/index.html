@@ -388,12 +388,14 @@
            // Modal close functionality
            closeResultsModal.addEventListener('click', () => {
                resultsModal.classList.remove('show');
+               clearCurrentFile(); // Clear file when user exits modal
            });
 
            // Close modal when clicking outside
            resultsModal.addEventListener('click', (e) => {
                if (e.target === resultsModal) {
                    resultsModal.classList.remove('show');
+                   clearCurrentFile(); // Clear file when user exits modal
                }
            });
 
@@ -402,6 +404,7 @@
                if (e.key === 'Escape') {
                    if (resultsModal.classList.contains('show')) {
                        resultsModal.classList.remove('show');
+                       clearCurrentFile(); // Clear file when user exits modal
                    }
                    if (jobPostingModal.classList.contains('show')) {
                        jobPostingModal.classList.remove('show');
@@ -429,7 +432,7 @@
            submitJobPosting.addEventListener('click', async () => {
                const jobPosting = jobPostingTextarea.value.trim();
                if (!jobPosting) {
-                   showMessage('Please enter a job description.', 'error');
+                   showMessageFallback('Please enter a job description.', 'error');
                    return;
                }
 
@@ -442,12 +445,18 @@
                }
            });
 
-           function showMessage(text, type = 'success') {
-               // Use the global showMessage function from the second script tag
-               if (typeof window.showMessage === 'function') {
-                   window.showMessage(text, type);
-               } else {
-                   // Fallback to console if toast system not available
+           // Function moved to global scope below
+       });
+   </script>
+   
+   <script>
+       // Helper function for showing messages within DOMContentLoaded scope
+       function showMessageFallback(text, type = 'success') {
+           // Use the global showMessage function from the second script tag
+           if (typeof window.showMessage === 'function') {
+               window.showMessage(text, type);
+           } else {
+               // Fallback to console if toast system not available
                    console.log(`[${type.toUpperCase()}] ${text}`);
                }
            }
@@ -458,6 +467,22 @@
 
            function hideLoadingOverlay() {
                loadingOverlay.classList.remove('show');
+           }
+
+           function clearCurrentFile() {
+               console.log('Clearing current file for new upload');
+               window.currentFile = null;
+               resetFileUploadUI();
+               
+               // SECURITY: Clear session markers when starting fresh
+               premiumResultsDisplayed = false;
+               // Clear all premium session markers
+               for (let i = sessionStorage.length - 1; i >= 0; i--) {
+                   const key = sessionStorage.key(i);
+                   if (key && key.startsWith('premium_displayed_')) {
+                       sessionStorage.removeItem(key);
+                   }
+               }
            }
 
            function handleDragOver(e) {
@@ -664,7 +689,7 @@
                                <div class="text-center">
                                    <h4 class="font-bold text-blue-900 mb-3 text-lg">🚀 Want to go deeper?</h4>
                                    <p class="text-blue-800 mb-4">Get a comprehensive ATS optimization analysis with specific improvements and text rewrites.</p>
-                                   <button class="upsell-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-lg" data-action="upsell" onclick="handleUpsellPurchase()">
+                                   <button class="upsell-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-lg" data-action="upsell">
                                        Get ATS Analysis - $1.49
                                    </button>
                                </div>
@@ -675,7 +700,7 @@
                        // Return to App button
                        const returnButtonHtml = `
                            <div class="text-center mt-6">
-                               <button onclick="resultsModal.classList.remove('show')" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                               <button onclick="resultsModal.classList.remove('show'); clearCurrentFile();" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
                                    Return to App
                         </button>
                            </div>
@@ -704,7 +729,7 @@
             
                // Reset file upload UI to allow new file
                resetFileUploadUI();
-               window.currentFile = null;
+               // Note: Keep window.currentFile for potential upselling - don't set to null
                
                // Show the modal
                console.log('🎯 About to show modal:', resultsModal);
@@ -719,6 +744,10 @@
                const analysisId = urlParams.get('analysis_id');
 
                if (premium === 'true' && product && analysisId) {
+                   // SECURITY: Clear URL parameters immediately to prevent re-access via refresh
+                   window.history.replaceState({}, document.title, window.location.pathname);
+                   
+                   // Display results once
                    displayPremiumResults(analysisId, product);
                }
            }
@@ -728,6 +757,14 @@
                    console.log('Premium results already displayed');
                 return;
             }
+            
+               // SECURITY: Check if this analysis has already been displayed in this session
+               const sessionKey = `premium_displayed_${analysisId}`;
+               if (sessionStorage.getItem(sessionKey)) {
+                   console.log('Premium results already displayed for this analysis in this session');
+                   showMessage('Results already displayed in this session. Please complete a new payment for additional access.', 'warning');
+                   return;
+               }
 
                premiumResultsDisplayed = true;
                showLoadingOverlay();
@@ -751,7 +788,11 @@
                    analysisResults.innerHTML = html;
                    resultsModal.classList.add('show');
                    
+                   // SECURITY: Mark this analysis as displayed in this session  
+                   sessionStorage.setItem(sessionKey, 'true');
+                   
                    // Premium results loaded - no toast needed, results speak for themselves
+                   // Note: File will be cleared when user closes modal
 
             } catch (error) {
                    console.error('Premium results error:', error);
@@ -1019,20 +1060,7 @@
 
        // Global function for upselling button
 
-       // Global event delegation for upselling button
-       document.addEventListener('click', function(e) {
-           console.log('Click detected on:', e.target);
-           console.log('Target classes:', e.target.className);
-           console.log('Has upsell-button class:', e.target.classList.contains('upsell-button'));
-           
-           // Check if it's the upselling button or a child element
-           const upsellButton = e.target.closest('.upsell-button');
-           if (upsellButton) {
-               console.log('Upsell button clicked via delegation!');
-               e.preventDefault();
-               handleUpsellPurchase();
-           }
-       });
+       // Upsell button handling is done via modal event delegation below
 
        // Also add event listener to results modal for better coverage
        document.addEventListener('DOMContentLoaded', function() {
@@ -1167,6 +1195,32 @@
                    return;
                }
                
+               // Store original states for interview questions if present
+               let originalStates = [];
+               const allDetails = document.querySelectorAll('[id^="details-"]');
+               const allIcons = document.querySelectorAll('[id^="icon-"]');
+               
+               // If this is an interview template, expand all questions for export
+               if (allDetails.length > 0) {
+                   console.log('Interview template detected, expanding all questions for PDF export');
+                   allDetails.forEach((detail, index) => {
+                       originalStates[index] = detail.style.display;
+                       detail.style.display = 'block';
+                   });
+                   allIcons.forEach(icon => {
+                       icon.classList.add('expanded');
+                   });
+               }
+               
+               // If this is resume rewrite template, hide analysis section for cleaner export
+               const analysisSection = document.querySelector('.analysis-section');
+               let analysisOriginalDisplay = null;
+               if (analysisSection) {
+                   console.log('Resume rewrite template detected, hiding analysis section for PDF export');
+                   analysisOriginalDisplay = analysisSection.style.display;
+                   analysisSection.style.display = 'none';
+               }
+               
                // Temporarily hide action buttons for clean screenshot
                const actionElements = document.querySelectorAll('.actions, .btn, button, [onclick]');
                actionElements.forEach(element => {
@@ -1220,6 +1274,25 @@
                        actionElements.forEach(element => {
                            element.style.display = '';
                        });
+                       
+                       // Restore original interview question states
+                       if (allDetails.length > 0) {
+                           allDetails.forEach((detail, index) => {
+                               if (originalStates && originalStates[index] !== undefined) {
+                                   detail.style.display = originalStates[index];
+                               }
+                           });
+                           allIcons.forEach(icon => {
+                               if (!originalStates || !originalStates.some(state => state === 'block')) {
+                                   icon.classList.remove('expanded');
+                               }
+                           });
+                       }
+                       
+                       // Restore analysis section if it was hidden
+                       if (analysisSection && analysisOriginalDisplay !== null) {
+                           analysisSection.style.display = analysisOriginalDisplay;
+                       }
                    }
                    
                }).catch(error => {
@@ -1230,6 +1303,25 @@
                    actionElements.forEach(element => {
                        element.style.display = '';
                    });
+                   
+                   // Restore original interview question states
+                   if (allDetails.length > 0) {
+                       allDetails.forEach((detail, index) => {
+                           if (originalStates && originalStates[index] !== undefined) {
+                               detail.style.display = originalStates[index];
+                           }
+                       });
+                       allIcons.forEach(icon => {
+                           if (!originalStates || !originalStates.some(state => state === 'block')) {
+                               icon.classList.remove('expanded');
+                           }
+                       });
+                   }
+                   
+                   // Restore analysis section if it was hidden
+                   if (typeof analysisSection !== 'undefined' && analysisSection && analysisOriginalDisplay !== null) {
+                       analysisSection.style.display = analysisOriginalDisplay;
+                   }
                });
                
            } catch (error) {
@@ -1243,7 +1335,276 @@
            showMessage('Using browser print dialog as fallback', 'info');
            window.print();
        }
-    </script>
+
+       // Interview-specific functions for mock interview templates
+       function toggleQuestion(questionNum) {
+           const details = document.getElementById(`details-${questionNum}`);
+           const icon = document.getElementById(`icon-${questionNum}`);
+           
+           if (!details || !icon) {
+               console.error(`Question ${questionNum} elements not found`);
+               return;
+           }
+           
+           if (details.style.display === 'none' || details.style.display === '') {
+               // Expand the question
+               details.style.display = 'block';
+               icon.classList.add('expanded');
+               
+               // Smooth scroll to question if needed
+               setTimeout(() => {
+                   const questionContainer = details.closest('.question-container');
+                   if (questionContainer) {
+                       const rect = questionContainer.getBoundingClientRect();
+                       if (rect.top < 0) {
+                           questionContainer.scrollIntoView({ 
+                               behavior: 'smooth', 
+                               block: 'start' 
+                           });
+                       }
+                   }
+               }, 100);
+           } else {
+               // Collapse the question
+               details.style.display = 'none';
+               icon.classList.remove('expanded');
+           }
+       }
+       
+       function toggleAllQuestions() {
+           const expandAllBtn = document.getElementById('expandAllBtn');
+           const expandAllText = document.getElementById('expandAllText');
+           const allDetails = document.querySelectorAll('[id^="details-"]');
+           const allIcons = document.querySelectorAll('[id^="icon-"]');
+           
+           if (!allDetails.length) {
+               console.error('No interview questions found');
+               return;
+           }
+           
+           // Check if ALL questions are currently expanded (not just some)
+           const allExpanded = Array.from(allDetails).every(detail => 
+               detail.style.display === 'block'
+           );
+           
+           if (allExpanded) {
+               // Collapse all questions
+               allDetails.forEach(detail => {
+                   detail.style.display = 'none';
+               });
+               allIcons.forEach(icon => {
+                   icon.classList.remove('expanded');
+               });
+               if (expandAllText) expandAllText.textContent = '📂 Expand All';
+           } else {
+               // Expand all questions
+               allDetails.forEach(detail => {
+                   detail.style.display = 'block';
+               });
+               allIcons.forEach(icon => {
+                   icon.classList.add('expanded');
+               });
+               if (expandAllText) expandAllText.textContent = '📁 Collapse All';
+           }
+       }
+
+       function exportToWord() {
+           try {
+               console.log('Starting DOCX export...');
+               
+               // Show loading message
+               const docxBtn = document.querySelector('.docx-btn');
+               if (docxBtn) {
+                   const originalText = docxBtn.textContent;
+                   docxBtn.textContent = '⏳ Generating DOCX...';
+                   docxBtn.disabled = true;
+                   
+                   setTimeout(() => {
+                       docxBtn.textContent = originalText;
+                       docxBtn.disabled = false;
+                   }, 5000);
+               }
+               
+               // Get the content to export
+               const content = document.querySelector('.premium-results');
+               const title = 'Mock Interview Guide';
+               
+               if (!content) {
+                   alert('❌ Content not found for DOCX export');
+                   return;
+               }
+               
+               // Clone the content and modify for export
+               const clonedContent = content.cloneNode(true);
+               
+               // Show all question details in the clone (for interview exports)
+               const allDetails = clonedContent.querySelectorAll('[id^="details-"]');
+               allDetails.forEach(detail => {
+                   detail.style.display = 'block';
+                   detail.style.visibility = 'visible';
+               });
+               
+               // Remove analysis section from clone (for resume rewrite exports)
+               const clonedAnalysisSection = clonedContent.querySelector('.analysis-section');
+               if (clonedAnalysisSection) {
+                   console.log('Resume rewrite template detected, removing analysis section from DOCX export');
+                   clonedAnalysisSection.remove();
+               }
+               
+               // Also temporarily expand in original for proper cloning if needed
+               const originalDetails = document.querySelectorAll('[id^="details-"]');
+               let originalStates = [];
+               if (originalDetails.length > 0) {
+                   console.log('Interview template detected, ensuring all content is captured in DOCX export');
+                   originalDetails.forEach((detail, index) => {
+                       originalStates[index] = detail.style.display;
+                       detail.style.display = 'block';
+                   });
+               }
+               
+               // Remove interactive elements
+               const elementsToRemove = clonedContent.querySelectorAll('.expand-icon, .expand-all-btn, .actions, button, [onclick]');
+               elementsToRemove.forEach(element => {
+                   element.remove();
+               });
+               
+               // Remove click handlers and clean up headers
+               const questionHeaders = clonedContent.querySelectorAll('.question-header');
+               questionHeaders.forEach(header => {
+                   header.style.cursor = 'default';
+                   header.removeAttribute('onclick');
+                   header.style.backgroundColor = 'transparent';
+               });
+           
+               // Create HTML content for Word
+               const htmlContent = `
+                   <!DOCTYPE html>
+                   <html>
+                   <head>
+                       <meta charset="utf-8">
+                       <title>${title}</title>
+                       <style>
+                           body { 
+                               font-family: 'Times New Roman', serif; 
+                               line-height: 1.6; 
+                               margin: 40px;
+                               color: #333;
+                           }
+                           .premium-header h2 {
+                               color: #2c3e50;
+                               text-align: center;
+                               border-bottom: 2px solid #2c3e50;
+                               padding-bottom: 10px;
+                           }
+                           .section h3 {
+                               color: #2c3e50;
+                               border-bottom: 1px solid #2c3e50;
+                               padding-bottom: 5px;
+                           }
+                           .question-container {
+                               margin-bottom: 25px;
+                               border: 1px solid #ddd;
+                               padding: 15px;
+                               border-radius: 5px;
+                           }
+                           .question-category-badge {
+                               background: #2c3e50;
+                               color: white;
+                               padding: 5px 10px;
+                               border-radius: 3px;
+                               font-size: 12px;
+                               margin-bottom: 10px;
+                               display: inline-block;
+                           }
+                           .strategic-approach, .sample-framework, .success-tips {
+                               background: #f8f9fa;
+                               padding: 10px;
+                               margin: 10px 0;
+                               border-left: 3px solid #007bff;
+                           }
+                           .key-points li {
+                               margin: 5px 0;
+                           }
+                       </style>
+                   </head>
+                   <body>
+                       ${clonedContent.outerHTML}
+                   </body>
+                   </html>
+               `;
+               
+               // Create blob and download
+               const blob = new Blob([htmlContent], {
+                   type: 'application/msword'
+               });
+               
+               const url = URL.createObjectURL(blob);
+               const a = document.createElement('a');
+               a.href = url;
+               
+               // Generate filename with timestamp
+               const timestamp = new Date().toISOString().slice(0, 10);
+               a.download = `Mock_Interview_Guide_${timestamp}.doc`;
+               
+               document.body.appendChild(a);
+               a.click();
+               document.body.removeChild(a);
+               URL.revokeObjectURL(url);
+               
+               console.log('DOCX export completed successfully');
+               
+               // Restore original interview question states
+               if (originalDetails.length > 0) {
+                   originalDetails.forEach((detail, index) => {
+                       if (originalStates && originalStates[index] !== undefined) {
+                           detail.style.display = originalStates[index];
+                       }
+                   });
+               }
+               
+           } catch (error) {
+               console.error('DOCX export error:', error);
+               alert('❌ Error generating DOCX file: ' + error.message);
+               
+               // Restore original interview question states on error
+               if (typeof originalDetails !== 'undefined' && originalDetails.length > 0) {
+                   originalDetails.forEach((detail, index) => {
+                       if (originalStates && originalStates[index] !== undefined) {
+                           detail.style.display = originalStates[index];
+                       }
+                   });
+               }
+           }
+       }
+
+       // Copy to clipboard function for all templates
+       function copyToClipboard(elementSelector) {
+           const element = document.querySelector(elementSelector);
+           if (!element) {
+               alert('❌ Content not found to copy.');
+               return;
+           }
+           
+           const content = element.textContent || element.innerText;
+           navigator.clipboard.writeText(content).then(() => {
+               alert('✅ Content copied to clipboard!');
+           }).catch(err => {
+               console.error('Failed to copy: ', err);
+               // Fallback for older browsers
+               const textArea = document.createElement('textarea');
+               textArea.value = content;
+               document.body.appendChild(textArea);
+               textArea.select();
+               try {
+                   document.execCommand('copy');
+                   alert('✅ Content copied to clipboard!');
+               } catch (err) {
+                   alert('❌ Failed to copy to clipboard. Please select and copy manually.');
+               }
+               document.body.removeChild(textArea);
+           });
+       }
+   </script>
 
     <!-- Load external libraries for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

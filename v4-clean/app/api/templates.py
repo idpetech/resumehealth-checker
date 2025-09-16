@@ -143,20 +143,28 @@ async def premium_results_page(
         if not analysis:
             return HTMLResponse(content="<h1>Analysis not found</h1>", status_code=404)
         
-        # Check if payment was successful
-        if analysis.get('payment_status') != 'paid':
+        # Check if payment was successful for premium content, or allow free analysis display
+        payment_status = analysis.get('payment_status')
+        if payment_status != 'paid' and payment_status != 'free':
             return HTMLResponse(content="<h1>Payment required</h1>", status_code=402)
         
         # Get job posting if available
         job_posting = analysis.get('job_posting')
         
-        # Generate premium service based on product type
+        # Generate premium service based on product type, or use existing free result
         if product_type == "resume_analysis":
-            result = await analysis_service.analyze_resume(
-                analysis['resume_text'], 
-                'premium',
-                job_posting
-            )
+            if payment_status == 'free':
+                # Use existing free analysis result
+                result = analysis.get('free_result', {})
+                if not result:
+                    return HTMLResponse(content="<h1>Analysis result not found</h1>", status_code=404)
+            else:
+                # Generate premium analysis
+                result = await analysis_service.analyze_resume(
+                    analysis['resume_text'], 
+                    'premium',
+                    job_posting
+                )
         elif product_type == "job_fit_analysis":
             if not job_posting:
                 return HTMLResponse(content="<h1>Job posting required for job fit analysis</h1>", status_code=400)

@@ -163,7 +163,7 @@
     <div class="actions">
         <button class="btn print-btn" onclick="window.print()">🖨️ Print Interview Guide</button>
         <button class="btn pdf-btn" onclick="exportToPDFClient('{{ analysis_id }}')">📄 Save as PDF</button>
-        <button class="btn docx-btn" onclick="exportToWord('.premium-results')">📝 Save as DOCX</button>
+        <button class="btn docx-btn" onclick="exportToWord()">📝 Save as DOCX</button>
         <a href="/" class="btn">🏠 Return to App</a>
     </div>
 </div>
@@ -540,12 +540,12 @@
         const allDetails = document.querySelectorAll('[id^="details-"]');
         const allIcons = document.querySelectorAll('[id^="icon-"]');
         
-        // Check if all questions are currently expanded
-        const isExpanded = Array.from(allDetails).some(detail => 
+        // Check if ALL questions are currently expanded (not just some)
+        const allExpanded = Array.from(allDetails).every(detail => 
             detail.style.display === 'block'
         );
         
-        if (isExpanded) {
+        if (allExpanded) {
             // Collapse all questions
             allDetails.forEach(detail => {
                 detail.style.display = 'none';
@@ -567,11 +567,11 @@
     }
     
     // Enhanced PDF export that expands all questions and uses jsPDF for direct download
-    function exportToPDF(analysisId = null) {
+    function exportToPDFClient(analysisId = null) {
         console.log('PDF export function called');
         
         // Show loading message
-        const pdfBtn = document.querySelector('.pdf-btn, [onclick*="exportToPDF"]');
+        const pdfBtn = document.querySelector('.pdf-btn, [onclick*="exportToPDFClient"]');
         if (pdfBtn) {
             const originalText = pdfBtn.textContent;
             pdfBtn.textContent = '⏳ Generating PDF...';
@@ -615,20 +615,29 @@
                 return;
             }
             
-            // Temporarily hide action buttons for clean screenshot
-            const actionElements = document.querySelectorAll('.actions, .btn, button, [onclick], .expand-icon, .expand-all-btn');
+            // Temporarily hide action buttons for clean screenshot (but keep content visible)
+            const actionElements = document.querySelectorAll('.actions, .expand-icon, .expand-all-btn');
             actionElements.forEach(element => {
                 element.style.display = 'none';
             });
             
             // Use html2canvas to capture the content
             html2canvas(content, {
-                scale: 2,
+                scale: 1.5, // Reduced scale for better performance
                 useCORS: true,
                 allowTaint: true,
                 backgroundColor: '#ffffff',
                 width: content.scrollWidth,
-                height: content.scrollHeight
+                height: content.scrollHeight,
+                logging: false, // Disable console logs
+                onclone: function(clonedDoc) {
+                    // Ensure all question details are visible in the clone
+                    const clonedDetails = clonedDoc.querySelectorAll('[id^="details-"]');
+                    clonedDetails.forEach(detail => {
+                        detail.style.display = 'block';
+                        detail.style.visibility = 'visible';
+                    });
+                }
             }).then(canvas => {
                 try {
                     const { jsPDF } = window.jspdf;
@@ -741,31 +750,54 @@
     }
     
     function exportToWord() {
-        // Get the content to export
-        const content = document.querySelector('.premium-results');
-        const title = 'Mock Interview Guide';
-        
-        // Clone the content and modify for export
-        const clonedContent = content.cloneNode(true);
-        
-        // Show all question details
-        const allDetails = clonedContent.querySelectorAll('[id^="details-"]');
-        allDetails.forEach(detail => {
-            detail.style.display = 'block';
-        });
-        
-        // Remove interactive elements
-        const elementsToRemove = clonedContent.querySelectorAll('.expand-icon, .expand-all-btn, .actions');
-        elementsToRemove.forEach(element => {
-            element.remove();
-        });
-        
-        // Remove click handlers
-        const questionHeaders = clonedContent.querySelectorAll('.question-header');
-        questionHeaders.forEach(header => {
-            header.style.cursor = 'default';
-            header.removeAttribute('onclick');
-        });
+        try {
+            console.log('Starting DOCX export...');
+            
+            // Show loading message
+            const docxBtn = document.querySelector('.docx-btn');
+            if (docxBtn) {
+                const originalText = docxBtn.textContent;
+                docxBtn.textContent = '⏳ Generating DOCX...';
+                docxBtn.disabled = true;
+                
+                setTimeout(() => {
+                    docxBtn.textContent = originalText;
+                    docxBtn.disabled = false;
+                }, 5000);
+            }
+            
+            // Get the content to export
+            const content = document.querySelector('.premium-results');
+            const title = 'Mock Interview Guide';
+            
+            if (!content) {
+                alert('❌ Content not found for DOCX export');
+                return;
+            }
+            
+            // Clone the content and modify for export
+            const clonedContent = content.cloneNode(true);
+            
+            // Show all question details
+            const allDetails = clonedContent.querySelectorAll('[id^="details-"]');
+            allDetails.forEach(detail => {
+                detail.style.display = 'block';
+                detail.style.visibility = 'visible';
+            });
+            
+            // Remove interactive elements
+            const elementsToRemove = clonedContent.querySelectorAll('.expand-icon, .expand-all-btn, .actions, button, [onclick]');
+            elementsToRemove.forEach(element => {
+                element.remove();
+            });
+            
+            // Remove click handlers and clean up headers
+            const questionHeaders = clonedContent.querySelectorAll('.question-header');
+            questionHeaders.forEach(header => {
+                header.style.cursor = 'default';
+                header.removeAttribute('onclick');
+                header.style.backgroundColor = 'transparent';
+            });
         
         // Create HTML content for Word
         const htmlContent = `
@@ -824,19 +856,30 @@
             </html>
         `;
         
-        // Create blob and download
-        const blob = new Blob([htmlContent], {
-            type: 'application/msword'
-        });
-        
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'Mock_Interview_Guide.doc';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+            // Create blob and download
+            const blob = new Blob([htmlContent], {
+                type: 'application/msword'
+            });
+            
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().slice(0, 10);
+            a.download = `Mock_Interview_Guide_${timestamp}.doc`;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            console.log('DOCX export completed successfully');
+            
+        } catch (error) {
+            console.error('DOCX export error:', error);
+            alert('❌ Error generating DOCX file: ' + error.message);
+        }
     }
     
     // Optional: Expand first question by default
