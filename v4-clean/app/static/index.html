@@ -355,6 +355,54 @@
            const cancelJobPosting = document.getElementById('cancelJobPosting');
            const closeJobPostingModal = document.getElementById('closeJobPostingModal');
 
+           // Define event handler functions first
+           function handleDragOver(e) {
+               e.preventDefault();
+               fileUploadArea.classList.add('dragover');
+           }
+
+           // handleDragLeave function moved earlier
+
+           function handleDrop(e) {
+               e.preventDefault();
+               fileUploadArea.classList.remove('dragover');
+               const files = e.dataTransfer.files;
+               if (files.length > 0) {
+                   handleFile(files[0]);
+               }
+           }
+
+           function handleFileSelect(e) {
+               const file = e.target.files[0];
+               if (file) {
+                   handleFile(file);
+               }
+           }
+
+           function handleFile(file) {
+               console.log('Processing file:', file.name);
+               
+               // Validate file type
+               const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'text/plain'];
+               if (!allowedTypes.includes(file.type)) {
+                   showMessage('Please upload a PDF, DOC, or DOCX file.', 'error');
+                   return;
+               }
+
+               // Validate file size (10MB limit)
+               const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+               if (file.size > maxSize) {
+                   showMessage('File size must be less than 10MB.', 'error');
+                   return;
+               }
+
+               window.currentFile = file;
+               
+               // Update UI to show file is ready
+               updateFileDisplay(file);
+               showMessage(`File "${file.name}" ready for analysis!`);
+           }
+
            // File upload handling
            fileUploadArea.addEventListener('click', () => fileInput.click());
            fileUploadArea.addEventListener('dragover', handleDragOver);
@@ -485,15 +533,9 @@
                }
            }
 
-           function handleDragOver(e) {
-               e.preventDefault();
-               fileUploadArea.classList.add('dragover');
-           }
+           // handleDragOver function moved earlier to avoid reference errors
 
-           function handleDragLeave(e) {
-               e.preventDefault();
-               fileUploadArea.classList.remove('dragover');
-           }
+           // handleDragLeave function moved earlier
 
            function handleDrop(e) {
             e.preventDefault();
