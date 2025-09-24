@@ -137,16 +137,17 @@ async def export_docx(analysis_id: str):
         
         # Determine product type from analysis content
         product_type = analysis.get('product_type')
-        if not product_type:
-            # Try to infer from premium result content
-            if 'rewritten_resume' in premium_result:
-                product_type = 'resume_rewrite'
-            elif 'cover_letter' in premium_result:
-                product_type = 'cover_letter'
-            elif 'job_fit_score' in premium_result:
-                product_type = 'job_fit_analysis'
-            else:
-                product_type = 'resume_analysis'
+        
+        # Always check premium result content to override product_type if needed
+        # This handles cases where product_type is set incorrectly in the database
+        if 'rewritten_resume' in premium_result:
+            product_type = 'resume_rewrite'
+        elif 'cover_letter' in premium_result:
+            product_type = 'cover_letter'
+        elif 'job_fit_score' in premium_result:
+            product_type = 'job_fit_analysis'
+        elif not product_type:
+            product_type = 'resume_analysis'
         
         # Support DOCX export for all premium services
         if product_type not in ['resume_analysis', 'job_fit_analysis', 'cover_letter', 'resume_rewrite']:
