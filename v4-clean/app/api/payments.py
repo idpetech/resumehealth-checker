@@ -163,10 +163,10 @@ async def payment_success(
         currency = verification['currency'].upper()
         AnalysisDB.mark_as_paid(analysis_id, amount_paid, currency)
         
-        # If no premium result exists, generate it using unified service
+        # If no premium result exists, trigger async generation (don't wait)
         if not analysis.get('premium_result'):
             try:
-                logger.info(f"Generating premium {product_type} for {analysis_id} via unified service")
+                logger.info(f"Triggering async premium {product_type} generation for {analysis_id}")
                 
                 # Create access context for payment
                 access_context = AccessContext(
@@ -179,27 +179,21 @@ async def payment_success(
                     }
                 )
                 
-                # Use unified premium generation service
-                premium_result = await premium_generation_service.generate_premium_results(
-                    analysis_id=analysis_id,
-                    product_type=product_type,
-                    access_context=access_context
+                # Start async premium generation (don't await - let it run in background)
+                import asyncio
+                asyncio.create_task(
+                    premium_generation_service.generate_premium_results(
+                        analysis_id=analysis_id,
+                        product_type=product_type,
+                        access_context=access_context
+                    )
                 )
                 
-                analysis['premium_result'] = premium_result
-                logger.info(f"Premium {product_type} generated successfully for {analysis_id} via unified service")
+                logger.info(f"Async premium {product_type} generation started for {analysis_id}")
                 
             except Exception as e:
-                logger.error(f"Failed to generate premium {product_type} for {analysis_id}: {e}")
-                logger.error(f"Exception type: {type(e).__name__}")
-                import traceback
-                logger.error(f"Full traceback: {traceback.format_exc()}")
-                analysis['premium_result'] = {
-                    "error": f"Premium {product_type} generation failed",
-                    "message": "Our AI analysis service encountered an error. Please contact support.",
-                    "technical_details": str(e),
-                    "analysis_id": analysis_id
-                }
+                logger.error(f"Failed to start async premium generation for {analysis_id}: {e}")
+                # Don't block the success page for this error
         
         # Return success page using template
         return templates.TemplateResponse("payment_success.html", {
@@ -284,10 +278,10 @@ async def complete_payment(request: Request):
         mock_currency = getattr(config, 'mock_payment_currency', 'usd')
         AnalysisDB.mark_as_paid(analysis_id, mock_amount, mock_currency)
         
-        # If no premium result exists, generate it using unified service
+        # If no premium result exists, trigger async generation (don't wait)
         if not analysis.get('premium_result'):
             try:
-                logger.info(f"Generating premium {product_type} for {analysis_id} via unified service (mock payment)")
+                logger.info(f"Triggering async premium {product_type} generation for {analysis_id} (mock payment)")
                 
                 # Create access context for mock payment
                 access_context = AccessContext(
@@ -301,24 +295,21 @@ async def complete_payment(request: Request):
                     }
                 )
                 
-                # Use unified premium generation service
-                premium_result = await premium_generation_service.generate_premium_results(
-                    analysis_id=analysis_id,
-                    product_type=product_type,
-                    access_context=access_context
+                # Start async premium generation (don't await - let it run in background)
+                import asyncio
+                asyncio.create_task(
+                    premium_generation_service.generate_premium_results(
+                        analysis_id=analysis_id,
+                        product_type=product_type,
+                        access_context=access_context
+                    )
                 )
                 
-                analysis['premium_result'] = premium_result
-                logger.info(f"Premium {product_type} generated successfully for {analysis_id} via unified service (mock payment)")
+                logger.info(f"Async premium {product_type} generation started for {analysis_id} (mock payment)")
                 
             except Exception as e:
-                logger.error(f"Failed to generate premium {product_type} for {analysis_id}: {e}")
-                analysis['premium_result'] = {
-                    "error": f"Premium {product_type} generation failed",
-                    "message": "Our AI analysis service encountered an error. Please contact support.",
-                    "technical_details": str(e),
-                    "analysis_id": analysis_id
-                }
+                logger.error(f"Failed to start async premium generation for {analysis_id}: {e}")
+                # Don't block the success response for this error
         
         logger.info(f"Mock payment completed for analysis {analysis_id}, product {product_type}")
         

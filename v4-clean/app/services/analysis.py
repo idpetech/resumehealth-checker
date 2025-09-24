@@ -8,6 +8,7 @@ import json
 import logging
 import openai
 import httpx
+import re
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -164,7 +165,7 @@ class AnalysisService:
                 messages=messages,
                 temperature=config.openai_temperature,
                 max_tokens=config.openai_max_tokens,
-                timeout=60  # 60 second timeout
+                timeout=30  # Reduced to 30 second timeout for better UX
             )
             
             # Extract and parse response

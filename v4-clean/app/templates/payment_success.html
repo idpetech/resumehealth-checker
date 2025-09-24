@@ -53,18 +53,72 @@
         <p><strong>Product:</strong> {{ product_type }}</p>
         
         <div style="margin: 30px 0;">
-            <p>Your premium analysis is being generated. You'll be redirected to your results automatically.</p>
+            <div class="loading-spinner" style="font-size: 2rem; margin-bottom: 15px;">⏳</div>
+            <p><strong>Your premium analysis is being generated...</strong></p>
+            <p>This typically takes 30-60 seconds.</p>
+            <p><strong>You can safely close this page and check back in a few minutes.</strong></p>
         </div>
         
-        <a href="/?premium=true&product={{ product_type }}&analysis_id={{ analysis_id }}" class="btn">
-            View Premium Results
-        </a>
+        <div id="actionButtons" style="display: none;">
+            <a href="/?premium=true&product={{ product_type }}&analysis_id={{ analysis_id }}" class="btn">
+                View Premium Results
+            </a>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: left;">
+            <h3 style="margin-top: 0; color: #333;">📋 How to Check Back Later</h3>
+            <p><strong>Option 1:</strong> Bookmark this page and refresh it in a few minutes</p>
+            <p><strong>Option 2:</strong> Go to the main page and enter your Analysis ID: <code>{{ analysis_id }}</code></p>
+            <p><strong>Option 3:</strong> Use this direct link: <a href="/?premium=true&product={{ product_type }}&analysis_id={{ analysis_id }}">View Results</a></p>
+        </div>
         
         <script>
-            // Auto-redirect to results after 3 seconds
-            setTimeout(() => {
-                window.location.href = '/?premium=true&product={{ product_type }}&analysis_id={{ analysis_id }}';
-            }, 3000);
+            // Check for premium results every 5 seconds
+            let checkCount = 0;
+            const maxChecks = 24; // 2 minutes total
+            
+            function checkPremiumResults() {
+                checkCount++;
+                
+                fetch(`/api/v1/premium/{{ analysis_id }}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.premium_result && !data.premium_result.error) {
+                            // Premium results are ready!
+                            document.querySelector('.loading-spinner').textContent = '✅';
+                            document.querySelector('div[style*="margin: 30px 0"]').innerHTML = 
+                                '<p><strong>✅ Your premium analysis is ready!</strong></p>';
+                            document.getElementById('actionButtons').style.display = 'block';
+                            
+                            // Auto-redirect after 2 seconds
+                            setTimeout(() => {
+                                window.location.href = '/?premium=true&product={{ product_type }}&analysis_id={{ analysis_id }}';
+                            }, 2000);
+                        } else if (checkCount >= maxChecks) {
+                            // Timeout - show manual link
+                            document.querySelector('.loading-spinner').textContent = '⏰';
+                            document.querySelector('div[style*="margin: 30px 0"]').innerHTML = 
+                                '<p><strong>Analysis is taking longer than expected.</strong></p>' +
+                                '<p>Please check back in a few minutes using the link below.</p>' +
+                                '<p><small>Analysis ID: {{ analysis_id }}</small></p>';
+                            document.getElementById('actionButtons').style.display = 'block';
+                        } else {
+                            // Keep checking
+                            setTimeout(checkPremiumResults, 5000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking premium results:', error);
+                        if (checkCount >= maxChecks) {
+                            document.getElementById('actionButtons').style.display = 'block';
+                        } else {
+                            setTimeout(checkPremiumResults, 5000);
+                        }
+                    });
+            }
+            
+            // Start checking after 5 seconds
+            setTimeout(checkPremiumResults, 5000);
         </script>
     </div>
 </body>
