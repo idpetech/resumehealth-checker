@@ -456,6 +456,11 @@ class AnalysisService:
             response.replace('\n', '').replace('\t', ''),  # Remove whitespace
             re.sub(r',\s*}', '}', response),  # Remove trailing commas
             re.sub(r',\s*]', ']', response),  # Remove trailing commas in arrays
+            # Fix missing commas between JSON fields
+            re.sub(r'"\s*\n\s*"', '",\n  "', response),  # Add missing comma between quoted fields
+            re.sub(r'"\s*}\s*"', '",\n  "', response),   # Add missing comma before closing brace
+            # Fix specific pattern: "field": "value"\n  "next_field"
+            re.sub(r'"\s*\n\s*"([^:]+)":', '",\n  "\1":', response),
         ]
         
         for i, attempt in enumerate(fixed_attempts):

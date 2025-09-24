@@ -138,6 +138,19 @@ async def get_premium_service(analysis_id: str, product_type: str = "resume_anal
         if analysis.get('payment_status') != 'paid':
             raise HTTPException(status_code=402, detail="Payment required")
         
+        # Check if premium result already exists (generated during payment)
+        if analysis.get('premium_result'):
+            logger.info(f"Returning existing premium result for {analysis_id}")
+            return {
+                "analysis_id": analysis_id,
+                "product_type": product_type,
+                "premium_result": analysis['premium_result'],
+                "status": "ready"
+            }
+        
+        # If no premium result exists, generate it now
+        logger.info(f"Generating premium {product_type} for {analysis_id}")
+        
         # Get job posting if available
         job_posting = analysis.get('job_posting')
         

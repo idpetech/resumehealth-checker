@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Resume Analyzer</title>
+   <link rel="icon" href="data:,">
    <script src="https://cdn.tailwindcss.com"></script>
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,7 +52,7 @@
            visibility: visible;
        }
        .results-content {
-           background: white;
+            background: white;
            border-radius: 1rem;
            padding: 2rem;
            max-width: 90vw;
@@ -170,11 +171,24 @@
            </div>
        </div>
 
+       <!-- Promotional Code Section -->
+       <div class="bg-purple-50 p-4 rounded-xl border border-purple-200 mb-6">
+           <div class="flex flex-col sm:flex-row gap-3 items-center">
+               <label class="text-sm font-medium text-purple-700">Promotional Code:</label>
+               <input type="text" id="promoCode" placeholder="Enter code (e.g., SAVE20)" 
+                      class="flex-1 px-3 py-2 border border-purple-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+               <button id="applyPromo" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
+                   Apply
+               </button>
+           </div>
+           <div id="promoMessage" class="mt-2 text-sm hidden"></div>
+       </div>
+
        <!-- Paid Pricing Grid -->
        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
            <!-- ATS Analysis Card -->
-           <div class="bg-blue-50 bg-opacity-70 p-6 rounded-2xl border border-blue-100 flex flex-col justify-between">
+           <div class="bg-blue-50 bg-opacity-70 p-6 rounded-2xl border border-blue-100 flex flex-col justify-between" data-original-price="1.49">
                <div>
                    <div class="flex items-center text-blue-600 mb-2">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -185,12 +199,12 @@
                    <p class="text-sm text-gray-700 mt-2">Get a detailed analysis of your resume's compatibility with a specific job description.</p>
                </div>
                <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg" data-product="resume_analysis" data-price="1.49">
-                   Buy Now ($1.49)
+                   <span class="price-display">Buy Now ($1.49)</span>
                </button>
            </div>
 
            <!-- Cover Letter Card -->
-           <div class="bg-green-50 bg-opacity-70 p-6 rounded-2xl border border-green-100 flex flex-col justify-between">
+           <div class="bg-green-50 bg-opacity-70 p-6 rounded-2xl border border-green-100 flex flex-col justify-between" data-original-price="2.99">
                <div>
                    <div class="flex items-center text-green-600 mb-2">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -201,12 +215,12 @@
                    <p class="text-sm text-gray-700 mt-2">Generate a personalized cover letter tailored to your resume and a target job.</p>
                </div>
                <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-lg" data-product="cover_letter" data-price="2.99">
-                   Buy Now ($2.99)
+                   <span class="price-display">Buy Now ($2.99)</span>
                </button>
            </div>
 
            <!-- Job Fit Score Card -->
-           <div class="bg-amber-50 bg-opacity-70 p-6 rounded-2xl border border-amber-100 flex flex-col justify-between">
+           <div class="bg-amber-50 bg-opacity-70 p-6 rounded-2xl border border-amber-100 flex flex-col justify-between" data-original-price="1.99">
                <div>
                    <div class="flex items-center text-amber-600 mb-2">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -217,12 +231,12 @@
                    <p class="text-sm text-gray-700 mt-2">Get a quick score and detailed report on how well your resume fits a job.</p>
                </div>
                <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-lg" data-product="job_fit_analysis" data-price="1.99">
-                   Buy Now ($1.99)
+                   <span class="price-display">Buy Now ($1.99)</span>
                </button>
-        </div>
+           </div>
         
            <!-- Resume Rewrite Card - EPIC 1 COMPLETE -->
-           <div class="bg-purple-50 bg-opacity-70 p-6 rounded-2xl border border-purple-100 flex flex-col justify-between">
+           <div class="bg-purple-50 bg-opacity-70 p-6 rounded-2xl border border-purple-100 flex flex-col justify-between" data-original-price="4.99">
                <div>
                    <div class="flex items-center text-purple-600 mb-2">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -233,12 +247,12 @@
                    <p class="text-sm text-gray-700 mt-2">Complete job-targeted resume transformation. Upload your resume + job posting for a professional rewrite.</p>
                </div>
                <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-lg" data-product="resume_rewrite" data-price="4.99">
-                   Buy Now ($4.99)
+                   <span class="price-display">Buy Now ($4.99)</span>
                </button>
            </div>
 
            <!-- Mock Interview Card -->
-           <div class="bg-red-50 bg-opacity-70 p-6 rounded-2xl border border-red-100 flex flex-col justify-between">
+           <div class="bg-red-50 bg-opacity-70 p-6 rounded-2xl border border-red-100 flex flex-col justify-between" data-original-price="3.99">
                <div>
                    <div class="flex items-center text-red-600 mb-2">
                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -249,7 +263,7 @@
                    <p class="text-sm text-gray-700 mt-2">Complete interview simulation with strategic answers and company-specific preparation.</p>
                </div>
                <button class="buy-button mt-6 w-full py-3 px-4 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-lg" data-product="mock_interview" data-price="3.99">
-                   Buy Now ($3.99)
+                   <span class="price-display">Buy Now ($3.99)</span>
                </button>
            </div>
 
@@ -558,6 +572,15 @@
                    if (jobPosting) {
                        paymentFormData.append('job_posting', jobPosting);
                    }
+                   
+                   // Add promo code if applied
+                   const promoCodeToUse = currentPromoCode || window.currentPromoCode;
+                   if (promoCodeToUse) {
+                       paymentFormData.append('promo_code', promoCodeToUse);
+                       console.log('Adding promo code to payment:', promoCodeToUse);
+                   } else {
+                       console.log('No promo code applied to payment');
+                   }
 
                    const controller = new AbortController();
                    const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -604,8 +627,8 @@
            // Buy buttons
            buyButtons.forEach(button => {
                button.addEventListener('click', (event) => {
-                   const productType = event.target.dataset.product;
-                   const price = event.target.dataset.price;
+                   const productType = event.currentTarget.dataset.product;
+                   const price = event.currentTarget.dataset.price;
                    handlePremiumPurchase(productType, price);
                });
            });
@@ -634,7 +657,7 @@
                                <div class="bg-blue-50 p-4 rounded-lg">
                                    <h4 class="font-bold text-blue-900 mb-2">Overall Score</h4>
                                    <div class="text-3xl font-bold text-blue-600">${analysis.overall_score}/100</div>
-                               </div>
+        </div>
                            `;
                            analysisResults.innerHTML += scoreHtml;
                        }
@@ -664,7 +687,7 @@
                                            `<li class="text-amber-800">• ${improvement}</li>`
                                        ).join('')}
                                    </ul>
-                               </div>
+                </div>
                            `;
                            analysisResults.innerHTML += improvementsHtml;
                        }
@@ -675,7 +698,7 @@
                                <div class="bg-purple-50 p-4 rounded-lg">
                                    <h4 class="font-bold text-purple-900 mb-2">Encouragement</h4>
                                    <p class="text-purple-800">${analysis.encouragement_message}</p>
-                               </div>
+                </div>
                            `;
                            analysisResults.innerHTML += encouragementHtml;
                        }
@@ -688,9 +711,9 @@
                                    <p class="text-blue-800 mb-4">Get a comprehensive ATS optimization analysis with specific improvements and text rewrites.</p>
                                    <button class="upsell-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-lg" data-action="upsell">
                                        Get ATS Analysis - $1.49
-                                   </button>
-                               </div>
-                           </div>
+                </button>
+        </div>
+            </div>
                        `;
                        analysisResults.innerHTML += upsellingHtml;
 
@@ -700,7 +723,7 @@
                                <button onclick="resultsModal.classList.remove('show'); clearCurrentFile();" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
                                    Return to App
                         </button>
-                           </div>
+        </div>
                        `;
                        analysisResults.innerHTML += returnButtonHtml;
 
@@ -710,7 +733,7 @@
                            <div class="bg-red-50 p-4 rounded-lg">
                                <h4 class="font-bold text-red-900 mb-2">Analysis Results</h4>
                                <p class="text-red-800">Error displaying results. Please try again.</p>
-                           </div>
+        </div>
                        `;
                    }
                } else {
@@ -720,7 +743,7 @@
                            <h4 class="font-bold text-red-900 mb-2">Analysis Error</h4>
                            <p class="text-red-800">No results available. Check console for details.</p>
                            <p class="text-sm text-red-600 mt-2">Response structure: ${JSON.stringify(result, null, 2)}</p>
-                    </div>
+    </div>
                 `;
             }
             
@@ -770,7 +793,7 @@
                    const controller = new AbortController();
                    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-                   const response = await fetch(`/api/v1/premium-results/${analysisId}?embedded=true&product_type=${productType}`, {
+                   const response = await fetch(`/api/v1/premium/${analysisId}?embedded=true&product_type=${productType}`, {
                        signal: controller.signal
                    });
 
@@ -798,7 +821,7 @@
                    } else {
                        window.showMessage ? window.showMessage('Failed to load premium results: ' + error.message, 'error') : console.log('Failed to load premium results:', error.message);
                    }
-               } finally {
+            } finally {
                    hideLoadingOverlay();
                }
            }
@@ -978,9 +1001,9 @@
                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                        </svg>
-                   </button>
-               </div>
-           `;
+                        </button>
+                    </div>
+                `;
 
            // Add to container
            toastContainer.appendChild(toast);
@@ -1077,7 +1100,7 @@
                if (!response.ok) {
                    if (response.status === 402) {
                        showMessage('Payment required to export', 'error');
-                       return;
+                return;
                    } else if (response.status === 404) {
                        showMessage('Analysis not found', 'error');
                        return;
@@ -1353,7 +1376,7 @@
                        }
                    }
                }, 100);
-           } else {
+                } else {
                // Collapse the question
                details.style.display = 'none';
                icon.classList.remove('expanded');
@@ -1549,9 +1572,9 @@
                            detail.style.display = originalStates[index];
                        }
                    });
-               }
-               
-           } catch (error) {
+                }
+                
+            } catch (error) {
                console.error('DOCX export error:', error);
                alert('❌ Error generating DOCX file: ' + error.message);
                
@@ -1593,7 +1616,122 @@
                document.body.removeChild(textArea);
            });
        }
-   </script>
+
+       // Promotional Code Functionality
+       let currentPromoCode = null;
+       let currentDiscount = null;
+       
+       // Make promo code variables globally accessible
+       window.currentPromoCode = currentPromoCode;
+       window.currentDiscount = currentDiscount;
+
+       document.getElementById('applyPromo').addEventListener('click', async function() {
+           const promoCode = document.getElementById('promoCode').value.trim();
+           const messageDiv = document.getElementById('promoMessage');
+           
+           if (!promoCode) {
+               showPromoMessage('Please enter a promotional code', 'error');
+               return;
+           }
+           
+           try {
+               // Get the first pricing card's amount for validation (we'll update all cards after validation)
+               const firstCard = document.querySelector('[data-original-price]');
+               const sampleAmount = firstCard ? parseFloat(firstCard.dataset.originalPrice) : 10.00;
+               
+               const response = await fetch('/api/v1/promo/validate', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ code: promoCode, amount: sampleAmount })
+               });
+               
+               const result = await response.json();
+               
+               if (result.valid) {
+                   currentPromoCode = promoCode;
+                   window.currentPromoCode = promoCode;
+                   // Store the discount info with type and value for individual calculations
+                   currentDiscount = {
+                       discount_type: result.discount.discount_type || 'percentage',
+                       discount_value: result.discount.discount_value || 0,
+                       is_free: result.discount.is_free,
+                       original_amount: result.discount.original_amount,
+                       discount_amount: result.discount.discount_amount,
+                       final_amount: result.discount.final_amount
+                   };
+                   showPromoMessage(result.message, 'success');
+                   updatePricingDisplay();
+               } else {
+                   showPromoMessage(result.error || 'Invalid promotional code', 'error');
+               }
+           } catch (error) {
+               showPromoMessage('Failed to validate promotional code', 'error');
+           }
+       });
+
+       function showPromoMessage(message, type) {
+           const messageDiv = document.getElementById('promoMessage');
+           messageDiv.textContent = message;
+           messageDiv.className = `mt-2 text-sm ${type === 'success' ? 'text-green-600' : 'text-red-600'}`;
+           messageDiv.classList.remove('hidden');
+       }
+
+       function updatePricingDisplay() {
+           console.log('updatePricingDisplay called with currentDiscount:', currentDiscount);
+           
+           if (!currentDiscount) {
+               console.log('No current discount, returning');
+               return;
+           }
+           
+           // Update all pricing cards with discounted prices
+           const pricingCards = document.querySelectorAll('[data-original-price]');
+           console.log('Found pricing cards:', pricingCards.length);
+           
+           pricingCards.forEach((card, index) => {
+               const originalPrice = parseFloat(card.dataset.originalPrice);
+               
+               // Calculate discount for THIS specific card's price
+               let discountAmount, finalPrice, isFree;
+               
+               if (currentDiscount.discount_type === 'percentage') {
+                   discountAmount = (originalPrice * currentDiscount.discount_value) / 100;
+                   finalPrice = originalPrice - discountAmount;
+                   isFree = finalPrice <= 0;
+               } else { // fixed amount - maximum discount
+                   discountAmount = Math.min(currentDiscount.discount_value, originalPrice);
+                   finalPrice = originalPrice - discountAmount;
+                   isFree = finalPrice <= 0;
+               }
+               
+               const priceElement = card.querySelector('.price-display');
+               
+               console.log(`Card ${index}: originalPrice=${originalPrice}, discountAmount=${discountAmount}, finalPrice=${finalPrice}, isFree=${isFree}`);
+               
+               if (priceElement) {
+                   if (isFree) {
+                       priceElement.innerHTML = '<span style="color: white; font-weight: bold; font-size: 1.2em;">FREE</span>';
+                       console.log(`Card ${index}: Set to FREE`);
+                   } else {
+                       priceElement.innerHTML = `
+                           <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                               <div style="display: flex; align-items: center; gap: 8px;">
+                                   <span style="color: white; font-weight: bold; font-size: 1.1em;">$${finalPrice.toFixed(2)}</span>
+                                   <span style="color: #d1d5db; text-decoration: line-through; font-size: 0.9em;">$${originalPrice.toFixed(2)}</span>
+                               </div>
+                               <div style="color: white; font-weight: 600; font-size: 0.85em;">Save $${discountAmount.toFixed(2)}!</div>
+                           </div>
+                       `;
+                       console.log(`Card ${index}: Updated with correct discount`);
+                   }
+               } else {
+                   console.log(`Card ${index}: No price element found`);
+               }
+           });
+           
+           console.log('Pricing updated with discount:', currentDiscount);
+       }
+    </script>
 
     <!-- Load external libraries for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
