@@ -8,79 +8,79 @@
       "test": "Health Check",
       "success": true,
       "details": "Status: healthy",
-      "timestamp": 1757631294.685814
+      "timestamp": 1758748054.7312279
     },
     {
       "test": "File Upload - ResumeLAW.docx",
       "success": true,
-      "details": "Analysis ID: 08f4556f-0537-4a95-9f4a-b5e22cacaf43",
-      "timestamp": 1757631301.389175
+      "details": "Analysis ID: ab7a8eae-d7fa-4333-a38c-e7255936dca5",
+      "timestamp": 1758748062.8949
     },
     {
       "test": "File Upload & Analysis",
       "success": true,
       "details": "Successfully processed 1/1 files",
-      "timestamp": 1757631301.389191
+      "timestamp": 1758748062.8949099
     },
     {
       "test": "Payment Session Creation",
       "success": true,
-      "details": "Session ID: cs_test_b1isIMSeQrupSydFtrY7VBca9fEQ5paBgEcpMBQ2I0oeNrX5eXqZTR9URB",
-      "timestamp": 1757631302.008853
+      "details": "Session ID: cs_test_b1fcSyRMPZII9ZzBObFCQWT4AzP5CJjDDh3TPJZgM18ViTF9ZaCBfio5Dk",
+      "timestamp": 1758748064.07429
     },
     {
       "test": "Payment Session URL",
       "success": true,
-      "details": "URL: https://checkout.stripe.com/c/pay/cs_test_b1isIMSeQrupSydFtrY7VBca9fEQ5paBgEcpMBQ2I0oeNrX5eXqZTR9URB#fidkdWxOYHwnPyd1blpxYHZxWjA0V3A9fFBAQG43Vk9KVTFcam5od1Bva3Q3YW1DQ3ZuRENxYlBEUj1XcGA0QXJQcWJQSVNnXHYyMlVgUGRRVFJqMHxoQncyYUg0aF9hdzdfVHQ2NDZjcD1ONTV2QVB1d2ZoVCcpJ2N3amhWYHdzYHcnP3F3cGApJ2lkfGpwcVF8dWAnPydocGlxbFpscWBoJyknYGtkZ2lgVWlkZmBtamlhYHd2Jz9xd3BgeCUl",
-      "timestamp": 1757631302.008863
+      "details": "URL: https://checkout.stripe.com/c/pay/cs_test_b1fcSyRMPZII9ZzBObFCQWT4AzP5CJjDDh3TPJZgM18ViTF9ZaCBfio5Dk#fidkdWxOYHwnPyd1blpxYHZxWjA0V3A9fFBAQG43Vk9KVTFcam5od1Bva3Q3YW1DQ3ZuRENxYlBEUj1XcGA0QXJQcWJQSVNnXHYyMlVgUGRRVFJqMHxoQncyYUg0aF9hdzdfVHQ2NDZjcD1ONTV2QVB1d2ZoVCcpJ2N3amhWYHdzYHcnP3F3cGApJ2dkZm5id2pwa2FGamlqdyc%2FJyZjY2NjY2MnKSdpZHxqcHFRfHVgJz8naHBpcWxabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl",
+      "timestamp": 1758748064.0742972
     },
     {
       "test": "Regional Pricing - US",
       "success": true,
       "details": "Currency: USD",
-      "timestamp": 1757631302.012
+      "timestamp": 1758748064.0775769
     },
     {
       "test": "Regional Pricing - PK",
       "success": true,
       "details": "Currency: PKR",
-      "timestamp": 1757631302.0143008
+      "timestamp": 1758748064.080153
     },
     {
       "test": "Regional Pricing - IN",
       "success": true,
       "details": "Currency: INR",
-      "timestamp": 1757631302.016248
+      "timestamp": 1758748064.082474
     },
     {
       "test": "Regional Pricing - HK",
       "success": true,
       "details": "Currency: HKD",
-      "timestamp": 1757631302.018474
+      "timestamp": 1758748064.084957
     },
     {
       "test": "Regional Pricing - AE",
       "success": true,
       "details": "Currency: AED",
-      "timestamp": 1757631302.0202298
+      "timestamp": 1758748064.087189
     },
     {
       "test": "Regional Pricing - BD",
       "success": true,
       "details": "Currency: BDT",
-      "timestamp": 1757631302.02207
+      "timestamp": 1758748064.089664
     },
     {
       "test": "Analysis Retrieval",
       "success": true,
-      "details": "Type: free, Status: pending",
-      "timestamp": 1757631302.024016
+      "details": "Type: free, Status: free",
+      "timestamp": 1758748064.0931451
     },
     {
       "test": "Webhook Endpoint",
       "success": true,
       "details": "Endpoint exists and validates signatures",
-      "timestamp": 1757631302.025923
+      "timestamp": 1758748064.096138
     }
   ]
 }

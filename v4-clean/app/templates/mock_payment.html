@@ -67,7 +67,7 @@
     <div class="container">
         <div class="success-icon">&#10003;</div>
         <h1>Mock Payment Successful!</h1>
-        <p>This is a test payment page for development purposes.</p>
+        <p>This is a test payment page using Stripe sandbox for development purposes.</p>
         
         <div class="info">
             <p><strong>Session ID:</strong> {{ session_id }}</p>
@@ -76,7 +76,7 @@
             <p><strong>Environment:</strong> {{ environment }}</p>
         </div>
         
-        <p>In a real implementation, this would redirect to Stripe Checkout.</p>
+        <p>In a real implementation, this would redirect to Stripe Checkout using sandbox/test mode.</p>
         
         <div class="actions">
             <a href="/" class="btn" onclick="returnToApp()">Return to App</a>

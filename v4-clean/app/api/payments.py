@@ -15,6 +15,7 @@ from ..core.exceptions import PaymentError
 from ..services.payments import get_payment_service
 from ..services.geo import geo_service
 from ..services.analysis import analysis_service
+from ..services.premium_generation import premium_generation_service, AccessContext, AccessType
 
 logger = logging.getLogger(__name__)
 
@@ -162,67 +163,32 @@ async def payment_success(
         currency = verification['currency'].upper()
         AnalysisDB.mark_as_paid(analysis_id, amount_paid, currency)
         
-        # If no premium result exists, generate it now based on product type
+        # If no premium result exists, generate it using unified service
         if not analysis.get('premium_result'):
             try:
-                logger.info(f"Generating premium {product_type} for {analysis_id}")
+                logger.info(f"Generating premium {product_type} for {analysis_id} via unified service")
                 
-                if product_type == "resume_analysis":
-                    premium_result = await analysis_service.analyze_resume(
-                        analysis['resume_text'], 
-                        'premium'
-                    )
-                elif product_type == "job_fit_analysis":
-                    # Get job posting from analysis metadata
-                    job_posting = analysis.get('job_posting') or analysis.get('metadata', {}).get('job_posting', '')
-                    if not job_posting:
-                        raise ValueError("Job posting required for job fit analysis")
-                    premium_result = await analysis_service.analyze_resume(
-                        analysis['resume_text'], 
-                        'premium',
-                        job_posting
-                    )
-                elif product_type == "cover_letter":
-                    # Get job posting from analysis metadata  
-                    job_posting = analysis.get('job_posting') or analysis.get('metadata', {}).get('job_posting', '')
-                    if not job_posting:
-                        raise ValueError("Job posting required for cover letter generation")
-                    premium_result = await analysis_service.generate_cover_letter(
-                        analysis['resume_text'], 
-                        job_posting
-                    )
-                elif product_type == "resume_rewrite":
-                    # Get job posting from analysis metadata
-                    job_posting = analysis.get('job_posting') or analysis.get('metadata', {}).get('job_posting', '')
-                    if not job_posting:
-                        raise ValueError("Job posting required for resume rewrite")
-                    premium_result = await analysis_service.complete_resume_rewrite(
-                        analysis['resume_text'], 
-                        job_posting
-                    )
-                elif product_type == "mock_interview":
-                    # Get job posting from analysis metadata
-                    job_posting = analysis.get('job_posting') or analysis.get('metadata', {}).get('job_posting', '')
-                    if not job_posting:
-                        raise ValueError("Job posting required for mock interview")
-                    premium_result = await analysis_service.generate_mock_interview_premium(
-                        analysis['resume_text'], 
-                        job_posting
-                    )
-                else:
-                    raise ValueError(f"Unknown product type: {product_type}")
-                
-                if premium_result:
-                    AnalysisDB.update_premium_result(analysis_id, premium_result)
-                    analysis['premium_result'] = premium_result
-                    logger.info(f"Premium {product_type} generated successfully for {analysis_id}")
-                else:
-                    logger.error(f"Premium {product_type} returned empty result for {analysis_id}")
-                    analysis['premium_result'] = {
-                        "error": f"Premium {product_type} generation failed",
-                        "message": "Our AI analysis service is temporarily unavailable. Please contact support.",
-                        "analysis_id": analysis_id
+                # Create access context for payment
+                access_context = AccessContext(
+                    access_type=AccessType.PAYMENT,
+                    payment_id=session_id,
+                    metadata={
+                        "amount_paid": amount_paid,
+                        "currency": currency,
+                        "payment_method": "stripe"
                     }
+                )
+                
+                # Use unified premium generation service
+                premium_result = await premium_generation_service.generate_premium_results(
+                    analysis_id=analysis_id,
+                    product_type=product_type,
+                    access_context=access_context
+                )
+                
+                analysis['premium_result'] = premium_result
+                logger.info(f"Premium {product_type} generated successfully for {analysis_id} via unified service")
+                
             except Exception as e:
                 logger.error(f"Failed to generate premium {product_type} for {analysis_id}: {e}")
                 logger.error(f"Exception type: {type(e).__name__}")
@@ -297,7 +263,7 @@ async def mock_payment_page(
 
 @router.post("/payment/complete")
 async def complete_payment(request: Request):
-    """Mark payment as completed (for mock payments)"""
+    """Mark payment as completed (for mock payments using Stripe sandbox)"""
     try:
         data = await request.json()
         analysis_id = data.get('analysis_id')
@@ -307,19 +273,61 @@ async def complete_payment(request: Request):
         if not analysis_id:
             raise HTTPException(status_code=400, detail="Analysis ID required")
         
+        # Get analysis to check if premium result already exists
+        analysis = AnalysisDB.get(analysis_id)
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
         # Mark analysis as paid (mock payment with configurable amount)
         from ..core.config import config
         mock_amount = getattr(config, 'mock_payment_amount', 1000)  # Default 1000 cents if not configured
         mock_currency = getattr(config, 'mock_payment_currency', 'usd')
         AnalysisDB.mark_as_paid(analysis_id, mock_amount, mock_currency)
         
-        logger.info(f"Payment completed for analysis {analysis_id}, product {product_type}")
+        # If no premium result exists, generate it using unified service
+        if not analysis.get('premium_result'):
+            try:
+                logger.info(f"Generating premium {product_type} for {analysis_id} via unified service (mock payment)")
+                
+                # Create access context for mock payment
+                access_context = AccessContext(
+                    access_type=AccessType.PAYMENT,
+                    payment_id=session_id or f"mock_{analysis_id}",
+                    metadata={
+                        "amount_paid": mock_amount,
+                        "currency": mock_currency,
+                        "payment_method": "stripe_sandbox",
+                        "is_mock": True
+                    }
+                )
+                
+                # Use unified premium generation service
+                premium_result = await premium_generation_service.generate_premium_results(
+                    analysis_id=analysis_id,
+                    product_type=product_type,
+                    access_context=access_context
+                )
+                
+                analysis['premium_result'] = premium_result
+                logger.info(f"Premium {product_type} generated successfully for {analysis_id} via unified service (mock payment)")
+                
+            except Exception as e:
+                logger.error(f"Failed to generate premium {product_type} for {analysis_id}: {e}")
+                analysis['premium_result'] = {
+                    "error": f"Premium {product_type} generation failed",
+                    "message": "Our AI analysis service encountered an error. Please contact support.",
+                    "technical_details": str(e),
+                    "analysis_id": analysis_id
+                }
+        
+        logger.info(f"Mock payment completed for analysis {analysis_id}, product {product_type}")
         
         return {
             "status": "success",
             "analysis_id": analysis_id,
             "product_type": product_type,
-            "message": "Payment completed successfully"
+            "message": "Payment completed successfully",
+            "premium_result": analysis.get('premium_result') is not None
         }
         
     except Exception as e:
