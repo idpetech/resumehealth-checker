@@ -1,0 +1,194 @@
+site_name: Resume Health Checker v4.0 Documentation
+site_description: Comprehensive documentation for Resume Health Checker v4.0
+site_author: Development Team
+site_url: https://resumehealthchecker.com/docs
+
+# Repository
+repo_name: resumehealthchecker/v4-clean
+repo_url: https://github.com/resumehealthchecker/v4-clean
+edit_uri: edit/main/docs/
+
+# Configuration
+theme:
+  name: material
+  language: en
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+  features:
+    - announce.dismiss
+    - content.action.edit
+    - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
+    - content.footnote.tooltips
+    - content.tabs.link
+    - content.tooltips
+    - header.autohide
+    - navigation.expand
+    - navigation.footer
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.prune
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+    - toc.integrate
+
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+
+  logo: assets/logo.png
+  favicon: assets/favicon.png
+
+# Plugins
+plugins:
+  - search:
+      lang: en
+  - mermaid2:
+      arguments:
+        theme: base
+        themeVariables:
+          primaryColor: '#2196F3'
+          primaryTextColor: '#fff'
+          primaryBorderColor: '#1976D2'
+          lineColor: '#666'
+          secondaryColor: '#006100'
+          tertiaryColor: '#fff'
+
+# Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      title: On this page
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:materialx.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      normalize_issue_symbols: true
+      repo_url_shorthand: true
+      user: resumehealthchecker
+      repo: v4-clean
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      combine_header_slug: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Page tree
+nav:
+  - Home: index.md
+  - Quick Start:
+    - Navigation Guide: docs/MODULAR_NAVIGATION.md
+    - Documentation Hub: docs/README.md
+    - Critical Architecture Fix: docs/CRITICAL_ARCHITECTURE_FIX.md
+  - Features:
+    - Free Analysis: docs/features/free-analysis.md
+    - Premium Payment: docs/features/premium-payment.md
+    - Promotional Codes: docs/features/promotional-codes.md
+    - Bundle Products: docs/features/bundle-products.md
+  - Architecture:
+    - Unified Premium Generation: docs/architecture/UNIFIED_PREMIUM_GENERATION.md
+  - Implementation:
+    - Unified Premium Implementation: docs/implementation/UNIFIED_PREMIUM_IMPLEMENTATION.md
+  - Sprints:
+    - Sprint 1: docs/sprints/sprint-1.md
+    - Sprint 2: docs/sprints/sprint-2.md
+    - Sprint 3: docs/sprints/sprint-3.md
+  - Testing:
+    - Unit Tests: docs/tests/unit-tests.md
+    - Integration Tests: docs/tests/integration-tests.md
+    - Security Tests: docs/tests/security-tests.md
+    - Performance Tests: docs/tests/performance-tests.md
+  - Bug Analysis:
+    - Bundle Delivery Bug: docs/bugs/bundle-delivery-bug.md
+    - Payment Validation Bug: docs/bugs/payment-validation-bug.md
+    - Security Vulnerabilities: docs/bugs/security-vulnerabilities.md
+  - User Stories:
+    - All Stories: docs/stories/USER_STORIES.md
+    - Story Template: docs/stories/USER_STORY_TEMPLATE.md
+    - Story Workflow: docs/stories/USER_STORY_WORKFLOW.md
+  - Standards:
+    - Development Standards: docs/standards/DEVELOPMENT_STANDARDS.md
+    - Test Coverage Analysis: docs/standards/TEST_COVERAGE_ANALYSIS.md
+    - Implementation Roadmap: docs/standards/IMPLEMENTATION_ROADMAP.md
+  - Diagrams:
+    - Interactive Diagram Viewer: docs/diagrams/DIAGRAM_VIEWER.md
+    - Unified Premium Flow: docs/diagrams/UNIFIED_PREMIUM_FLOW.md
+
+# Extra
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/resumehealthchecker
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/resumehealthchecker
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/company/resumehealthchecker
+
+  version:
+    provider: mike
+
+# Copyright
+copyright: Copyright &copy; 2025 Resume Health Checker Team

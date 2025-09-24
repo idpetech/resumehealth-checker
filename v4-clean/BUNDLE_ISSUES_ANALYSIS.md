@@ -233,3 +233,4 @@ if (isBundle) {
    - Option B: Show summary with links to individual results
    - Option C: Show first result with navigation to others
 
+
